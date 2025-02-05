@@ -236,11 +236,11 @@ msgid "Choose a color:"
 msgstr "色を選択:"
 
 #: app/scripts/controllers/menu.js:320
-msgid "Clear Recent Projects"
+msgid "Clear recent projects"
 msgstr ""
 
 #: app/views/menu.html:171
-msgid "Clear Recently Opened"
+msgid "Clear recently opened"
 msgstr ""
 
 #: app/scripts/services/utils.js:1436
@@ -922,13 +922,13 @@ msgstr ""
 msgid "Open"
 msgstr "開く"
 
-#: app/views/menu.html:154
-msgid "Open Recent"
-msgstr ""
-
 #: app/scripts/services/utils.js:800
 msgid "Open SVG"
 msgstr "SVG を開く"
+
+#: app/views/menu.html:154
+msgid "Open recent"
+msgstr ""
 
 #: app/scripts/services/forms.js:394 app/views/design.html:150
 msgid "Orange Red"

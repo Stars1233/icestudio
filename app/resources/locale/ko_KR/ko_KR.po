@@ -236,11 +236,11 @@ msgid "Choose a color:"
 msgstr "색깔을 선택하세요:"
 
 #: app/scripts/controllers/menu.js:320
-msgid "Clear Recent Projects"
+msgid "Clear recent projects"
 msgstr ""
 
 #: app/views/menu.html:171
-msgid "Clear Recently Opened"
+msgid "Clear recently opened"
 msgstr ""
 
 #: app/scripts/services/utils.js:1436
@@ -930,13 +930,13 @@ msgstr "생기없는 올리브"
 msgid "Open"
 msgstr "열기"
 
-#: app/views/menu.html:154
-msgid "Open Recent"
-msgstr ""
-
 #: app/scripts/services/utils.js:800
 msgid "Open SVG"
 msgstr "SVG 열기"
+
+#: app/views/menu.html:154
+msgid "Open recent"
+msgstr ""
 
 #: app/scripts/services/forms.js:394 app/views/design.html:150
 #, fuzzy

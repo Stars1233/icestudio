@@ -294,7 +294,7 @@ angular.module('icestudio').controller(
     };
 
     //-------------------------------------------------------------------------//-------------------------------------------------------------------------
-    //-- FILE/Open Recent
+    //-- FILE/Open recent
     //-- Show a list of recent projects
     //-------------------------------------------------------------------------
 
@@ -317,7 +317,7 @@ angular.module('icestudio').controller(
 
     $scope.clearRecentProjects = function () {
       alertify.confirm(
-        gettextCatalog.getString('Clear Recent Projects'),
+        gettextCatalog.getString('Clear recent projects'),
         gettextCatalog.getString(
           'Are you sure you want to clear the recent projects list?'
         ),

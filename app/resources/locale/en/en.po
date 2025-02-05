@@ -99,7 +99,7 @@ msgstr "Apio install {{name}}"
 
 #: app/scripts/controllers/menu.js:321
 msgid "Are you sure you want to clear the recent projects list?"
-msgstr ""
+msgstr "Are you sure you want to clear the recent projects list?"
 
 #: app/scripts/services/tools.js:1621
 msgid "At least Python 3.7 is required"
@@ -233,12 +233,12 @@ msgid "Choose a color:"
 msgstr "Choose a color:"
 
 #: app/scripts/controllers/menu.js:320
-msgid "Clear Recent Projects"
-msgstr ""
+msgid "Clear recent projects"
+msgstr "Clear recent projects"
 
 #: app/views/menu.html:171
-msgid "Clear Recently Opened"
-msgstr ""
+msgid "Clear recently opened"
+msgstr "Clear recently opened"
 
 #: app/scripts/services/utils.js:1436
 msgid ""
@@ -436,7 +436,7 @@ msgstr "Documentation"
 
 #: app/scripts/controllers/menu.js:606
 msgid "Don’t Save"
-msgstr ""
+msgstr "Don’t Save"
 
 #: app/views/version.html:83
 msgid "Don’t display"
@@ -907,13 +907,13 @@ msgstr "Olive Drab"
 msgid "Open"
 msgstr "Open"
 
-#: app/views/menu.html:154
-msgid "Open Recent"
-msgstr ""
-
 #: app/scripts/services/utils.js:800
 msgid "Open SVG"
 msgstr "Open SVG"
+
+#: app/views/menu.html:154
+msgid "Open recent"
+msgstr "Open recent"
 
 #: app/scripts/services/forms.js:394 app/views/design.html:150
 msgid "Orange Red"
@@ -998,7 +998,7 @@ msgstr "Quit"
 
 #: app/scripts/controllers/menu.js:327
 msgid "Recent projects cleared"
-msgstr ""
+msgstr "Recent projects cleared"
 
 #: app/scripts/services/forms.js:382 app/views/design.html:118
 msgid "Red"
@@ -1070,7 +1070,7 @@ msgstr "Save submodule"
 
 #: app/scripts/services/tools.js:2252
 msgid "Screen recording error. Review your permissions."
-msgstr ""
+msgstr "Screen recording error. Review your permissions."
 
 #: app/views/menu.html:587
 msgid "Select"
@@ -1094,7 +1094,7 @@ msgstr "Slate Blue"
 
 #: app/scripts/services/tools.js:2181
 msgid "Snapshot saved: {{name}}"
-msgstr ""
+msgstr "Snapshot saved: {{name}}"
 
 #: app/views/menu.html:1020
 msgid "Source code"
@@ -1138,11 +1138,11 @@ msgstr "Taiwanese"
 
 #: app/views/menu.html:885
 msgid "Take PNG"
-msgstr ""
+msgstr "Take PNG"
 
 #: app/views/menu.html:893
 msgid "Take Video"
-msgstr ""
+msgstr "Take Video"
 
 #: app/views/menu.html:245
 msgid "Testbench"
@@ -1285,7 +1285,7 @@ msgstr "UI theme"
 
 #: app/views/languages.html:95
 msgid "Ukrainian"
-msgstr ""
+msgstr "Ukrainian"
 
 #: app/views/menu.html:296
 msgid "Undo"
@@ -1338,7 +1338,7 @@ msgstr "Version notes"
 
 #: app/scripts/services/tools.js:2234
 msgid "Video saved: {{name}}"
-msgstr ""
+msgstr "Video saved: {{name}}"
 
 #: app/views/menu.html:510
 msgid "View"
@@ -1354,7 +1354,7 @@ msgstr "Viewing tri-state"
 
 #: app/scripts/controllers/menu.js:1116
 msgid "Wait for <b></b> seconds"
-msgstr ""
+msgstr "Wait for <b></b> seconds"
 
 #: app/scripts/services/tools.js:975
 msgid "Warnings detected in the design"

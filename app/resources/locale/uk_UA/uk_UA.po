@@ -234,11 +234,11 @@ msgid "Choose a color:"
 msgstr "Виберіть колір:"
 
 #: app/scripts/controllers/menu.js:320
-msgid "Clear Recent Projects"
+msgid "Clear recent projects"
 msgstr ""
 
 #: app/views/menu.html:171
-msgid "Clear Recently Opened"
+msgid "Clear recently opened"
 msgstr ""
 
 #: app/scripts/services/utils.js:1436
@@ -584,7 +584,7 @@ msgstr "Ресурси FPGA"
 
 #: app/views/version.html:61
 msgid "FPGAwars GitHub project"
-msgstr ""
+msgstr "Проєкт GitHub FPGAwars"
 
 #: app/views/version.html:48
 msgid "FPGAwars community."
@@ -758,7 +758,7 @@ msgstr "Неправильне підключення <i>Pull-up</i>:<br>Бло�
 #: app/scripts/services/graph.js:375
 msgid "Invalid <i>Pull-up</i> connection:<br>Only <i>Input</i> blocks allowed"
 msgstr ""
-"Неправильне підключення <i>Pull-up</i>:<br>Дозволені лише блоки <i>Input</i>"
+"Неправильне з'єднання <i>Pull-up</i>:<br>Дозволені лише блоки <i>Input</i>"
 
 #: app/scripts/services/graph.js:363
 msgid "Invalid block connection:<br><i>Pull-up</i> already connected"
@@ -910,13 +910,13 @@ msgstr "Оливковий зелений"
 msgid "Open"
 msgstr "Відкрити"
 
-#: app/views/menu.html:154
-msgid "Open Recent"
-msgstr ""
-
 #: app/scripts/services/utils.js:800
 msgid "Open SVG"
 msgstr "Відкрити SVG"
+
+#: app/views/menu.html:154
+msgid "Open recent"
+msgstr ""
 
 #: app/scripts/services/forms.js:394 app/views/design.html:150
 msgid "Orange Red"
@@ -1362,7 +1362,7 @@ msgstr "Перегляд тристабільного стану"
 
 #: app/scripts/controllers/menu.js:1116
 msgid "Wait for <b></b> seconds"
-msgstr ""
+msgstr "Чекайте <b></b> секунд"
 
 #: app/scripts/services/tools.js:975
 msgid "Warnings detected in the design"

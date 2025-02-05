@@ -234,11 +234,11 @@ msgid "Choose a color:"
 msgstr "Выберите цвет:"
 
 #: app/scripts/controllers/menu.js:320
-msgid "Clear Recent Projects"
+msgid "Clear recent projects"
 msgstr ""
 
 #: app/views/menu.html:171
-msgid "Clear Recently Opened"
+msgid "Clear recently opened"
 msgstr ""
 
 #: app/scripts/services/utils.js:1436
@@ -936,13 +936,13 @@ msgstr "Тускло-коричневый"
 msgid "Open"
 msgstr "Открыть"
 
-#: app/views/menu.html:154
-msgid "Open Recent"
-msgstr ""
-
 #: app/scripts/services/utils.js:800
 msgid "Open SVG"
 msgstr "Открыть SVG"
+
+#: app/views/menu.html:154
+msgid "Open recent"
+msgstr ""
 
 #: app/scripts/services/forms.js:394 app/views/design.html:150
 #, fuzzy

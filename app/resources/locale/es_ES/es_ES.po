@@ -233,11 +233,11 @@ msgid "Choose a color:"
 msgstr "Selecciona un color:"
 
 #: app/scripts/controllers/menu.js:320
-msgid "Clear Recent Projects"
+msgid "Clear recent projects"
 msgstr "Vaciar listado de proyectos recientes"
 
 #: app/views/menu.html:171
-msgid "Clear Recently Opened"
+msgid "Clear recently opened"
 msgstr "Vaciar abiertos recientemente"
 
 #: app/scripts/services/utils.js:1436
@@ -583,7 +583,7 @@ msgstr "Recursos de la FPGA"
 
 #: app/views/version.html:61
 msgid "FPGAwars GitHub project"
-msgstr ""
+msgstr "Proyecto GitHub FPGAwars"
 
 #: app/views/version.html:48
 msgid "FPGAwars community."
@@ -911,13 +911,13 @@ msgstr "Verde oliva"
 msgid "Open"
 msgstr "Abrir"
 
-#: app/views/menu.html:154
-msgid "Open Recent"
-msgstr "Abrir reciente"
-
 #: app/scripts/services/utils.js:800
 msgid "Open SVG"
 msgstr "Abrir SVG"
+
+#: app/views/menu.html:154
+msgid "Open recent"
+msgstr "Abrir reciente"
 
 #: app/scripts/services/forms.js:394 app/views/design.html:150
 msgid "Orange Red"
@@ -1194,13 +1194,12 @@ msgid "This project is designed for the {{name}} board."
 msgstr "Este proyecto está diseñado para la placa {{name}}."
 
 #: app/views/version.html:40
-#, fuzzy
 msgid ""
 "This release has been possible thanks to the great work done\n"
 "          by an active, growing, enthusiastic team, the"
 msgstr ""
-"Este lanzamiento ha sido posible gracias al gran trabajo hecho por el grupo "
-"emergente de"
+"Este lanzamiento ha sido posible gracias al gran trabajo hecho por un "
+"emergente, activo y entusiasta equipo,"
 
 #: app/scripts/services/utils.js:1458
 msgid "This time"
