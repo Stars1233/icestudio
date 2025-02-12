@@ -79,9 +79,9 @@ joint.shapes.ice.WireView = joint.dia.LinkView.extend({
   initialize: function () {
     joint.dia.LinkView.prototype.initialize.apply(this, arguments);
 
-    var self = this;
+    var self = this
 
-    setTimeout(function () {
+     requestAnimationFrame(function () {
       var size = self.model.get('size');
 
       if (!size) {
@@ -102,9 +102,8 @@ joint.shapes.ice.WireView = joint.dia.LinkView.extend({
         }
       }
       self.setWireClass(size);
-      //self.updateWireProperties(size);
       self.updateBifurcations();
-    }, 100);
+      });
   },
 
   apply: function () {
