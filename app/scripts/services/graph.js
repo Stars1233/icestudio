@@ -520,7 +520,6 @@ let panFrameRequested = false;
           if (state.mutateZoom === false) {
             state.mutateZoom = true;
             disableAceEditors();
-            graph.startBatch('batch-update');
             // Close expanded combo
             if (document.activeElement.className === 'select2-search__field') {
               $('select').select2('close');
@@ -534,7 +533,6 @@ let panFrameRequested = false;
             restoreAceEditors();
             requestAnimationFrame(() => {
               updateCellBoxes();
-              graph.stopBatch('batch-update');
 
               state.mutateZoom = false;
             });
@@ -554,7 +552,11 @@ let panFrameRequested = false;
         },
       });
 
+
+
+   
       function updateCellBoxes() {
+          graph.startBatch('batch-update');
         let cells = graph.getCells();
         /* WIP: optimization rendering
       let viewport = {
@@ -581,6 +583,7 @@ let panFrameRequested = false;
             selectionView.updateBox(elementView.model);
           }
         }
+          graph.stopBatch('batch-update'); 
       }
       /*
           // WIP: Optimization rendering
@@ -673,7 +676,12 @@ function isElementInViewport(elementBBox, viewport) {
       });
       let isDblClick = false;
       let pointerdblclickCellType = false;
-      paper.on('cell:pointerdblclick', function (cellView, evt, x, y) {
+    
+
+
+
+
+      paper.on('cell:pointerdblclick', async function (cellView, evt, x, y) {
         if (x && y && !checkInsideViewBox(cellView, x, y)) {
           // Out of the view box
           return;
@@ -714,7 +722,7 @@ function isElementInViewport(elementBBox, viewport) {
             z.index = 1;
             isDblClick = true;
 
-            utils.beginBlockingTask();
+            await utils.beginBlockingTask();
             setTimeout(function () {
               $rootScope.$broadcast('navigateProject', {
                 update: self.breadcrumbs.length === 1,
