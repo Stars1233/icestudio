@@ -101,7 +101,7 @@ joint.shapes.ice.WireView = joint.dia.LinkView.extend({
         }
       }
       this.setWireClass(size);
-      this.updateBifurcations();
+     // this.updateBifurcations();
       });
   },
 

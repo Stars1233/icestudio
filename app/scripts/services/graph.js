@@ -384,7 +384,8 @@ angular.module('icestudio').service(
           let tsize = 0;
           let lsize = linkView.model.get('size');
           let portId = magnetT.getAttribute('port');
-          let sourcePortId = magnetS.getAttribute('port');
+          let sourcePortId = magnetS.getAttribute('port') ?? false;
+
           let tLeftPorts = cellViewT.model.get('leftPorts');
           let sRightPorts = cellViewS.model.get('rightPorts');
           let isParametric = false;
@@ -784,6 +785,8 @@ document.body.addEventListener('mouseenter', function(event) {
       });
 
       function checkInsideViewBox(view, x, y) {
+        if(typeof view.$box === 'undefined') {return false;}
+
         let $box = $(view.$box[0]);
         let position = $box.position();
         let rbox = g.rect(
