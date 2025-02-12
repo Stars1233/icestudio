@@ -79,30 +79,29 @@ joint.shapes.ice.WireView = joint.dia.LinkView.extend({
   initialize: function () {
     joint.dia.LinkView.prototype.initialize.apply(this, arguments);
 
-    var self = this
 
-     requestAnimationFrame(function () {
-      var size = self.model.get('size');
+     requestAnimationFrame( () => {
+      var size = this.model.get('size');
 
       if (!size) {
         // New wire
         var i,
           port,
-          portName = self.model.get('source').port;
-        var rightPorts = self.sourceView.model.get('rightPorts');
+          portName = this.model.get('source').port;
+        var rightPorts = this.sourceView.model.get('rightPorts');
         // Initialize wire properties
         for (i in rightPorts) {
           port = rightPorts[i];
           if (portName === port.id) {
             size = port.size;
             // For wire size connection validation
-            self.model.attributes.size = size;
+            this.model.attributes.size = size;
             break;
           }
         }
       }
-      self.setWireClass(size);
-      self.updateBifurcations();
+      this.setWireClass(size);
+      this.updateBifurcations();
       });
   },
 
@@ -184,7 +183,7 @@ setWireClass: function (size) {
     }
   },
 
-  updateWireProperties: function (size) {
+  updateWireProperties: function (/*size*/) {
 
     // In this moment Icestudio not need update any wire properties, is setup at the creation
    // this.setWireClass(size);

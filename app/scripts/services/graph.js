@@ -842,9 +842,10 @@ document.body.addEventListener('mouseenter', function(event) {
             graph.trigger('batch:start');
             processReplaceBlock(cellView.model);
             graph.trigger('batch:stop');
+            /* Changed updateWires flow, remove in next commits if all works well
             if (paper.options.enabled) {
               _this.updateWires();
-            }
+            }*/
           }
         }, 200);
       });
