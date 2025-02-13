@@ -30,19 +30,9 @@ angular.module('icestudio').service(
     let autorouting = false;
     let isRouting = false;
 
+
+
     let mousePosition = { x: 0, y: 0 };
-
-    /*-- This event flood the task queue,and throttle techniches not work accurate as needed,for this
-         *  i replace this capture method for on demand capture function based on non blocking promise
-         *
-         *  $('body').mousemove(function (event) {
-        mousePosition = {
-          x: event.pageX,
-          y: event.pageY,
-        };
-      });
---*/
-
     let needsUpdate = true;
 
     document.addEventListener('mousemove', (event) => {
@@ -51,7 +41,7 @@ angular.module('icestudio').service(
         requestAnimationFrame(() => {
           mousePosition.x = event.pageX;
           mousePosition.y = event.pageY;
-          needsUpdate = true; // Permitimos la siguiente actualización
+          needsUpdate = true; // enable the next update
         });
       }
     });
@@ -67,7 +57,7 @@ angular.module('icestudio').service(
     this.enableAutoRouting = function () {
       if (autorouting === false) {
         autorouting = true;
-        $('body').on('Graph::updateWires', function () {
+       $('body').on('Graph::updateWires', function () {
           _this.route();
         });
       }
@@ -201,8 +191,6 @@ angular.module('icestudio').service(
         //-- Get the current window from NW
         let win = window.get();
 
-        //-- DEBUG
-
         // Target box: The circuit is fit inside this target box
         let tbox = {
           x: CIRCUIT_MARGIN,
@@ -254,7 +242,6 @@ angular.module('icestudio').service(
       }
     };
 
-    //-----------------------------------------------------------------------
 
     //---------------------------------------------------------------------
     //-- Create the paper, where the circuits will be drawn
@@ -271,20 +258,13 @@ angular.module('icestudio').service(
         height: 5000,
         model: graph,
         gridSize: gridsize,
-        interactive: true,
+        interactive: false,
         clickThreshold: 6,
         snapLinks: { radius: 16 },
         linkPinning: false,
         embeddingMode: false,
-        //async:true,
-        //markAvailable: true,
         getState: this.getState,
         defaultLink: new joint.shapes.ice.Wire(),
-        //
-        // guard: function(evt, view) vg
-        //   // FALSE means the event isn't guarded.
-        //   return false;
-        // },
         validateMagnet: function (cellView, magnet) {
           // Prevent to start wires from an input port
           return magnet.getAttribute('type') === 'output';
@@ -504,6 +484,7 @@ angular.module('icestudio').service(
           newWidth + 'px'
         );
       }
+      let isOnZoom=false;
 let panFrameRequested = false;
       this.panAndZoom = svgPanZoom(targetElement.childNodes[2], {
         fit: false,
@@ -516,6 +497,7 @@ let panFrameRequested = false;
         maxZoom: ZOOM_MAX,
         eventsListenerElement: targetElement,
         onZoom: function (scale) {
+isOnZoom=true;
           state.zoom = scale;
           if (state.mutateZoom === false) {
             state.mutateZoom = true;
@@ -530,13 +512,19 @@ let panFrameRequested = false;
           }
           clearTimeout(zoomTimeout);
           zoomTimeout = setTimeout(() => {
-            restoreAceEditors();
+            
+              restoreAceEditors();
             requestAnimationFrame(() => {
+              
+             if(isOnZoom){
+              isOnZoom=false;
               updateCellBoxes();
 
               state.mutateZoom = false;
+             }
             });
-          }, 200);
+          }, 300);
+          
         },
         onPan: function (newPan) {
           state.pan = newPan;
@@ -558,25 +546,14 @@ let panFrameRequested = false;
       function updateCellBoxes() {
           graph.startBatch('batch-update');
         let cells = graph.getCells();
-        /* WIP: optimization rendering
-      let viewport = {
-        x: paper.getArea().x,
-        y: paper.getArea().y,
-        width: paper.getArea().width,
-        height: paper.getArea().height
-    };*/
-
-        selectionView.options.state = state;
+             selectionView.options.state = state;
         let elementView = false;
         let bbox = false;
-        //WIP: optimization rendering let isInViewPort=false;
         for (let i = 0, len = cells.length; i < len; i++) {
           if (!cells[i].isLink()) {
             cells[i].attributes.state = state;
             elementView = paper.findViewByModel(cells[i]);
             bbox = elementView.getBBox();
-
-            //isInViewPort= isElementInViewport(bbox, viewport);
             // Pan blocks
             elementView.updateBox();
             // Pan selection boxes
@@ -585,15 +562,7 @@ let panFrameRequested = false;
         }
           graph.stopBatch('batch-update'); 
       }
-      /*
-          // WIP: Optimization rendering
-function isElementInViewport(elementBBox, viewport) {
-    return !(elementBBox.x + elementBBox.width < viewport.x ||
-             elementBBox.x > viewport.x + viewport.width ||
-             elementBBox.y + elementBBox.height < viewport.y ||
-             elementBBox.y > viewport.y + viewport.height);
-}*/
-      // Events
+       // Events
 
       let shiftPressed = false;
 
@@ -650,12 +619,127 @@ function isElementInViewport(elementBBox, viewport) {
           }
         }
       });
+/*--
+ * The wire is divided into segments, we need to find the segment nearest at 
+ * the point that the user has clicked.
+ --*/
+function getInsertIndex(vertices, newPoint, linkModel) {
+    if (vertices.length === 0) return 0;
+
+    let minDistance = Infinity;
+    let index = vertices.length; // Por defecto, al final
+
+    let source = linkModel.get('source');
+    let target = linkModel.get('target');
+
+    let sourcePoint = source.id ? getElementCenter(source.id) : source;
+    let targetPoint = target.id ? getElementCenter(target.id) : target;
+
+    // Wire full path (route)
+    let pathPoints = [sourcePoint, ...vertices, targetPoint]; 
+
+    for (let i = 0; i < pathPoints.length - 1; i++) {
+        let v1 = pathPoints[i];
+        let v2 = pathPoints[i + 1];
+
+        let distance = pointToSegmentDistance(newPoint, v1, v2);
+        if (distance < minDistance) {
+            minDistance = distance;
+            index = i;
+        }
+    }
+   
+    // Coordinate where the control point should be inyected
+    return index; 
+}
+
+/*--
+ * Point to segment distance
+--*/
+function pointToSegmentDistance(p, v1, v2) {
+    let A = p.x - v1.x;
+    let B = p.y - v1.y;
+    let C = v2.x - v1.x;
+    let D = v2.y - v1.y;
+
+    let dot = A * C + B * D;
+    let len_sq = C * C + D * D;
+    let param = len_sq !== 0 ? dot / len_sq : -1;
+
+    let xx, yy;
+    if (param < 0) {
+        xx = v1.x;
+        yy = v1.y;
+    } else if (param > 1) {
+        xx = v2.x;
+        yy = v2.y;
+    } else {
+        xx = v1.x + param * C;
+        yy = v1.y + param * D;
+    }
+
+    let dx = p.x - xx;
+    let dy = p.y - yy;
+    return Math.sqrt(dx * dx + dy * dy);
+}
+
+
+/*--
+ * Real coords of the element center y id
+--*/
+function getElementCenter(elementId) {
+    let element = paper.getModelById(elementId);
+    if (!element) return { x: 0, y: 0 };
+
+    let bbox = element.getBBox();
+    return { x: bbox.x + bbox.width / 2, y: bbox.y + bbox.height / 2 };
+}
 
       paper.on('cell:pointerclick', function (cellView, evt, x, y) {
-        if (!checkInsideViewBox(cellView, x, y)) {
+    
+ if (cellView.model.isLink()) {
+ const linkModel = cellView.model;
+        let vertices = linkModel.get('vertices') || [];
+
+        // if user click on remove control point, jointjs do the stuff
+        if (evt.target.closest('.marker-vertex-remove')) {
+            return;
+        }
+   // if user click is on grupo marker area, but not in path, control point or remove icon, jointjs do the stuff
+    if (evt.target.closest('.marker-vertex-group')) {
+        return;
+    }
+
+        
+        // Obtain the coordsof the click  in the same world coordinates than jointjs
+        let localPoint = paper.pageToLocalPoint({ x: evt.clientX, y: evt.clientY });
+
+        // If vertex is clicked jointjs do the stuff
+        if (isClickOnVertex(cellView, localPoint.x, localPoint.y)) {
+            return;
+        }
+
+        // User click the wire, we need calculate the correct place to insert the control point.
+        let index = getInsertIndex(vertices, localPoint, linkModel);
+
+        // Detect duplicated points before insert the new one.
+        if (!vertices.some(v => v.x === localPoint.x && v.y === localPoint.y)) {
+     
+           vertices.splice(index, 0, { x: localPoint.x, y: localPoint.y });
+            const cleanedVertices = vertices.map(v => ({ x: v.x, y: v.y }));
+            linkModel.set('vertices', cleanedVertices, { ui: true });
+            linkModel.trigger('change:vertices');
+        }
+ return;
+    }
+
+
+   
+      if (!checkInsideViewBox(cellView, x, y)) {
           // Out of the view box
           return;
         }
+       
 
         // If Shift is pressed, we are updating the selection. Else new selection.
         if (!utils.hasShift(evt)) {
@@ -674,12 +758,9 @@ function isElementInViewport(elementBBox, viewport) {
           }
         }
       });
+
       let isDblClick = false;
       let pointerdblclickCellType = false;
-    
-
-
-
 
       paper.on('cell:pointerdblclick', async function (cellView, evt, x, y) {
         if (x && y && !checkInsideViewBox(cellView, x, y)) {

@@ -3,8 +3,47 @@
 
 'use strict';
 
-// Custom wire
+/*-- 
+ * Existent vertex click detection with selectable margin 
+ * Future refactor: helper jointjs 
+ --*/
+function isClickOnVertex(linkView, x, y, margin = 5) {
 
+  const linkModel = linkView.model;
+  const vertices = linkModel.get('vertices') || [];
+  return vertices.some(v => Math.abs(v.x - x) < margin && Math.abs(v.y - y) < margin);
+}
+
+
+/*--
+ * Click filter to choose between click on path , vertex or remove marker isClickOnVertex
+ --*/
+const originalPointerDown = joint.dia.LinkView.prototype.pointerdown;
+joint.dia.LinkView.prototype.pointerdown = function(evt, x, y) {
+
+    // Delete marker icon -> default jointjs action  
+    if (evt.target.closest('.marker-vertex-remove')) {
+        originalPointerDown.apply(this, arguments);
+    
+      // Vertex group area but no control point neither delete icon -> default jointjs action 
+     }else if (evt.target.closest('.marker-vertex-group')) {
+            
+        originalPointerDown.apply(this, arguments);
+
+    // Vertex control point -> jointjs management
+    }else if (isClickOnVertex(this, x, y, 10)) {
+        originalPointerDown.apply(this, arguments);
+
+    // Click on path -> stop default jointjs actions and derive to our route algorithm
+    } else {
+        evt.stopPropagation();
+        evt.preventDefault();
+    }
+};
+
+/*--
+ * Custom wire
+--*/
 joint.shapes.ice.Wire = joint.dia.Link.extend({
   markup: [
     '<path class="connection" d="M 0 0 0 0"/>',
@@ -101,7 +140,6 @@ joint.shapes.ice.WireView = joint.dia.LinkView.extend({
         }
       }
       this.setWireClass(size);
-     // this.updateBifurcations();
       });
   },
 
@@ -156,23 +194,8 @@ joint.shapes.ice.WireView = joint.dia.LinkView.extend({
    * instead constant dom update, but for the moment , recomend not delete
    * the old function to have near if something go bad
    */
-/*  updateWireProperties: function (size) {
-    console.log('UpdateWireProperties');
-    if (size > 1) {
-      this.$('.connection').css('stroke-width', WIRE_WIDTH * 3);
 
-      this.model.bifurcationMarkup = this.model.bifurcationMarkup.replace(
-        /<%= r %>/g,
-        WIRE_WIDTH * 4
-      );
-    } else {
-      this.model.bifurcationMarkup = this.model.bifurcationMarkup.replace(
-        /<%= r %>/g,
-        WIRE_WIDTH * 2
-      );
-    }
-  },*/
-setWireClass: function (size) {
+  setWireClass: function (size) {
     var connection = this.$('.connection');
     connection.removeClass('wire-bus wire-single'); 
 
@@ -186,7 +209,7 @@ setWireClass: function (size) {
   updateWireProperties: function (/*size*/) {
 
     // In this moment Icestudio not need update any wire properties, is setup at the creation
-   // this.setWireClass(size);
+  
   },
 
   updateConnection: function (opt) {
@@ -198,7 +221,6 @@ setWireClass: function (size) {
       opt
     ));
     // finds all the connection points taking new vertices into account
-
     this._findConnectionPoints(route);
     var pathData = this.getPathData(route);
 
@@ -256,11 +278,8 @@ setWireClass: function (size) {
         );
         var A, B, nW;
         for (A = 0, nW = portWires.length; A < nW; A++) {
-          //        _.each(portWires, function (wireA) {
           for (B = 0; B < nW; B++) {
-            //         _.each(portWires, function (wireB) {
             if (portWires[A].id !== portWires[B].id) {
-              // Not the same wire
               findBifurcations(
                 portWires[A].view,
                 portWires[B].view,

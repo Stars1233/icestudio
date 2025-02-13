@@ -2,7 +2,6 @@
 
 joint.connectors.ice = function (sourcePoint, targetPoint, vertices) {
   var points = [];
-
   points.push({ x: sourcePoint.x, y: sourcePoint.y });
   _.each(vertices, function (vertex) {
     points.push({ x: vertex.x, y: vertex.y });
