@@ -34,17 +34,19 @@ jobs:
           # Intentar hacer commit
           git add .
 
-          if git commit -m "🚀 Auto-format code and linting check"; then
-            echo "✅ Commit successful, pushing and pipeline..."
-            git push
-          else
-            COMMIT_STATUS=$?
-            # if commit is empty we go out successfully
-            if [ $COMMIT_STATUS -eq 1 ]; then
-              echo "⚠️ Nothing to commit, continue pipelining"
-              exit 0
-            else
-              echo "❌ Checks failed, aborting pipeline"
-              exit 1
-            fi
-          fi
+		  if git commit -m "🚀 Auto-format code and linting check"; then
+    		echo "✅ Commit successful, pushing and continuing pipeline..."
+    		git push
+		  else
+    	 	COMMIT_STATUS=$?
+
+         	# Check if there are no changes to commit
+    	 	if git diff --quiet && git diff --staged --quiet; then
+        		echo "⚠️ No changes detected, continuing pipeline..."
+        		exit 0
+      	 	else
+        		echo "❌ Checks failed, aborting pipeline."
+        		exit 1
+    	 	fi
+		 fi
+
