@@ -1,57 +1,40 @@
-name: Prettier hook for PRs
+name: Prettier and Linting Hook for PRs
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, closed]
-    branches: [develop, master]
+    types: [opened, synchronize, reopened]
+    branches: [develop]
   push:
-    branches: [develop, master]
+    branches: [develop]
 
 jobs:
-  ci-pr:
-    # Run on any change from PR or direct push, but don't run on a cancel PR
-    if: github.event_name != 'pull_request' || (
-
-      github.event.action == 'opened' ||
-      github.event.action == 'synchronize' ||
-      github.event.action == 'reopened' && github.event.before != github.event.after ||
-      github.event.action == 'closed' && github.event.pull_request.merged == true
-      )
-
+  enforce-code-style:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-      - name: Use Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '23.3.0'
           cache: 'npm'
 
-      - name: Install dependencies
+      - name: Install Dependencies
         run: npm ci --legacy-peer-deps
 
-      - name: Enforce code formatting
+      - name: Run Prettier and JSHint
         run: |
           npm run prettier
           npm run jshint
 
-      - name: Commit changes
+      # If prettier or jshint fails, push or PR will be rejected
+      - name: Commit and Push Changes
+        if: success()
         run: |
-          git config --global user.name "maria[bot]"
-          git config --global user.email "maria[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add .
-          git commit -m "Auto-format code with prettier" || echo "No changes to commit"
+          git commit -m "🚀 Auto-format code and linting check" || exit 0
           git push
-
-  ci-close-pr:
-    # Run on a cancel PR
-    if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
-
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Just report closed, nothing to do
-        run: |
-          echo PR #${{ github.event.number }} has been closed, not merged
