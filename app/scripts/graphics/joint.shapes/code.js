@@ -1,4 +1,4 @@
-// jshint ignore:start 
+// jshint ignore:start
 
 /* --global sha1, WIRE_WIDTH, aceFontSize */
 
@@ -357,4 +357,4 @@ joint.shapes.ice.CodeView = joint.shapes.ice.ModelView.extend({
   },
 });
 
-// jshint ignore:end 
+// jshint ignore:end

@@ -1,10 +1,9 @@
-//-- jshint rules                             
+//-- jshint rules
 /* jshint ignore: start */
 
 /* --global sha1, aceFontSize, WIRE_WIDTH */
 
 'use strict';
-
 
 // Memory block
 

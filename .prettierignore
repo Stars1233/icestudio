@@ -1,10 +1,19 @@
-app/resources/fonts/
-**/libs/vendor/
-**/js/vendor/
-**/lib/*.js
-*.md
+# Bypass globally all this extensions
+**/*.md
+**/*.min.js
+**/*.min.css
+**/*.ice
+**/*.json
+**/*.jsonc
+**/*.txt
+**/*.svg
+
+# Bypass globally all this folders and its contents
+**/vendor/
+**/fonts/
+**/node_modules/
+
+
+# Bypass specific files and folders 
 package-lock.json
-tailwind.css
-app/resources/libs/Icestudio/Crypto/SHA-256.js
-app/resources/plugins/icerok/css/*.min.css
 Gruntfile.js

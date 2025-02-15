@@ -1,5 +1,5 @@
 importScripts(
-  '/resources/libs/Icestudio/Crypto/SHA-256.js',
+  '/resources/libs/vendor/SHA-256/SHA-256.js',
   '/resources/libs/Icestudio/Services/WafleEventBus.js',
   '/resources/libs/Icestudio/Plugin/Api/Worker/BindingWafleEventBus.js',
   '/resources/libs/Icestudio/Plugin/Api/IcestudioPlugin.js',

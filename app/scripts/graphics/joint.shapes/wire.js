@@ -1,4 +1,4 @@
-//-- jshint rules                             
+//-- jshint rules
 /* global WIRE_WIDTH */
 
 'use strict';
@@ -54,7 +54,6 @@ joint.shapes.ice.Wire = joint.dia.Link.extend({
     '<g class="link-tools"/>',
   ].join(''),
 
-  
   bifurcationMarkup: [
     '<g class="marker-bifurcation-group" transform="translate(<%= x %>, <%= y %>)">',
     '<circle class="marker-bifurcation" idx="<%= idx %>" r="<%= r %>" fill="#777"/>',
@@ -91,7 +90,6 @@ joint.shapes.ice.Wire = joint.dia.Link.extend({
     {
       type: 'ice.Wire',
 
-   
       attrs: {
         '.connection': {
           'stroke-width': WIRE_WIDTH,
@@ -116,8 +114,7 @@ joint.shapes.ice.WireView = joint.dia.LinkView.extend({
   initialize: function () {
     joint.dia.LinkView.prototype.initialize.apply(this, arguments);
 
-
-     requestAnimationFrame( () => {
+    requestAnimationFrame(() => {
       var size = this.model.get('size');
 
       if (!size) {
@@ -138,7 +135,7 @@ joint.shapes.ice.WireView = joint.dia.LinkView.extend({
         }
       }
       this.setWireClass(size);
-      });
+    });
   },
 
   apply: function () {
@@ -195,7 +192,7 @@ joint.shapes.ice.WireView = joint.dia.LinkView.extend({
 
   setWireClass: function (size) {
     var connection = this.$('.connection');
-    connection.removeClass('wire-bus wire-single'); 
+    connection.removeClass('wire-bus wire-single');
 
     if (size > 1) {
       connection.addClass('wire-bus');
@@ -205,16 +202,14 @@ joint.shapes.ice.WireView = joint.dia.LinkView.extend({
   },
 
   updateWireProperties: function (/*size*/) {
-
     // In this moment Icestudio not need update any wire properties, is setup at the creation
-  
   },
 
   updateConnection: function (opt) {
     opt = opt || {};
 
     // Necessary path finding
-   var route = (this.route = this.findRoute(
+    var route = (this.route = this.findRoute(
       this.model.get('vertices') || [],
       opt
     ));
@@ -231,7 +226,7 @@ joint.shapes.ice.WireView = joint.dia.LinkView.extend({
     this._translateAndAutoOrientArrows(
       this._V.markerSource,
       this._V.markerTarget
-    ); 
+    );
   },
 
   // cacheUpdateBifurcations:{},

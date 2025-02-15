@@ -8,10 +8,7 @@ function result(object, property, defaultValue) {
   return value !== undefined ? value : defaultValue;
 }
 
-
-
 joint.routers.ice = (function (g, _, joint) {
-
   var config = {
     // size of the step to find a route
     step: 8,
@@ -78,7 +75,7 @@ joint.routers.ice = (function (g, _, joint) {
         90: this.step / 2,
       };
     },
-   
+
     fallbackRoute: _.constant(null),
 
     // if a function is provided, it's used to route the link while dragging an end
@@ -98,39 +95,38 @@ joint.routers.ice = (function (g, _, joint) {
 
   ObstacleMap.prototype.build = function (graph, link) {
     var opt = this.options;
-var excludedEnds = opt.excludeEnds
-  .map(function(end) {
-    return link.get(end);
-  })
-  .map(function(linkEnd) {
-    return linkEnd ? graph.getCell(linkEnd.id) : null;
-  })
-  .filter(function(cell) {
-    return cell !== null;
-  });
+    var excludedEnds = opt.excludeEnds
+      .map(function (end) {
+        return link.get(end);
+      })
+      .map(function (linkEnd) {
+        return linkEnd ? graph.getCell(linkEnd.id) : null;
+      })
+      .filter(function (cell) {
+        return cell !== null;
+      });
 
-var excludedAncestors = [];
+    var excludedAncestors = [];
 
-var source = graph.getCell(link.get('source').id);
-if (source) {
-  excludedAncestors = excludedAncestors.concat(
-    source.getAncestors().map(function(ancestor) {
-      return ancestor.id;
-    })
-  );
-}
+    var source = graph.getCell(link.get('source').id);
+    if (source) {
+      excludedAncestors = excludedAncestors.concat(
+        source.getAncestors().map(function (ancestor) {
+          return ancestor.id;
+        })
+      );
+    }
 
-var target = graph.getCell(link.get('target').id);
-if (target) {
-  excludedAncestors = excludedAncestors.concat(
-    target.getAncestors().map(function(ancestor) {
-      return ancestor.id;
-    })
-  );
-}
+    var target = graph.getCell(link.get('target').id);
+    if (target) {
+      excludedAncestors = excludedAncestors.concat(
+        target.getAncestors().map(function (ancestor) {
+          return ancestor.id;
+        })
+      );
+    }
 
-excludedAncestors = Array.from(new Set(excludedAncestors));
-
+    excludedAncestors = Array.from(new Set(excludedAncestors));
 
     // builds a map of all elements for quicker obstacle queries (i.e. is a point contained
     // in any obstacle?) (a simplified grid search)
@@ -139,43 +135,41 @@ excludedAncestors = Array.from(new Set(excludedAncestors));
     // to go through all obstacles, we check only those in a particular cell.
     var mapGridSize = this.mapGridSize;
 
-var elements = graph.getElements();
+    var elements = graph.getElements();
 
-var filteredElements = elements.filter(function(element) {
-  var isExcludedEnd = excludedEnds.includes(element);
+    var filteredElements = elements.filter(function (element) {
+      var isExcludedEnd = excludedEnds.includes(element);
 
-  var isExcludedType = opt.excludeTypes.includes(element.get('type'));
+      var isExcludedType = opt.excludeTypes.includes(element.get('type'));
 
-  var isExcludedAncestor = excludedAncestors.includes(element.id);
+      var isExcludedAncestor = excludedAncestors.includes(element.id);
 
-  return !isExcludedEnd && !isExcludedType && !isExcludedAncestor;
-});
+      return !isExcludedEnd && !isExcludedType && !isExcludedAncestor;
+    });
 
-var blockRectangles = filteredElements.map(function(element) {
-  return element.getBBox();
-});
+    var blockRectangles = filteredElements.map(function (element) {
+      return element.getBBox();
+    });
 
- 
-var x, y, origin, corner;
+    var x, y, origin, corner;
 
-blockRectangles.forEach(function(bbox) {
-  bbox.moveAndExpand(opt.paddingBox);
-  origin = bbox.origin().snapToGrid(mapGridSize);
-  corner = bbox.corner().snapToGrid(mapGridSize);
+    blockRectangles.forEach(function (bbox) {
+      bbox.moveAndExpand(opt.paddingBox);
+      origin = bbox.origin().snapToGrid(mapGridSize);
+      corner = bbox.corner().snapToGrid(mapGridSize);
 
-  for (x = origin.x; x <= corner.x; x += mapGridSize) {
-    for (y = origin.y; y <= corner.y; y += mapGridSize) {
-      var gridKey = x + '@' + y;
+      for (x = origin.x; x <= corner.x; x += mapGridSize) {
+        for (y = origin.y; y <= corner.y; y += mapGridSize) {
+          var gridKey = x + '@' + y;
 
-      if (!this.map[gridKey]) {
-        this.map[gridKey] = [];
+          if (!this.map[gridKey]) {
+            this.map[gridKey] = [];
+          }
+
+          this.map[gridKey].push(bbox);
+        }
       }
-
-      this.map[gridKey].push(bbox);
-    }
-  }
-}, this);
-
+    }, this);
 
     return this;
   };
@@ -361,13 +355,11 @@ blockRectangles.forEach(function(bbox) {
       // Cost from start to a point along best known path.
       var costs = {};
 
-
-      startPoints.forEach(function(point) {
-  var key = point.toString();
-  openSet.add(key, estimateCost(point, endPoints));
-  costs[key] = 0;
-});
-
+      startPoints.forEach(function (point) {
+        var key = point.toString();
+        openSet.add(key, estimateCost(point, endPoints));
+        costs[key] = 0;
+      });
 
       // directions
       var dir, dirChange;
@@ -464,13 +456,11 @@ blockRectangles.forEach(function(bbox) {
 
   // resolve some of the options
   function resolveOptions(opt) {
-
-opt.directions = result(opt, 'directions');
-opt.penalties = result(opt, 'penalties');
-opt.paddingBox = result(opt, 'paddingBox');
+    opt.directions = result(opt, 'directions');
+    opt.penalties = result(opt, 'penalties');
+    opt.paddingBox = result(opt, 'paddingBox');
 
     for (var i = 0, no = opt.directions.length; i < no; i++) {
-
       var point1 = g.point(0, 0);
       var point2 = g.point(
         opt.directions[i].offsetX,
@@ -583,4 +573,3 @@ opt.paddingBox = result(opt, 'paddingBox');
     return router.call(linkView, vertices, _.extend({}, config, opt));
   };
 })(g, _, joint);
-

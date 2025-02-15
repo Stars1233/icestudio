@@ -4,8 +4,6 @@
 
 'use strict';
 
-
-
 // Constant block
 
 joint.shapes.ice.Constant = joint.shapes.ice.IO.extend({

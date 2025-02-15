@@ -34,8 +34,6 @@ angular.module('icestudio').service(
     let autorouting = false;
     let isRouting = false;
 
-
-
     let mousePosition = { x: 0, y: 0 };
     let needsUpdate = true;
 
@@ -61,7 +59,7 @@ angular.module('icestudio').service(
     this.enableAutoRouting = function () {
       if (autorouting === false) {
         autorouting = true;
-       $('body').on('Graph::updateWires', function () {
+        $('body').on('Graph::updateWires', function () {
           _this.route();
         });
       }
@@ -245,7 +243,6 @@ angular.module('icestudio').service(
         this.resetView();
       }
     };
-
 
     //---------------------------------------------------------------------
     //-- Create the paper, where the circuits will be drawn
@@ -488,8 +485,8 @@ angular.module('icestudio').service(
           newWidth + 'px'
         );
       }
-      let isOnZoom=false;
-let panFrameRequested = false;
+      let isOnZoom = false;
+      let panFrameRequested = false;
       this.panAndZoom = svgPanZoom(targetElement.childNodes[2], {
         fit: false,
         center: false,
@@ -501,7 +498,7 @@ let panFrameRequested = false;
         maxZoom: ZOOM_MAX,
         eventsListenerElement: targetElement,
         onZoom: function (scale) {
-isOnZoom=true;
+          isOnZoom = true;
           state.zoom = scale;
           if (state.mutateZoom === false) {
             state.mutateZoom = true;
@@ -516,41 +513,35 @@ isOnZoom=true;
           }
           clearTimeout(zoomTimeout);
           zoomTimeout = setTimeout(() => {
-            
-              restoreAceEditors();
+            restoreAceEditors();
             requestAnimationFrame(() => {
-              
-             if(isOnZoom){
-              isOnZoom=false;
-              updateCellBoxes();
+              if (isOnZoom) {
+                isOnZoom = false;
+                updateCellBoxes();
 
-              state.mutateZoom = false;
-             }
+                state.mutateZoom = false;
+              }
             });
           }, 300);
-          
         },
         onPan: function (newPan) {
           state.pan = newPan;
           graph.trigger('state', state);
 
           if (!panFrameRequested) {
-      panFrameRequested = true;
-      requestAnimationFrame(() => {
-        updateCellBoxes();
-        panFrameRequested = false;
-      });
-    }
+            panFrameRequested = true;
+            requestAnimationFrame(() => {
+              updateCellBoxes();
+              panFrameRequested = false;
+            });
+          }
         },
       });
 
-
-
-   
       function updateCellBoxes() {
-          graph.startBatch('batch-update');
+        graph.startBatch('batch-update');
         let cells = graph.getCells();
-             selectionView.options.state = state;
+        selectionView.options.state = state;
         let elementView = false;
         let bbox = false;
         for (let i = 0, len = cells.length; i < len; i++) {
@@ -564,9 +555,9 @@ isOnZoom=true;
             selectionView.updateBox(elementView.model);
           }
         }
-          graph.stopBatch('batch-update'); 
+        graph.stopBatch('batch-update');
       }
-       // Events
+      // Events
 
       let shiftPressed = false;
 
@@ -623,131 +614,130 @@ isOnZoom=true;
           }
         }
       });
-/*--
+      /*--
  * The wire is divided into segments, we need to find the segment nearest at
  * the point that the user has clicked.
  --*/
-function getInsertIndex(vertices, newPoint, linkModel) {
-    if (vertices.length === 0) {
-        return 0;
-    }
+      function getInsertIndex(vertices, newPoint, linkModel) {
+        if (vertices.length === 0) {
+          return 0;
+        }
 
-    let minDistance = Infinity;
-    let index = vertices.length; // Por defecto, al final
+        let minDistance = Infinity;
+        let index = vertices.length; // Por defecto, al final
 
-    let source = linkModel.get('source');
-    let target = linkModel.get('target');
+        let source = linkModel.get('source');
+        let target = linkModel.get('target');
 
-    let sourcePoint = source.id ? getElementCenter(source.id) : source;
-    let targetPoint = target.id ? getElementCenter(target.id) : target;
+        let sourcePoint = source.id ? getElementCenter(source.id) : source;
+        let targetPoint = target.id ? getElementCenter(target.id) : target;
 
-    // Wire full path (route)
-    let pathPoints = [sourcePoint, ...vertices, targetPoint];
+        // Wire full path (route)
+        let pathPoints = [sourcePoint, ...vertices, targetPoint];
 
-    for (let i = 0; i < pathPoints.length - 1; i++) {
-        let v1 = pathPoints[i];
-        let v2 = pathPoints[i + 1];
+        for (let i = 0; i < pathPoints.length - 1; i++) {
+          let v1 = pathPoints[i];
+          let v2 = pathPoints[i + 1];
 
-        let distance = pointToSegmentDistance(newPoint, v1, v2);
-        if (distance < minDistance) {
+          let distance = pointToSegmentDistance(newPoint, v1, v2);
+          if (distance < minDistance) {
             minDistance = distance;
             index = i;
+          }
         }
-    }
-   
-    // Coordinate where the control point should be inyected
-    return index; 
-}
 
-/*--
+        // Coordinate where the control point should be inyected
+        return index;
+      }
+
+      /*--
  * Point to segment distance
 --*/
-function pointToSegmentDistance(p, v1, v2) {
-    let A = p.x - v1.x;
-    let B = p.y - v1.y;
-    let C = v2.x - v1.x;
-    let D = v2.y - v1.y;
+      function pointToSegmentDistance(p, v1, v2) {
+        let A = p.x - v1.x;
+        let B = p.y - v1.y;
+        let C = v2.x - v1.x;
+        let D = v2.y - v1.y;
 
-    let dot = A * C + B * D;
-    let lenSq = C * C + D * D;
-    let param = lenSq !== 0 ? dot / lenSq : -1;
+        let dot = A * C + B * D;
+        let lenSq = C * C + D * D;
+        let param = lenSq !== 0 ? dot / lenSq : -1;
 
-    let xx, yy;
-    if (param < 0) {
-        xx = v1.x;
-        yy = v1.y;
-    } else if (param > 1) {
-        xx = v2.x;
-        yy = v2.y;
-    } else {
-        xx = v1.x + param * C;
-        yy = v1.y + param * D;
-    }
+        let xx, yy;
+        if (param < 0) {
+          xx = v1.x;
+          yy = v1.y;
+        } else if (param > 1) {
+          xx = v2.x;
+          yy = v2.y;
+        } else {
+          xx = v1.x + param * C;
+          yy = v1.y + param * D;
+        }
 
-    let dx = p.x - xx;
-    let dy = p.y - yy;
-    return Math.sqrt(dx * dx + dy * dy);
-}
+        let dx = p.x - xx;
+        let dy = p.y - yy;
+        return Math.sqrt(dx * dx + dy * dy);
+      }
 
-
-/*--
+      /*--
  * Real coords of the element center y id
 --*/
-function getElementCenter(elementId) {
-    let element = paper.getModelById(elementId);
-    if (!element) {
-        return { x: 0, y: 0 };
-    }
+      function getElementCenter(elementId) {
+        let element = paper.getModelById(elementId);
+        if (!element) {
+          return { x: 0, y: 0 };
+        }
 
-    let bbox = element.getBBox();
-    return { x: bbox.x + bbox.width / 2, y: bbox.y + bbox.height / 2 };
-}
+        let bbox = element.getBBox();
+        return { x: bbox.x + bbox.width / 2, y: bbox.y + bbox.height / 2 };
+      }
 
       paper.on('cell:pointerclick', function (cellView, evt, x, y) {
+        if (cellView.model.isLink()) {
+          const linkModel = cellView.model;
+          let vertices = linkModel.get('vertices') || [];
 
- if (cellView.model.isLink()) {
- const linkModel = cellView.model;
-        let vertices = linkModel.get('vertices') || [];
-
-        // if user click on remove control point, jointjs do the stuff
-        if (evt.target.closest('.marker-vertex-remove')) {
+          // if user click on remove control point, jointjs do the stuff
+          if (evt.target.closest('.marker-vertex-remove')) {
             return;
-        }
+          }
 
-    // if user click is on grupo marker area, but not in path, control point or remove icon, jointjs do the stuff
-    if (evt.target.closest('.marker-vertex-group')) {
-        return;
-    }
-
-        // Obtain the coords of the click in the same world coordinates as jointjs
-        let localPoint = paper.pageToLocalPoint({ x: evt.clientX, y: evt.clientY });
-
-        // If vertex is clicked jointjs do the stuff
-        if (isClickOnVertex(cellView, localPoint.x, localPoint.y)) {
+          // if user click is on grupo marker area, but not in path, control point or remove icon, jointjs do the stuff
+          if (evt.target.closest('.marker-vertex-group')) {
             return;
-        }
+          }
 
-        // User click the wire, we need calculate the correct place to insert the control point.
-        let index = getInsertIndex(vertices, localPoint, linkModel);
+          // Obtain the coords of the click in the same world coordinates as jointjs
+          let localPoint = paper.pageToLocalPoint({
+            x: evt.clientX,
+            y: evt.clientY,
+          });
 
-        // Detect duplicated points before insert the new one.
-        if (!vertices.some(v => v.x === localPoint.x && v.y === localPoint.y)) {
-     
-           vertices.splice(index, 0, { x: localPoint.x, y: localPoint.y });
-            const cleanedVertices = vertices.map(v => ({ x: v.x, y: v.y }));
+          // If vertex is clicked jointjs do the stuff
+          if (isClickOnVertex(cellView, localPoint.x, localPoint.y)) {
+            return;
+          }
+
+          // User click the wire, we need calculate the correct place to insert the control point.
+          let index = getInsertIndex(vertices, localPoint, linkModel);
+
+          // Detect duplicated points before insert the new one.
+          if (
+            !vertices.some((v) => v.x === localPoint.x && v.y === localPoint.y)
+          ) {
+            vertices.splice(index, 0, { x: localPoint.x, y: localPoint.y });
+            const cleanedVertices = vertices.map((v) => ({ x: v.x, y: v.y }));
             linkModel.set('vertices', cleanedVertices, { ui: true });
             linkModel.trigger('change:vertices');
+          }
+          return;
         }
- return;
-    }
 
-
-   
-      if (!checkInsideViewBox(cellView, x, y)) {
+        if (!checkInsideViewBox(cellView, x, y)) {
           // Out of the view box
           return;
         }
-       
 
         // If Shift is pressed, we are updating the selection. Else new selection.
         if (!utils.hasShift(evt)) {
@@ -857,24 +847,39 @@ function getElementCenter(elementId) {
         }
       });
 
-//-- tooltip error - warning - info position calculation for ace editor
-//-- capture when user are over the error/warning/info mark and calculate
-//-- the tooltip position under the line of the mark
-document.body.addEventListener('mouseenter', function(event) {
-    if (
-      event.target.classList.contains('ace_gutter-cell') &&
-      (event.target.classList.contains('ace_error') ||
-       event.target.classList.contains('ace_info') ||
-       event.target.classList.contains('warning'))
-    ) {
-      //-- Important to use parseFloat to remove px suffix from css
-      const tgutter = parseFloat(document.defaultView.getComputedStyle(event.target).getPropertyValue('top'));
-      const hgutter = parseFloat(document.defaultView.getComputedStyle(event.target).getPropertyValue('height'));
-      const offset = parseFloat(hgutter/2);
-      const tooltipTopValue = tgutter + hgutter + offset;
-      document.documentElement.style.setProperty('--ace_tooltip-top', `${tooltipTopValue}px`);
-    }
-  }, true); // 'true' needed for future elements
+      //-- tooltip error - warning - info position calculation for ace editor
+      //-- capture when user are over the error/warning/info mark and calculate
+      //-- the tooltip position under the line of the mark
+      document.body.addEventListener(
+        'mouseenter',
+        function (event) {
+          if (
+            event.target.classList.contains('ace_gutter-cell') &&
+            (event.target.classList.contains('ace_error') ||
+              event.target.classList.contains('ace_info') ||
+              event.target.classList.contains('warning'))
+          ) {
+            //-- Important to use parseFloat to remove px suffix from css
+            const tgutter = parseFloat(
+              document.defaultView
+                .getComputedStyle(event.target)
+                .getPropertyValue('top')
+            );
+            const hgutter = parseFloat(
+              document.defaultView
+                .getComputedStyle(event.target)
+                .getPropertyValue('height')
+            );
+            const offset = parseFloat(hgutter / 2);
+            const tooltipTopValue = tgutter + hgutter + offset;
+            document.documentElement.style.setProperty(
+              '--ace_tooltip-top',
+              `${tooltipTopValue}px`
+            );
+          }
+        },
+        true
+      ); // 'true' needed for future elements
 
       $rootScope.$on('navigateProjectEnded', function (event, args) {
         if (args.fromDoubleClick) {
@@ -889,7 +894,9 @@ document.body.addEventListener('mouseenter', function(event) {
       });
 
       function checkInsideViewBox(view, x, y) {
-        if(typeof view.$box === 'undefined') {return false;}
+        if (typeof view.$box === 'undefined') {
+          return false;
+        }
 
         let $box = $(view.$box[0]);
         let position = $box.position();
@@ -2206,14 +2213,14 @@ document.body.addEventListener('mouseenter', function(event) {
     }
 
     function addCells(cells) {
-    console.log('ADDCELLS');
+      console.log('ADDCELLS');
       iprof.start('updateCellAttributes');
       _.each(cells, function (cell) {
         updateCellAttributes(cell);
       });
       iprof.end('updateCellAttributes');
       iprof.start('graph.addCells');
-      console.log('CELLS',cells);
+      console.log('CELLS', cells);
       graph.addCells(cells);
       iprof.end('graph.addCells');
       let cellView = false;

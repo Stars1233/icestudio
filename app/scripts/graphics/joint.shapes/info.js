@@ -1,4 +1,4 @@
-//-- jshint rules                             
+//-- jshint rules
 /* global sha1, aceFontSize, openurl,marked */
 
 'use strict';
@@ -447,5 +447,3 @@ joint.shapes.ice.InfoView = joint.shapes.ice.ModelView.extend({
     this.$box.remove();
   },
 });
-
-
