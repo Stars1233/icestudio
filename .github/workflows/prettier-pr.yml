@@ -38,15 +38,18 @@ jobs:
             git push
           else
             COMMIT_EXIT_CODE=$?
-            if [ $COMMIT_EXIT_CODE -eq 1 ]; then
-                echo "⚠️ No changes detected, continuing pipeline..."
-                exit 0
-            elif [ $COMMIT_EXIT_CODE -eq 2 ]; then
-                echo "❌ Pre-commit hook failed (JSHint, Prettier, etc.), aborting pipeline."
-                exit 1
+            # Check if the pre-commit hook created the failure flag file
+            if [ -f "pre-commit.failed" ]; then
+               echo "❌ Pre-commit hook failed (JSHint, Prettier, etc.), aborting pipeline."
+               rm -f pre-commit.failed  # Clean up the flag file
+               exit 1
+            elif [ $COMMIT_EXIT_CODE -eq 1 ]; then
+               echo "⚠️ No changes detected, continuing pipeline..."
+               exit 0
             else
-                echo "❌ Unexpected git commit error (code: $COMMIT_EXIT_CODE), aborting pipeline."
-                exit $COMMIT_EXIT_CODE
+               echo "❌ Unexpected git commit error (code: $COMMIT_EXIT_CODE), aborting pipeline."
+               exit $COMMIT_EXIT_CODE
             fi
+
           fi
 
