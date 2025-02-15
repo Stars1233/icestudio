@@ -126,7 +126,7 @@ rm -f "$MODIFIED_FILES" 2>/dev/null || del "$MODIFIED_FILES" 2>/dev/null
 box_message "\n$YELLOW" "$WARNING_ICON" "Running linter check..."
 if ! npm run jshint --silent; then
     box_message "$RED" "$ERROR_ICON" "Linting failed! Fix issues before committing."
-    touch pre-comit.failed
+    touch pre-commit.failed
     exit 1
 fi
 
