@@ -1,5 +1,5 @@
 //== JSHINT rules / START
-// global isClickOnVertex
+// Gglobal isClickOnVertex
 //== JSHINT rules / END
 
 //----------------------------------------------------------------------------
