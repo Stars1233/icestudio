@@ -279,10 +279,6 @@ module.exports = function (grunt) {
     'https://github.com/FPGAwars/collection-default/archive/' +
     DEFAULT_COLLECTION_ZIP_FILE;
 
-  //-- DEBUG!!
-  console.log(`DEFAULT_COLLECTION_ZIP_FILE: ${DEFAULT_COLLECTION_ZIP_FILE}`);
-  console.log(`DEFAULT_COLLECTION_URL_FILE: ${DEFAULT_COLLECTION_URL_FILE}`);
-
   //-------------------------------------------------------------------------
   //-- NSIS TASK
   //-------------------------------------------------------------------------
@@ -544,7 +540,6 @@ module.exports = function (grunt) {
       ? ocpu
       : process.arch;
   const cpuIsARM = cpu === 'arm64';
-  console.log('CPU', cpu, 'NPM', npmLifecycleEvent);
   //-- Additional options for the platforms
   let options = { scope: ['devDependencies'] };
 
@@ -705,6 +700,22 @@ module.exports = function (grunt) {
     console.log('* DMGIMAGE: ' + MAC_DMG_IMAGE);
     console.log('* DMGARM64IMAGE: ' + MAC_DMG_IMAGE);
     console.log('* Target platform: ' + platform);
+
+    console.log('* Variables:');
+    let gruntVars = [
+      {
+        Name: 'DEFAULT_COLLECTION_ZIP_FILE',
+        Value: DEFAULT_COLLECTION_ZIP_FILE,
+      },
+      {
+        Name: 'DEFAULT_COLLECTION_URL_FILE',
+        Value: DEFAULT_COLLECTION_URL_FILE,
+      },
+      { Name: 'cpu', Value: cpu },
+      { Name: 'npmLifecycleEvent', Value: npmLifecycleEvent },
+    ];
+    console.table(gruntVars);
+
     console.log('* SubTASK for the DIST task:');
     if (Array.isArray(DIST_TASKS) && DIST_TASKS.length > 0) {
       console.table(DIST_TASKS);
