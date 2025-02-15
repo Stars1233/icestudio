@@ -7,6 +7,7 @@
 **/*.jsonc
 **/*.txt
 **/*.svg
+**/*.yml
 
 # Bypass globally all this folders and its contents
 **/vendor/
