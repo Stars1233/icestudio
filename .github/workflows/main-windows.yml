@@ -2,11 +2,11 @@ name: 'Icestudio Windows'
 
 # Controls when the action will run.
 on:
-  # Triggers the workflow on push or pull request events but only for the develop branch
-  push:
-    branches: [develop]
-  pull_request:
-    branches: [develop]
+  # Workflow run automatically when prettier hook finish succesfully
+  workflow_run:
+    workflows: ['Code standardizer hook for PRs']
+    types:
+      - completed
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
