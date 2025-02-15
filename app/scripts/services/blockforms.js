@@ -1013,7 +1013,7 @@ angular.module('icestudio').service(
 
     //-----------------------------------------------------------------------
     //-- Edit a basic label block (input/output)
-    //-- This function is called form the Find panel
+    //-- This function is called from the Find panel
     //--
     //-- TODO: It still needs to be refactored and joined with the current
     //-- block classes

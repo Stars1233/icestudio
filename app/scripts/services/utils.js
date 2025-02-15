@@ -484,7 +484,7 @@ angular
       //-- the setting of the APIO_HOME_DIR environment variable
       this.getApioExecutable = function () {
         //-- Check if the ICESTUDIO_APIO env variable is set with the apio
-        //-- toolchain to use  or if it has been set on the package.json file
+        //-- toolchain to use or if it has been set on the package.json file
         let candidateApio = process.env.ICESTUDIO_APIO
           ? process.env.ICESTUDIO_APIO
           : _package.apio.external;
@@ -1079,7 +1079,7 @@ angular
         // Very slow in comparison but more stable for all types
         // of objects, if fails, rollback to JSON method or try strict
         // on fast-copy module
-        //return  JSON.parse(JSON.stringify(data));
+        //return JSON.parse(JSON.stringify(data));
       };
 
       this.dependencyID = function (dependency) {

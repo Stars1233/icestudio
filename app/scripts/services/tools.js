@@ -1091,7 +1091,7 @@ angular
               }
 
               if ('ecp5' === archName) {
-                // ecp5  resources
+                // ecp5 resources
                 common.FPGAResources.nextpnr.Field0 = findValueNPNR(
                   /(LUT4)s:\s{1,}(\d+)\/(\d+)\s{1,}(\d+)%/g,
                   stdout,
@@ -1133,7 +1133,7 @@ angular
                   common.FPGAResources.nextpnr.Field13
                 );
               } else {
-                // ice40  resources
+                // ice40 resources
                 common.FPGAResources.nextpnr.Field0 = findValueNPNR(
                   /_(LC):\s{1,}(\d+)\/\s{1,}(\d+)\s{1,}(\d+)%/g,
                   stdout,

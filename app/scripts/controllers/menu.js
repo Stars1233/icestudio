@@ -1561,7 +1561,7 @@ angular.module('icestudio').controller(
         '  <div class="col-sm-12">',
 
         '    <p>Core Team:</p>',
-        '    <ul  class="credits-developers-list">',
+        '    <ul class="credits-developers-list">',
 
         '           <li><strong>Carlos Venegas Arrabé</strong>&nbsp;&nbsp;&nbsp;',
         '<a class="action-open-url-external-browser" href="https://github.com/cavearr"><img class="credits-rss-icon" src="resources/images/icon-github.svg"></a>&nbsp;&nbsp;',
@@ -1573,7 +1573,7 @@ angular.module('icestudio').controller(
         '</li>',
         '</ul>',
         '    <p>Highlighted contributors:</p>',
-        '    <ul  class="credits-developers-list">',
+        '    <ul class="credits-developers-list">',
 
         '           <li><strong>Alex Gutierrez Tomas</strong>&nbsp;&nbsp;&nbsp;',
         '<a class="action-open-url-external-browser" href="https://github.com/mslider"><img class="credits-rss-icon" src="resources/images/icon-github.svg"></a>&nbsp;&nbsp;',
@@ -1694,11 +1694,11 @@ angular.module('icestudio').controller(
         graph.removeSelected();
       } else {
         //-- When inside a block in non-edit mode
-        //-- the back key causes it to return to
+        //-- the Back key causes it to return to
         //-- the top-main module
         //-- Changed: The Back key is disabled by default
         //--  (asked by joaquim)
-        //-- (Uncomment the next sentence  for enabling it)
+        //-- (Uncomment the next sentence for enabling it)
         // $rootScope.$broadcast("breadcrumbsBack");
       }
     });
