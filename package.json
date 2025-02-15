@@ -59,8 +59,5 @@
     "fs-xattr": "^0.4.0",
     "grunt-appdmg": "github:agoodney/grunt-appdmg"
   },
-  "dependencies": {
-    "fs-xattr": "^0.4.0",
-    "grunt-appdmg": "github:agoodney/grunt-appdmg"
-  }
+  "dependencies": {}
 }
