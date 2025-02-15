@@ -37,8 +37,7 @@ jobs:
             echo "✅ Commit successful, pushing and continuing pipeline..."
             git push
           else
-            COMMIT_STATUS=$?
-            if git diff --quiet && git diff --staged --quiet; then
+            if git diff --cached --quiet; then
                 echo "⚠️ No changes detected, continuing pipeline..."
                 exit 0
             else
