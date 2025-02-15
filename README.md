@@ -88,22 +88,22 @@ Icestudio is a design tool focused on new comers to the FPGA world
 |:------------------:|:------------------:|
 |    English (en)    | ![Progress](https://progress-bar.xyz/100) |
 |  Spanish (es_ES)   | ![Progress](https://progress-bar.xyz/100) |
-| Ukrainian (uk_UA)  | ![Progress](https://progress-bar.xyz/100) |
-|   Czech (cs_CZ)    | ![Progress](https://progress-bar.xyz/94) |
-|   German (de_DE)   | ![Progress](https://progress-bar.xyz/82) |
-|   French (fr_FR)   | ![Progress](https://progress-bar.xyz/79) |
-|  Japanese (ja_JP)  | ![Progress](https://progress-bar.xyz/79) |
-|  Russian (ru_RU)   | ![Progress](https://progress-bar.xyz/71) |
-|  Italian (it_IT)   | ![Progress](https://progress-bar.xyz/67) |
-| Taiwanese (zh_TW)  | ![Progress](https://progress-bar.xyz/67) |
-|  Turkish (tr_TR)   | ![Progress](https://progress-bar.xyz/64) |
-|   Basque (eu_ES)   | ![Progress](https://progress-bar.xyz/64) |
-|  Chinese (zh_CN)   | ![Progress](https://progress-bar.xyz/64) |
-|   Korean (ko_KR)   | ![Progress](https://progress-bar.xyz/64) |
-| Catalonian (ca_ES) | ![Progress](https://progress-bar.xyz/61) |
-|   Greek (el_GR)    | ![Progress](https://progress-bar.xyz/58) |
-|   Dutch (nl_NL)    | ![Progress](https://progress-bar.xyz/57) |
-|  Galician (gl_ES)  | ![Progress](https://progress-bar.xyz/57) |
+| Ukrainian (uk_UA)  | ![Progress](https://progress-bar.xyz/94) |
+|   Czech (cs_CZ)    | ![Progress](https://progress-bar.xyz/80) |
+|   German (de_DE)   | ![Progress](https://progress-bar.xyz/70) |
+|   French (fr_FR)   | ![Progress](https://progress-bar.xyz/69) |
+|  Japanese (ja_JP)  | ![Progress](https://progress-bar.xyz/64) |
+|  Russian (ru_RU)   | ![Progress](https://progress-bar.xyz/63) |
+|  Italian (it_IT)   | ![Progress](https://progress-bar.xyz/60) |
+| Taiwanese (zh_TW)  | ![Progress](https://progress-bar.xyz/60) |
+|  Turkish (tr_TR)   | ![Progress](https://progress-bar.xyz/59) |
+|   Basque (eu_ES)   | ![Progress](https://progress-bar.xyz/58) |
+|  Chinese (zh_CN)   | ![Progress](https://progress-bar.xyz/58) |
+|   Korean (ko_KR)   | ![Progress](https://progress-bar.xyz/58) |
+| Catalonian (ca_ES) | ![Progress](https://progress-bar.xyz/56) |
+|   Dutch (nl_NL)    | ![Progress](https://progress-bar.xyz/53) |
+|  Galician (gl_ES)  | ![Progress](https://progress-bar.xyz/53) |
+|   Greek (el_GR)    | ![Progress](https://progress-bar.xyz/51) |
 
 **Contribute!**. Any contribution is very welcome! Please follow the steps at [Translating Icestudio](https://github.com/FPGAwars/icestudio/wiki/Translating-Icestudio)
 

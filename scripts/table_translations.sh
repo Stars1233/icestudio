@@ -9,22 +9,22 @@ TABLE_FILE="readme_table.txt"
 #-- lookup table
 declare "languages_en=English"
 declare "languages_es_ES=Spanish"
-declare "languages_ja_JP=Japanese"
 declare "languages_fr_FR=French"
 declare "languages_it_IT=Italian"
-declare "languages_zh_TW=Taiwanese"
-declare "languages_zh_CN=Chinese"
-declare "languages_eu_ES=Basque"
 declare "languages_de_DE=German"
-declare "languages_ko_KR=Korean"
-declare "languages_cs_CZ=Czech"
+declare "languages_nl_NL=Dutch"
+declare "languages_el_GR=Greek"
 declare "languages_tr_TR=Turkish"
+declare "languages_cs_CZ=Czech"
 declare "languages_uk_UA=Ukrainian"
 declare "languages_ru_RU=Russian"
-declare "languages_ca_ES=Catalonian"
-declare "languages_el_GR=Greek"
-declare "languages_nl_NL=Dutch"
 declare "languages_gl_ES=Galician"
+declare "languages_eu_ES=Basque"
+declare "languages_ca_ES=Catalonian"
+declare "languages_zh_CN=Chinese"
+declare "languages_zh_TW=Taiwanese"
+declare "languages_ko_KR=Korean"
+declare "languages_ja_JP=Japanese"
 
 #-- Examine the .po file of all the locale folders
 cd app/resources/locale
@@ -54,5 +54,5 @@ do
     PARTS=(${LINE//:/ })
     LANGUAGE="languages_${PARTS[1]}"
     #echo "${!LANGUAGE}" "${PARTS[0]}"
-    echo "| ${!LANGUAGE} (${PARTS[1]}) | ![Progress](https://progress-bar.dev/${PARTS[0]}) |" >> $TABLE_FILE
+    echo "| ${!LANGUAGE} (${PARTS[1]}) | ![Progress](https://progress-bar.xyz/${PARTS[0]}) |" >> $TABLE_FILE
 done
