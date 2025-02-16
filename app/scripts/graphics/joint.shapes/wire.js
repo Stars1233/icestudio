@@ -1,20 +1,7 @@
 //-- jshint rules
-/* global WIRE_WIDTH */
+/* global WIRE_WIDTH, isClickOnVertex */
 
 'use strict';
-
-/*-- 
- * Existent vertex click detection with selectable margin 
- * Future refactor: helper jointjs 
- --*/
-function isClickOnVertex(linkView, x, y, margin = 5) {
-  const linkModel = linkView.model;
-  const vertices = linkModel.get('vertices') || [];
-  return vertices.some(
-    (v) => Math.abs(v.x - x) < margin && Math.abs(v.y - y) < margin
-  );
-}
-
 /*--
  * Click filter to choose between click on path , vertex or remove marker isClickOnVertex
  --*/
