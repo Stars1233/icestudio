@@ -1,8 +1,11 @@
-2025-02-05 22:49 (GMT+1)
+2025-02-16 22:49 (GMT+1)
 ========================
 Type: WIP
 
 App Changes:
+  - Pre-Commit script and automatic setup development environment by @cavearr
+  - Improve Github Actions Workflow pipelined with prior formating and linting by @cavearr and @TimRudy
+  - Update translations and standardization tasks by @timRudy
   - New custom fine tune route control points user capability algorithm by @cavearr
   - Embeding SDK version of nwjs in WIPs by @cavearr
   - Improving loading times by @cavearr
