@@ -36,7 +36,7 @@ jobs:
             echo "skip_build=true" >> $GITHUB_ENV
           fi
 
-      - name: 🔍 Replace  NW SDK version for normal before install npm packages
+      - name: 🔍 Replace NW SDK version for normal before install npm packages
         run: |
           sed -i 's/\("nw": "[^"]*\)-sdk"/\1"/g' package.json
 
@@ -46,7 +46,7 @@ jobs:
 
       - name: Setup Nodejs version
         if: env.skip_build != 'true'
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '19.3.0'
 
@@ -57,7 +57,7 @@ jobs:
       - name: Build Linux
         if: env.skip_build != 'true'
         run: |
-          export DISPLAY=:0.0 
+          export DISPLAY=:0.0
           npm run buildAarch64
 
       # jq is bash command for reading properties from a json file

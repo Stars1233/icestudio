@@ -14,7 +14,5 @@
 **/fonts/
 **/node_modules/
 
-
-# Bypass specific files and folders 
+# Bypass specific files and folders
 package-lock.json
-#Gruntfile.js

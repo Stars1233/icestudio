@@ -611,7 +611,7 @@ module.exports = function (grunt) {
   //------------------------------------------------------------------
   //-- CLEAN:tmp
   //-- Add the "clean:tmp" command to the list of commands to execute
-  //-- It will be the last taks
+  //-- It will be the last task
   //------------------------------------------------------------------
   distPlatformTasks = distPlatformTasks.concat(['clean:tmp']);
 
@@ -741,7 +741,7 @@ module.exports = function (grunt) {
     // We check if git environment exists
     if (!fs.existsSync(path.dirname(destHook))) {
       grunt.log.error(
-        '❌ .git/hooks folder not found, check that you are into icestudio cloned repository'
+        '❌ .git/hooks folder not found, check that you are in icestudio cloned repository'
       );
       return done(false);
     }
@@ -759,10 +759,12 @@ module.exports = function (grunt) {
       if (process.platform !== 'win32') {
         exec(`chmod +x "${destHook}"`, (chmodErr) => {
           if (chmodErr) {
-            grunt.log.error(`❌ Error setup permissions: ${chmodErr.message}`);
+            grunt.log.error(
+              `❌ Error setting permissions: ${chmodErr.message}`
+            );
             return done(false);
           }
-          grunt.log.writeln('✅ Execution permissions done');
+          grunt.log.writeln('✅ Execution permissions set');
           done();
         });
       } else {
@@ -773,11 +775,11 @@ module.exports = function (grunt) {
 
   grunt.registerTask(
     'preparePackageJson',
-    'Prepare package.json for commiting',
+    'Prepare package.json for committing',
     function () {
       const { execSync } = require('child_process');
 
-      grunt.log.writeln('🛠  Prepare package.json for commit...');
+      grunt.log.writeln('🛠 Prepare package.json for commit...');
 
       const jsonCmd = 'npx json';
 
@@ -787,7 +789,7 @@ module.exports = function (grunt) {
       );
 
       grunt.log.writeln('');
-      grunt.log.writeln('✅ package.json ready for commit.');
+      grunt.log.writeln('✅ package.json ready for commit');
     }
   );
 
@@ -987,8 +989,7 @@ module.exports = function (grunt) {
       appImageLinux64: {
         command: [
           `sync`,
-
-          `ICESTUDIO_BUILD_ID=${pkg.version} scripts/appimageBuild.sh`,
+          `ICESTUDIO_BUILD_ID=${pkg.version} scripts/appImageBuild.sh`,
         ].join(' && '),
       },
     },

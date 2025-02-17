@@ -38,13 +38,13 @@ jobs:
             echo "skip_build=true" >> $GITHUB_ENV
             fi
 
-      - name: 🔍 Replace  NW SDK version for normal before install npm packages
+      - name: 🔍 Replace NW SDK version for normal before install npm packages
         run: |
           sed -i 's/\("nw": "[^"]*\)-sdk"/\1"/g' package.json
 
       - name: Setup Nodejs version
         if: env.skip_build != 'true'
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '23.3.0'
 
@@ -56,7 +56,7 @@ jobs:
         if: env.skip_build != 'true'
         run: |
           sudo apt install -y libfuse2
-          export DISPLAY=:0.0 
+          export DISPLAY=:0.0
           npm run buildLinux64
 
       # jq is bash command for reading properties from a json file

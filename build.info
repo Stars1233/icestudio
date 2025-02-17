@@ -3,13 +3,13 @@
 Type: WIP
 
 App Changes:
-  - Pre-Commit script and automatic setup development environment by @cavearr
-  - Improve Github Actions Workflow pipelined with prior formating and linting by @cavearr and @TimRudy
-  - Update translations and standardization tasks by @timRudy
+  - Pre-Commit script and auto-setup development environment by @cavearr
+  - Improve Github Actions Workflow pipelined with prior formatting and linting by @cavearr and @TimRudy
+  - Update translations and more standardization by @TimRudy
   - New custom fine tune route control points user capability algorithm by @cavearr
-  - Embeding SDK version of nwjs in WIPs by @cavearr
-  - Improving loading times by @cavearr
-  - Refactoring graphics engine by @cavearr
+  - Embed SDK version of NWJS in WIPs by @cavearr
+  - Improve loading times by @cavearr
+  - Refactor graphics engine by @cavearr
   - Better info/warning/error tooltip positioning in code editor by @cavearr
   - Finish translation so it is stable with Prettier by @TimRudy
   - Improve speed of code editors by @cavearr

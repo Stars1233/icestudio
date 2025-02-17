@@ -1,7 +1,7 @@
 #!/bin/bash
 # Icestudio automatic format and linter script before git commit
 # ==============================================================
-# Install: Copy this file in .git/hooks maintain the name and do it 
+# Install: Copy this file in .git/hooks maintain the name and do it
 #          executable if not is it.
 # Author: Carlos Venegas -> @cavearr at github/X
 # Pre-commit hook: Run Prettier & JSHint before committing
@@ -31,7 +31,7 @@ box_message() {
     local message=$3
 
     local length=${#message}
-    local border=$(printf '%*s' $((length + 6)) '' | tr ' ' '-')
+    local border=$(printf '%*s' $((length + 7)) '' | tr ' ' '-')
 
     echo -e "${color}"
     echo -e "+${border}+"
@@ -62,10 +62,9 @@ spin() {
   done
 }
 
-# Step 0: Clean and prepare commit, some OS include dependencies only for it and this 
-#         could break the build for other OSs (this only affect to OSX)
-
-box_message "\n$YELLOW" "$WARNING_ICON" "Preparing package.json ..."
+# Step 0: Clean and prepare commit. Some OSs include dependencies only for it and this
+#         could break the build for other OSs (only affects OSX)
+box_message "\n$YELLOW" "$WARNING_ICON" "Preparing package.json..."
 if [ -n "$COMSPEC" ]; then
         # Windows CMD
         box_message "$GREEN" "$SUCCESS_ICON" "Nothing to do..."
@@ -88,10 +87,9 @@ else
         fi
 fi
 
-
 ## Step 1: Run PrettierBot with Spinner
 box_message "$YELLOW" "$WARNING_ICON" "Reformatting code with Prettier..."
-npm run prettierBot > "$MODIFIED_FILES" &  # Run Prettier in the background
+npm run prettierBot > "$MODIFIED_FILES" & # Run Prettier in the background
 PRETTIER_PID=$!
 
 # Start spinner
@@ -138,7 +136,7 @@ if [ -f "pre-commit.failed" ]; then
     rm pre-commit.failed 2>/dev/null || del pre-commit.failed
 fi
 
-## Step 4: Run JSHint, and if not passed break the commit 
+## Step 4: Run JSHint, and if not passed break the commit
 box_message "\n$YELLOW" "$WARNING_ICON" "Running linter check..."
 if ! npm run jshint --silent; then
     box_message "$RED" "$ERROR_ICON" "Linting failed! Fix issues before committing."

@@ -18,7 +18,6 @@ dist
 cache
 docs/_build
 node_modules
-bower_components
 .idea
 app/resources/collection
 app/resources/locale/**/*.json
@@ -30,4 +29,3 @@ readme_table.txt
 icerok.raw
 icerok.capture.raw
 app/buildinfo.json
-collection-default*

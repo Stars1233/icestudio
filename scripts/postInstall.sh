@@ -18,6 +18,6 @@ fi
 # remove test temporal files
 rm -f "$TEST_FILE"
 
-$SED_CMD  's/options\.srcDir/\/\/options.srcDir/g' node_modules/grunt-nw-builder/tasks/nw.js
+$SED_CMD 's/options\.srcDir/\/\/options.srcDir/g' node_modules/grunt-nw-builder/tasks/nw.js
 
-echo "✅ Post install actions succeded"
+echo "✅ Post install actions succeeded"

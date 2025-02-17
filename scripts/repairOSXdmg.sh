@@ -9,7 +9,7 @@ GREEN="\033[1;32m"
 #-- Start repairing
 APPDIR="dist/icestudio/osx64"
 if [ -d $APPDIR ]; then
-   # Iiterate over .dmg files in dist
+   # Iterate over .dmg files in dist
     for dmg in `ls ${APPDIR}/*.dmg`; do
         if [ -f "$dmg" ]; then
             if [ -n "${CODESIGN_ID}" ]; then
