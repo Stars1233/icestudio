@@ -16,7 +16,7 @@
   "license": "GPL-2.0",
   "scripts": {
     "prepare": "npm run setupDevEnv",
-    "start": "npm run setupDevEnv; grunt serve",
+    "start": "npm run setupDevEnv && grunt serve",
     "buildLinux64": "grunt dist --platform=linux64",
     "buildAarch64": "grunt dist --platform=aarch64 ",
     "buildWindows": "grunt dist --platform=win64",
