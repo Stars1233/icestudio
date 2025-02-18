@@ -1,12 +1,8 @@
-'use strict';
+//== JSHINT rules / START
+/* global callFuncByObjectProperty */
+//== JSHINT rules / END
 
-function result(object, property, defaultValue) {
-  var value = object[property];
-  if (typeof value === 'function') {
-    return value.call(object);
-  }
-  return value !== undefined ? value : defaultValue;
-}
+'use strict';
 
 joint.routers.ice = (function (g, _, joint) {
   var config = {
@@ -456,9 +452,9 @@ joint.routers.ice = (function (g, _, joint) {
 
   // resolve some of the options
   function resolveOptions(opt) {
-    opt.directions = result(opt, 'directions');
-    opt.penalties = result(opt, 'penalties');
-    opt.paddingBox = result(opt, 'paddingBox');
+    opt.directions = callFuncByObjectProperty(opt, 'directions');
+    opt.penalties = callFuncByObjectProperty(opt, 'penalties');
+    opt.paddingBox = callFuncByObjectProperty(opt, 'paddingBox');
 
     for (var i = 0, no = opt.directions.length; i < no; i++) {
       var point1 = g.point(0, 0);
