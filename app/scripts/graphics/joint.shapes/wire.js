@@ -10,21 +10,30 @@ joint.dia.LinkView.prototype.pointerdown = function (evt, x, y) {
   console.log('Click');
   // Delete marker icon -> default jointjs action
   if (evt.target.closest('.marker-vertex-remove')) {
+    console.log('Marker remove');
     originalPointerDown.apply(this, arguments);
+    return;
 
     // Vertex group area but no control point neither delete icon -> default jointjs action
-  } else if (evt.target.closest('.marker-vertex-group')) {
+  }
+
+  if (evt.target.closest('.marker-vertex-group')) {
+    console.log('Marker group');
     originalPointerDown.apply(this, arguments);
+    return;
 
     // Vertex control point -> jointjs management
-  } else if (isClickOnVertex(this, x, y, 10)) {
-    originalPointerDown.apply(this, arguments);
-
-    // Click on path -> stop default jointjs actions and derive to our route algorithm
-  } else {
-    evt.stopPropagation();
-    evt.preventDefault();
   }
+
+  if (isClickOnVertex(this, x, y, 10)) {
+    console.log('isClickOnVertex');
+    originalPointerDown.apply(this, arguments);
+    return;
+    // Click on path -> stop default jointjs actions and derive to our route algorithm
+  }
+  console.log('Click on path');
+  evt.stopPropagation();
+  evt.preventDefault();
 };
 
 /*--
@@ -123,6 +132,7 @@ joint.shapes.ice.WireView = joint.dia.LinkView.extend({
         }
       }
       this.setWireClass(size);
+      this.updateBifurcations();
     });
   },
 
@@ -190,22 +200,32 @@ joint.shapes.ice.WireView = joint.dia.LinkView.extend({
   },
 
   updateWireProperties: function (/*size*/) {
+    return;
     // In this moment Icestudio not need update any wire properties, is setup at the creation
+    /*  if (size > 1) {
+      this.$(".connection").css("stroke-width", WIRE_WIDTH * 3);
+      this.model.label(0, { attrs: { text: { text: size } } });
+      this.model.bifurcationMarkup = this.model.bifurcationMarkup.replace(
+        /<%= r %>/g,
+        WIRE_WIDTH * 4
+      );
+    } else {
+      this.model.bifurcationMarkup = this.model.bifurcationMarkup.replace(
+        /<%= r %>/g,
+        WIRE_WIDTH * 2
+      );
+    }*/
   },
 
   updateConnection: function (opt) {
     opt = opt || {};
-
-    // Necessary path finding
     var route = (this.route = this.findRoute(
       this.model.get('vertices') || [],
       opt
     ));
-    // finds all the connection points taking new vertices into account
+
     this._findConnectionPoints(route);
     var pathData = this.getPathData(route);
-
-    // The markup needs to contain a `.connection`
     this._V.connection.attr('d', pathData.full);
     if (this._V.connectionWrap) {
       this._V.connectionWrap.attr('d', pathData.wrap);

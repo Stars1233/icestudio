@@ -7,7 +7,6 @@
 //----------------------------------------------------------------------------
 
 'use strict';
-
 angular.module('icestudio').service(
   'graph',
   function (
@@ -261,7 +260,7 @@ angular.module('icestudio').service(
         height: 5000,
         model: graph,
         gridSize: gridsize,
-        interactive: false,
+        interactive: true,
         clickThreshold: 6,
         snapLinks: { radius: 16 },
         linkPinning: false,
@@ -280,6 +279,7 @@ angular.module('icestudio').service(
           end,
           linkView
         ) {
+          console.log('New connection');
           // Prevent output-output links
           if (
             magnetS &&
@@ -361,6 +361,7 @@ angular.module('icestudio').service(
                 )
               );
             }
+            console.log('PULLUP');
             return ret;
           }
           // Prevent different size connections
@@ -697,16 +698,19 @@ angular.module('icestudio').service(
 
       paper.on('cell:pointerclick', function (cellView, evt, x, y) {
         if (cellView.model.isLink()) {
+          console.log('Click en cable');
           const linkModel = cellView.model;
           let vertices = linkModel.get('vertices') || [];
 
           // if user click on remove control point, jointjs do the stuff
           if (evt.target.closest('.marker-vertex-remove')) {
+            console.log('Remove vertex');
             return;
           }
 
           // if user click is on grupo marker area, but not in path, control point or remove icon, jointjs do the stuff
           if (evt.target.closest('.marker-vertex-group')) {
+            console.log('Try to remove but you click out');
             return;
           }
 
@@ -718,6 +722,7 @@ angular.module('icestudio').service(
 
           // If vertex is clicked jointjs do the stuff
           if (isClickOnVertex(cellView, localPoint.x, localPoint.y)) {
+            console.log('isClickOnVertex!');
             return;
           }
 
@@ -730,8 +735,17 @@ angular.module('icestudio').service(
           ) {
             vertices.splice(index, 0, { x: localPoint.x, y: localPoint.y });
             const cleanedVertices = vertices.map((v) => ({ x: v.x, y: v.y }));
+
             linkModel.set('vertices', cleanedVertices, { ui: true });
-            linkModel.trigger('change:vertices');
+
+            setTimeout(() => {
+              const linkView = paper.findViewByModel(linkModel);
+              if (!linkView) {
+                return;
+              }
+              // linkView.render();
+              linkModel.trigger('change:vertices');
+            }, 50);
           }
           return;
         }
@@ -1183,16 +1197,35 @@ angular.module('icestudio').service(
         disableReplacedBlock(lowerBlock);
       }, 100);
 
-      graph.on('add change:source change:target', function (cell) {
+      //-- Divide add from change:source->change:start event optimization
+      //-- Multiple calls did it without needed. For the moment add is not needed
+      /*graph.on('add', function (cell) {
+    if (cell.isLink()) {
+        console.log('✅ Nuevo wire agregado:', cell);
+
+      //Timeout is needed to wait at view are ready
+        setTimeout(() => {
+            const linkView = paper.findViewByModel(cell);
+            if (!linkView) {
+                console.error('🚨 Wire agregado pero no tiene un WireView.');
+                return;
+            }
+
+
+        }, 50);
+    }
+});
+*/
+      graph.on('change:source change:target', function (cell) {
         if (cell.isLink() && cell.get('source').id) {
-          // Link connected
           let target = cell.get('target');
+
+          // Connection wire ended moving
           if (target.id) {
-            // Connected to a port
             cell.attributes.lastTarget = target;
             updatePortDefault(target, false);
           } else {
-            // Moving the wire connection
+            // Connection wire is being moved
             target = cell.get('lastTarget');
             updatePortDefault(target, true);
           }

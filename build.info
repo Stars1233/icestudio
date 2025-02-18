@@ -1,8 +1,9 @@
-2025-02-16 22:49 (GMT+1)
+2025-02-18 00:59 (GMT+1)
 ========================
 Type: WIP
 
 App Changes:
+  - Routing and wire improvements by @cavearr
   - Pre-Commit script and auto-setup development environment by @cavearr
   - Improve Github Actions Workflow pipelined with prior formatting and linting by @cavearr and @TimRudy
   - Update translations and more standardization by @TimRudy
