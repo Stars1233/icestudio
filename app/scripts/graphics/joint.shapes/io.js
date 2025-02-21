@@ -396,7 +396,8 @@ joint.shapes.ice.IOView = joint.shapes.ice.ModelView.extend({
     var paths, rects;
     var width = WIRE_WIDTH * state.zoom;
 
-    var pwires = this.$el[0].getElementsByClassName('port-wire');
+    /*FOR THE MOMENT NOT DELETE COMMENTED OLD CODE */
+    /* var pwires = this.$el[0].getElementsByClassName('port-wire');
     for (i = 0; i < pwires.length; i++) {
       pendingTasks.push({
         e: pwires[i],
@@ -497,11 +498,11 @@ joint.shapes.ice.IOView = joint.shapes.ice.ModelView.extend({
           });
         }
       }
-    }
+    }*/
     //
     return this.place(data, bbox, state, pendingTasks);
   },
-
+  /*
   drawPendingTasks: function (tasks) {
     let _this = this;
     function applyDrawPendingTasks() {
@@ -514,7 +515,7 @@ joint.shapes.ice.IOView = joint.shapes.ice.ModelView.extend({
     }
     requestAnimationFrame(applyDrawPendingTasks);
   },
-
+*/
   removeBox: function () {
     // Close select options on remove
     this.$box.find('select').select2('close');
