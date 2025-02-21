@@ -64,3 +64,6 @@
 .port-default.port-visible {
   display: inline;
 }
+.leftPorts:has(.port-visible) .port-label {
+  display: none;
+}

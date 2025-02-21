@@ -288,27 +288,20 @@ joint.shapes.ice.CodeView = joint.shapes.ice.ModelView.extend({
         this.applyStyles([dome], { 'stroke-width': busWidth + 'px' });
       }
     });
-
+*/
     if (data?.ports?.in) {
       var portTokId = 'port-default-' + modelId + '-';
       data.ports.in.forEach((port) => {
         var portDefault = document.getElementById(portTokId + port.name);
         if (portDefault) {
-          this.applyStyles([portDefault], {
-            display: rules && port.default?.apply ? 'inline' : 'none',
-          });
-
-          if (port.default?.apply) {
-            this.applyStyles(portDefault.querySelectorAll('path'), {
-              'stroke-width': wireWidth + 'px',
-            });
-            this.applyStyles(portDefault.querySelectorAll('rect'), {
-              'stroke-width': state.zoom + 'px',
-            });
+          if (rules && port.default?.apply) {
+            portDefault.classList.add('port-visible');
+          } else {
+            portDefault.classList.remove('port-visible');
           }
         }
       });
-    }*/
+    }
 
     var contentTransform = {
       left: Math.round((bbox.width / 2.0) * (state.zoom - 1)) + 'px',
