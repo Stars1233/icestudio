@@ -10,6 +10,7 @@ joint.shapes.ice.Code = joint.shapes.ice.Model.extend({
   defaults: joint.util.deepSupplement(
     {
       type: 'ice.Code',
+      z: 10,
       size: {
         width: 384,
         height: 256,

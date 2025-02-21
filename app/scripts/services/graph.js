@@ -279,7 +279,6 @@ angular.module('icestudio').service(
           end,
           linkView
         ) {
-          console.log('New connection');
           // Prevent output-output links
           if (
             magnetS &&
@@ -365,11 +364,13 @@ angular.module('icestudio').service(
             return ret;
           }
           // Prevent different size connections
+          //
+
+          //         requestAnimationFrame(() => linkView.model.toBack());
           let tsize = 0;
           let lsize = linkView.model.get('size');
           let portId = magnetT.getAttribute('port');
           let sourcePortId = magnetS.getAttribute('port') ?? false;
-
           let tLeftPorts = cellViewT.model.get('leftPorts');
           let sRightPorts = cellViewS.model.get('rightPorts');
           let isParametric = false;
@@ -614,7 +615,7 @@ angular.module('icestudio').service(
             processReplaceBlock(selection.at(0));
             disableSelected();
 
-            updateWiresOnObstacles().then(() => {
+            __updateWiresOnObstacles().then(() => {
               graph.trigger('batch:stop');
             });
           } else {
@@ -708,19 +709,16 @@ angular.module('icestudio').service(
 
       paper.on('cell:pointerclick', function (cellView, evt, x, y) {
         if (cellView.model.isLink()) {
-          console.log('Click en cable');
           const linkModel = cellView.model;
           let vertices = linkModel.get('vertices') || [];
 
           // if user click on remove control point, jointjs do the stuff
           if (evt.target.closest('.marker-vertex-remove')) {
-            console.log('Remove vertex');
             return;
           }
 
           // if user click is on grupo marker area, but not in path, control point or remove icon, jointjs do the stuff
           if (evt.target.closest('.marker-vertex-group')) {
-            console.log('Try to remove but you click out');
             return;
           }
 
@@ -753,7 +751,6 @@ angular.module('icestudio').service(
               if (!linkView) {
                 return;
               }
-              // linkView.render();
               linkModel.trigger('change:vertices');
             }, 50);
           }
@@ -1209,23 +1206,15 @@ angular.module('icestudio').service(
 
       //-- Divide add from change:source->change:start event optimization
       //-- Multiple calls did it without needed. For the moment add is not needed
-      /*graph.on('add', function (cell) {
-    if (cell.isLink()) {
-        console.log('✅ Nuevo wire agregado:', cell);
+      /*      graph.on('add', function (cell) {
 
-      //Timeout is needed to wait at view are ready
-        setTimeout(() => {
-            const linkView = paper.findViewByModel(cell);
-            if (!linkView) {
-                console.error('🚨 Wire agregado pero no tiene un WireView.');
-                return;
-            }
-
-
-        }, 50);
-    }
-});
+      });
 */
+      graph.on('add', function (cell) {
+        if (cell.isLink()) {
+          setTimeout(() => cell.toBack(), 10);
+        }
+      });
       graph.on('change:source change:target', function (cell) {
         if (cell.isLink() && cell.get('source').id) {
           let target = cell.get('target');
@@ -1239,6 +1228,10 @@ angular.module('icestudio').service(
             target = cell.get('lastTarget');
             updatePortDefault(target, true);
           }
+        }
+
+        if (cell.isLink()) {
+          setTimeout(() => cell.toBack(), 50);
         }
       });
 
@@ -1281,27 +1274,36 @@ angular.module('icestudio').service(
       utils.rootScopeSafeApply();
     };
 
-    this.updateWires = async function () {
+    /* this.updateWires = async function () {
       await updateWiresOnObstacles();
+    };
+*/
+    this.updateWires = function () {
+      __updateWiresOnObstacles();
     };
 
     function __updateWiresOnObstacles() {
       let cells = graph.getCells();
 
+      let linkView = false;
       //_.each(cells, function (cell) {
       for (let i = 0, n = cells.length; i < n; i++) {
         if (cells[i].isLink()) {
-          paper.findViewByModel(cells[i]).update();
+          linkView = paper.findViewByModel(cells[i]);
+          if (linkView) {
+            linkView.update();
+            // cells[i].toBack(); // Force wires to back of the drawing
+          }
         }
       }
     }
 
-    function updateWiresOnObstacles() {
+    /*function updateWiresOnObstacles() {
       return new Promise((resolve) => {
         __updateWiresOnObstacles();
         resolve();
       });
-    }
+    }*/
 
     this.setBoardRules = function (rules) {
       let cells = graph.getCells();

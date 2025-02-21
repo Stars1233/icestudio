@@ -55,6 +55,7 @@ joint.shapes.ice.Output = joint.shapes.ice.IO.extend({
   defaults: joint.util.deepSupplement(
     {
       type: 'ice.Output',
+      z: 10,
       size: {
         width: 96,
         height: 64,

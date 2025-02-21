@@ -7,7 +7,6 @@
  --*/
 const originalPointerDown = joint.dia.LinkView.prototype.pointerdown;
 joint.dia.LinkView.prototype.pointerdown = function (evt, x, y) {
-  console.log('Click');
   // Delete marker icon -> default jointjs action
   if (evt.target.closest('.marker-vertex-remove')) {
     console.log('Marker remove');
@@ -86,7 +85,7 @@ joint.shapes.ice.Wire = joint.dia.Link.extend({
   defaults: joint.util.deepSupplement(
     {
       type: 'ice.Wire',
-
+      z: 1,
       attrs: {
         '.connection': {
           'stroke-width': WIRE_WIDTH,
@@ -133,6 +132,7 @@ joint.shapes.ice.WireView = joint.dia.LinkView.extend({
       }
       this.setWireClass(size);
       this.updateBifurcations();
+      this.model.toBack();
     });
   },
 

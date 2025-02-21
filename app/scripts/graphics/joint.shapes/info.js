@@ -9,6 +9,7 @@ joint.shapes.ice.Info = joint.shapes.ice.Model.extend({
   defaults: joint.util.deepSupplement(
     {
       type: 'ice.Info',
+      z: 12,
       size: {
         width: 400,
         height: 256,

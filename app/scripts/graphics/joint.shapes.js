@@ -502,6 +502,7 @@ joint.shapes.ice.Generic = joint.shapes.ice.Model.extend({
   defaults: joint.util.deepSupplement(
     {
       type: 'ice.Generic',
+      z: 10,
     },
     joint.shapes.ice.Model.prototype.defaults
   ),

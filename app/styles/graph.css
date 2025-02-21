@@ -5,7 +5,7 @@
   --ice-circuit-port-width: 16px;
   --ice-circuit-port-height: 16px;
   --ice-circuit-stroke-width: 1px;
-  --ice-circuit-port-label-color: #777;
+  --ice-circuit-port-label-color: #9a9a9a;
   --ice-circuit-port-wire-color: #777;
   --ice-circuit-port-connector-color: #777;
   --ice-circuit-port-connector-width: 1px;
@@ -64,6 +64,6 @@
 .port-default.port-visible {
   display: inline;
 }
-.leftPorts:has(.port-visible) .port-label {
+.leftPorts > .port:has(.port-visible) .port-label {
   display: none;
 }

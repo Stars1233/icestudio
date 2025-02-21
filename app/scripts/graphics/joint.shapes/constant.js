@@ -10,6 +10,7 @@ joint.shapes.ice.Constant = joint.shapes.ice.IO.extend({
   defaults: joint.util.deepSupplement(
     {
       type: 'ice.Constant',
+      z: 10,
       size: {
         width: 96,
         height: 64,
