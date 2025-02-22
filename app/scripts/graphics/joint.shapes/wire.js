@@ -9,7 +9,6 @@ const originalPointerDown = joint.dia.LinkView.prototype.pointerdown;
 joint.dia.LinkView.prototype.pointerdown = function (evt, x, y) {
   // Delete marker icon -> default jointjs action
   if (evt.target.closest('.marker-vertex-remove')) {
-    console.log('Marker remove');
     originalPointerDown.apply(this, arguments);
     return;
 
@@ -17,7 +16,6 @@ joint.dia.LinkView.prototype.pointerdown = function (evt, x, y) {
   }
 
   if (evt.target.closest('.marker-vertex-group')) {
-    console.log('Marker group');
     originalPointerDown.apply(this, arguments);
     return;
 
@@ -25,12 +23,10 @@ joint.dia.LinkView.prototype.pointerdown = function (evt, x, y) {
   }
 
   if (isClickOnVertex(this, x, y, 10)) {
-    console.log('isClickOnVertex');
     originalPointerDown.apply(this, arguments);
     return;
     // Click on path -> stop default jointjs actions and derive to our route algorithm
   }
-  console.log('Click on path');
   evt.stopPropagation();
   evt.preventDefault();
 };
@@ -131,8 +127,17 @@ joint.shapes.ice.WireView = joint.dia.LinkView.extend({
         }
       }
       this.setWireClass(size);
+
+      // Hide clk yellow block if is connected on load
+      let target = this.model.get('target');
+      let isClk = document.getElementById(
+        `port-default-${target.id}-${target.port}`
+      );
+      if (isClk) {
+        isClk.classList.add('wire-connected');
+      }
+
       this.updateBifurcations();
-      //this.model.toBack();
     });
   },
 
@@ -146,6 +151,15 @@ joint.shapes.ice.WireView = joint.dia.LinkView.extend({
   },
 
   remove: function () {
+    // Hide clk yellow block if is connected on load
+    let target = this.model.get('target');
+    let isClk = document.getElementById(
+      `port-default-${target.id}-${target.port}`
+    );
+    if (isClk) {
+      isClk.classList.remove('wire-connected');
+    }
+
     joint.dia.LinkView.prototype.remove.apply(this, arguments);
     this.updateBifurcations();
     return this;

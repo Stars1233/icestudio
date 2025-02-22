@@ -35,7 +35,7 @@ joint.shapes.ice.Model = joint.shapes.basic.Generic.extend({
            </g>',
   portMarkup:
     '<g class="port port<%= index %>">\
-                 <g class="port-default" id="port-default-<%= id %>-<%= port.id %>">\
+                 <g class="port-default" id="port-default-<%= id %>-<%= port.id %>" data-portid="<%= port.id %>">\
                     <path/><rect/>\
                  </g>\
                  <path class="port-wire <%= wireClass %>" id="port-wire-<%= id %>-<%= port.id %>"/>\

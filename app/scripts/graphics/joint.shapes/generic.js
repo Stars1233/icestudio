@@ -253,7 +253,6 @@ joint.shapes.ice.GenericView = joint.shapes.ice.ModelView.extend({
             port.default &&
             port.default.apply
           ) {
-            console.log('PORT DEFAULT', portDefault, rules, port);
             portDefault.classList.add('port-visible');
 
             /* pendingTasks.push({

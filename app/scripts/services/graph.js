@@ -1910,13 +1910,12 @@ angular.module('icestudio').service(
 
         iprof.start('graphToCells2');
         let cells = graphToCells(design.graph, opt);
-
         iprof.end('graphToCells2');
-        //self.fitContent();
 
         graph.trigger('batch:start');
         iprof.start('addCells');
         graph.addCells(cells);
+
         //addCells(cells);   --> This is an overlapping function with more functionality but heaviest
         iprof.end('addCells');
 

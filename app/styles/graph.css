@@ -64,6 +64,11 @@
 .port-default.port-visible {
   display: inline;
 }
+
+.port-default.port-visible.wire-connected {
+  display: none;
+}
+
 .leftPorts > .port:has(.port-visible) .port-label {
   display: none;
 }
