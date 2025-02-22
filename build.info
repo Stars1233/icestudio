@@ -1,8 +1,10 @@
-2025-02-22 00:59 (GMT+1)
+2025-02-23 00:59 (GMT+1)
 ========================
 Type: WIP
 
 App Changes:
+  - Fix save/open/import module or module as block by @cavearr
+  - Some wire and clock render fixes by @cavearr
   - Clock port speed optimization by @cavearr
   - Z position of blocks and wires to put labels alwais on top of wires by @cavearr
   - Width wires rendering huge improvement (speed) by @cavearr
