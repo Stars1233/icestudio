@@ -3,6 +3,7 @@
 Type: WIP
 
 App Changes:
+  - Severity routing calculations reduction by @cavearr
   - Fine tune routing to improve better large routes and near top parameter block 90 angle
    (now not turn, but control points are hidden under the block if is near, the user needs to give up the block) by @cavearr
   - Fix save/open/import module or module as block by @cavearr
