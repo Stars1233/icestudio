@@ -1,8 +1,10 @@
-2025-02-23 00:59 (GMT+1)
+2025-02-24 00:59 (GMT+1)
 ========================
 Type: WIP
 
 App Changes:
+  - Fine tune routing to improve better large routes and near top parameter block 90 angle
+   (now not turn, but control points are hidden under the block if is near, the user needs to give up the block) by @cavearr
   - Fix save/open/import module or module as block by @cavearr
   - Some wire and clock render fixes by @cavearr
   - Clock port speed optimization by @cavearr
