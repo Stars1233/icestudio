@@ -109,15 +109,14 @@ angular
 
       $scope.editModeToggle = function ($event) {
         var btn = $event.currentTarget;
-
         iprof.clear();
         if (!$scope.isNavigating) {
+          utils.beginBlockingTask();
           var block = graph.breadcrumbs[graph.breadcrumbs.length - 1];
           var tmp = false;
           var rw = true;
           var lockImg = false;
           var lockImgSrc = false;
-          console.log('editModeToggle');
           if (common.isEditingSubmodule) {
             lockImg = $('img', btn);
             lockImgSrc = lockImg.attr('data-lock');
@@ -246,19 +245,23 @@ cells.sort((a, b) => {
             common.isEditingSubmodule = true;
             subModuleActive = true;
           }
-
-          iprof.start('navigateProject');
-          $rootScope.$broadcast('navigateProject', {
-            update: false,
-            project: tmp,
-            editMode: rw,
-            fromDoubleClick: false,
+          requestAnimationFrame(() => {
+            setTimeout(() => {
+              iprof.start('navigateProject');
+              $rootScope.$broadcast('navigateProject', {
+                update: false,
+                project: tmp,
+                editMode: rw,
+                fromDoubleClick: false,
+              });
+              iprof.end('navigateProject');
+              iprof.start('safeApply');
+              utils.rootScopeSafeApply();
+              iprof.end('safeApply');
+              iprof.print();
+              utils.endBlockingTask();
+            }, 0);
           });
-          iprof.end('navigateProject');
-          iprof.start('safeApply');
-          utils.rootScopeSafeApply();
-          iprof.end('safeApply');
-          iprof.print();
         }
       };
 
@@ -347,11 +350,13 @@ cells.sort((a, b) => {
         if (typeof args.editMode !== 'undefined') {
           opt.disabled = args.editMode;
         }
+
+        //  utils.beginBlockingTask();
         if (args.update) {
           graph.resetView();
           project.update({ deps: false }, function () {
             graph.loadDesign(args.project.design, opt, function () {
-              utils.endBlockingTask();
+              //  utils.endBlockingTask();
             });
           });
         } else {
@@ -362,7 +367,7 @@ cells.sort((a, b) => {
           iprof.start('loadDesign');
           graph.loadDesign(args.project.design, opt, function () {
             iprof.end('loadDesign');
-            utils.endBlockingTask();
+            //  utils.endBlockingTask();
           });
         }
         $scope.topModule = false;
@@ -394,6 +399,7 @@ cells.sort((a, b) => {
       $rootScope.$on('editModeToggle', function (event) {
         $scope.editModeToggle(event);
         utils.rootScopeSafeApply();
+        //utils.endBlockingTask();
       });
     }
   );

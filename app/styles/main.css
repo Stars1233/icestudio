@@ -93,7 +93,9 @@ body {
 .alertify .ajs-body .ajs-content .ajs-input {
   width: 100%;
 }
-
+.alertify .ajs-modal {
+  z-index: 99999 !important;
+}
 #preview-svg.ajs-input {
   width: auto;
   max-width: 100%;

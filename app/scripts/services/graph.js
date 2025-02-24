@@ -1898,6 +1898,8 @@ angular.module('icestudio').service(
     this.loadDesign = function (design, opt, callback) {
       if (design && design.graph && design.graph.blocks && design.graph.wires) {
         opt = opt || { disabled: false, reset: true };
+
+        utils.beginBlockingTask();
         // self.disableAutoRouting();
         commandManager.stopListening();
 
@@ -1922,6 +1924,8 @@ angular.module('icestudio').service(
         if (callback) {
           callback();
           //self.enableAutoRouting();
+          //
+          utils.endBlockingTask();
         }
         return true;
       }
