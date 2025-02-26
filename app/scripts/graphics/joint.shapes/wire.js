@@ -48,7 +48,7 @@ joint.shapes.ice.Wire = joint.dia.Link.extend({
 
   bifurcationMarkup: [
     '<g class="marker-bifurcation-group" transform="translate(<%= x %>, <%= y %>)">',
-    '<circle class="marker-bifurcation" idx="<%= idx %>" r="<%= r %>" fill="#777"/>',
+    '<circle class="marker-bifurcation" idx="<%= idx %>" r="<%= r %>" fill="#8bbd05"/>',
     '</g>',
   ].join(''),
 

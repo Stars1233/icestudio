@@ -258,8 +258,9 @@
 }
 
 .code-block .code-content {
-  background: #c0dfeb;
-  border: 1px solid #777;
+  /*background: #c0dfeb;*/
+  background: #fff;
+  border: 10px solid #777;
 }
 
 .info-block .info-content {

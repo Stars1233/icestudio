@@ -454,9 +454,13 @@ angular.module('icestudio').service(
       let targetElement = element[0];
       let zoomTimeout;
       let cacheEditors = [];
+      let cacheCodeBlocks = [];
       function disableAceEditors() {
         cacheEditors = [];
+        cacheCodeBlocks = [];
+
         cacheEditors = document.querySelectorAll('.ace_editor');
+        //cacheCodeBlocks = document.querySelectorAll('.code-block');
         cacheEditors.forEach((editor) => {
           editor.style.display = 'none';
         });

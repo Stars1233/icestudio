@@ -502,8 +502,9 @@ g {
 .memory-block .memory-content .header {
   display: flex;
   padding: 0 6px;
-  margin-top: 6px;
-  height: 18px;
+  margin-top: 0px;
+  height: 32px;
+  background: #ffcd00;
 }
 
 .memory-block .memory-content .header label {
@@ -560,7 +561,7 @@ g {
   bottom: 0;
   margin: 7px;
   border-radius: 5px;
-  border: 1px solid #aaa;
+  border: 5px solid #aaa;
   pointer-events: auto;
 }
 

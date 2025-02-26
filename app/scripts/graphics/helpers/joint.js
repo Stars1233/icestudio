@@ -43,7 +43,7 @@ function findBifurcations(
       const pointKey = `${point.x},${point.y}`;
       if (!bifurcationPoints.has(pointKey)) {
         bifurcationPoints.add(pointKey);
-        const mt = markupTemplate(point).replace('r=""', 'r="1.5"');
+        const mt = markupTemplate(point).replace('r=""', 'r="8"');
         V(markersNode).append(V(mt));
       }
       break; // Intersection founded, go out
