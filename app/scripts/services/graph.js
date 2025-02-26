@@ -7,6 +7,20 @@
 //----------------------------------------------------------------------------
 
 'use strict';
+
+//-- Optimization tip
+//-- for the moment i put graph and paper globally to be accesible from joint.js custom
+//-- Diagram data structure. All the graphics start here
+//-- It is created by the joint.dia.Graph constructor
+//-- Documentation: https://resources.jointjs.com/mmap/joint.html
+//-- It contains cells: Elements + links
+let graph = null;
+
+//-- Paper data structure
+//-- The diagrams are place on a Paper
+//-- It is created by the joint.dia.Paper constructor
+let paper = null;
+
 angular.module('icestudio').service(
   'graph',
   function (
@@ -98,17 +112,6 @@ angular.module('icestudio').service(
     //-- It is initialized from VIEWSTATE_INIT
     let state = utils.clone(VIEWSTATE_INIT);
     state.mutateZoom = false;
-    //-- Diagram data structure. All the graphics start here
-    //-- It is created by the joint.dia.Graph constructor
-    //-- Documentation: https://resources.jointjs.com/mmap/joint.html
-    //-- It contains cells: Elements + links
-    let graph = null;
-
-    //-- Paper data structure
-    //-- The diagrams are place on a Paper
-    //-- It is created by the joint.dia.Paper constructor
-    let paper = null;
-
     let z = { index: 100 };
     let selection = null;
     let selectionView = null;
@@ -450,16 +453,16 @@ angular.module('icestudio').service(
 
       let targetElement = element[0];
       let zoomTimeout;
-
+      let cacheEditors = [];
       function disableAceEditors() {
-        const editors = document.querySelectorAll('.ace_editor');
-        editors.forEach((editor) => {
+        cacheEditors = [];
+        cacheEditors = document.querySelectorAll('.ace_editor');
+        cacheEditors.forEach((editor) => {
           editor.style.display = 'none';
         });
       }
       function restoreAceEditors() {
-        const editors = document.querySelectorAll('.ace_editor');
-        editors.forEach((editor) => {
+        cacheEditors.forEach((editor) => {
           editor.style.display = 'block';
         });
         const baseGutterWidth = 50;
@@ -506,7 +509,6 @@ angular.module('icestudio').service(
 
             if (!oncePerZoomHook) {
               oncePerZoomHook = true;
-
               disableAceEditors();
               // Close expanded combo
               if (
@@ -523,16 +525,16 @@ angular.module('icestudio').service(
           clearTimeout(zoomTimeout);
           zoomTimeout = setTimeout(() => {
             //  document.documentElement.style.setProperty('--wire-width', WIRE_WIDTH*state.zoom);
-            restoreAceEditors();
-            requestAnimationFrame(() => {
-              if (isOnZoom) {
-                isOnZoom = false;
-                oncePerZoomHook = false;
-                updateCellBoxes();
-                state.mutateZoom = false;
-              }
-            });
-          }, 300);
+            // requestAnimationFrame(() => {
+            if (isOnZoom) {
+              restoreAceEditors();
+              isOnZoom = false;
+              oncePerZoomHook = false;
+              updateCellBoxes();
+              state.mutateZoom = false;
+            }
+            //});
+          }, 400);
         },
         onPan: function (newPan) {
           state.pan = newPan;
@@ -549,24 +551,58 @@ angular.module('icestudio').service(
       });
 
       function updateCellBoxes() {
+        const cells = graph.getCells().filter((cell) => !cell.isLink());
+
+        // Actualizar selectionView solo si cambia
+        if (selectionView.options.state !== state) {
+          selectionView.options.state = state;
+        }
+
+        // Cachear vistas
+        const viewCache = new Map();
+        cells.forEach((cell) =>
+          viewCache.set(cell.id, paper.findViewByModel(cell))
+        );
+
         graph.startBatch('batch-update');
-        let cells = graph.getCells();
-        selectionView.options.state = state;
-        let elementView = false;
-        let bbox = false;
-        for (let i = 0, len = cells.length; i < len; i++) {
-          if (!cells[i].isLink()) {
-            cells[i].attributes.state = state;
-            elementView = paper.findViewByModel(cells[i]);
-            bbox = elementView.getBBox();
-            // Pan blocks
-            elementView.updateBox();
-            // Pan selection boxes
+
+        let index = 0;
+        const batchSize = 50; // Mantener pequeño por DOM en placementCssIOTasks
+
+        function processBatch() {
+          const startTime = performance.now();
+          const maxTimePerFrame = 8; // 8ms por la manipulación del DOM
+          const end = Math.min(index + batchSize, cells.length);
+          const updates = [];
+
+          // Preparar celdas
+          for (
+            ;
+            index < end && performance.now() - startTime < maxTimePerFrame;
+            index++
+          ) {
+            const cell = cells[index];
+            cell.set('state', state, { silent: true });
+            updates.push(viewCache.get(cell.id));
+          }
+
+          // Aplicar actualizaciones en lote
+          updates.forEach((elementView) => {
+            elementView.updateBox(); // Incluye placementCssIOTasks optimizado
             selectionView.updateBox(elementView.model);
+          });
+
+          if (index < cells.length) {
+            requestAnimationFrame(processBatch);
+          } else {
+            graph.stopBatch('batch-update');
+            graph.trigger('change'); // Forzar renderizado en 2.0.1
           }
         }
-        graph.stopBatch('batch-update');
+
+        requestAnimationFrame(processBatch);
       }
+
       // Events
 
       let shiftPressed = false;
@@ -611,9 +647,7 @@ angular.module('icestudio').service(
             processReplaceBlock(selection.at(0));
             disableSelected();
 
-            __updateWiresOnObstacles().then(() => {
-              graph.trigger('batch:stop');
-            });
+            __updateWiresOnObstacles();
           } else {
             // Toggle selected cell
             if (utils.hasShift(evt)) {
@@ -1905,14 +1939,17 @@ angular.module('icestudio').service(
 
         self.clearAll();
 
-        let cells = graphToCells(design.graph, opt);
+        let [cells, cellsw] = graphToCells(design.graph, opt);
 
-        graph.trigger('batch:start');
+        //graph.trigger('batch:start');
+        graph.startBatch('loadDesign');
         graph.addCells(cells);
-
+        graph.stopBatch('loadDesign');
+        graph.startBatch('loadDesignW');
+        graph.addCells(cellsw);
+        graph.stopBatch('loadDesignW');
         //addCells(cells);   --> This is an overlapping function with more functionality but heaviest
-
-        graph.trigger('batch:stop');
+        // graph.trigger('batch:stop');
         self.setState(design.state);
         self.appEnable(!opt.disabled);
         if (!opt.disabled) {
@@ -2102,6 +2139,7 @@ angular.module('icestudio').service(
         );
       }
 
+      let cellWires = [];
       _.each(_graph.wires, function (wireInstance) {
         let source = blocksMap[wireInstance.source.block];
         let target = blocksMap[wireInstance.target.block];
@@ -2123,10 +2161,11 @@ angular.module('icestudio').service(
           cell = cell.clone();
         }
         updateCellAttributes(cell);
-        cells.push(cell);
+        // cells.push(cell);
+        cellWires.push(cell);
       });
 
-      return cells;
+      return [cells, cellWires];
     }
 
     this.isTopLevel = function () {
@@ -2200,8 +2239,13 @@ angular.module('icestudio').service(
               ) * gridsize,
           },
         };
-        let cells = graphToCells(design.graph, opt);
+        let [cells, cellsw] = graphToCells(design.graph, opt);
+        graph.startBatch('appendDesign');
         graph.addCells(cells);
+        graph.stopBatch('appendDesign');
+        graph.startBatch('appendDesignW');
+        graph.addCells(cellsw);
+        graph.stopBatch('appendDesignW');
 
         // Select pasted elements
         _.each(cells, function (cell) {

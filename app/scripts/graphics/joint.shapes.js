@@ -283,9 +283,109 @@ joint.shapes.ice.ModelView = joint.dia.ElementView.extend({
     this.listenTo(this.model, 'process:ports', this.update);
   },
 
-  setupResizer: function () {
-    // Resizer
+  place: function (selector, bbox, state, queue) {
+    const bw = Math.round(bbox.width);
+    const bh = Math.round(bbox.height);
+    const bx = Math.round(bbox.x * state.zoom + state.pan.x);
+    const by = Math.round(bbox.y * state.zoom + state.pan.y);
 
+    const box = this.$box[0];
+
+    if (typeof box.dataset.osize === 'undefined') {
+      // Estilos iniciales de box
+      box.style.left = '0px';
+      box.style.top = '0px';
+
+      // Cachear y obtener elementos hijos
+      const cacheKey = this.id + this.cid + selector;
+      let gcontent = domCache[cacheKey];
+      if (!gcontent) {
+        gcontent = Array.from(box.querySelectorAll(selector));
+        domCache[cacheKey] = gcontent;
+      }
+
+      // Estilos de gcontent
+      for (let i = 0; i < gcontent.length; i++) {
+        gcontent[i].style.left = '0px';
+        gcontent[i].style.top = '0px';
+        gcontent[i].style.height = bh + 'px';
+        gcontent[i].style.width = bw + 'px';
+      }
+
+      // Estilos finales de box
+      box.style.height = bh + 'px';
+      box.style.width = bw + 'px';
+      box.dataset.osize = `w:${bw}|h:${bh}`;
+      box.style['transform-origin'] = '0 0';
+    }
+
+    box.style.transform = `translate3d(${bx}px, ${by}px, 0) scale(${state.zoom})`;
+  },
+
+  placeIO: function (data, bbox, state) {
+    const virtualtopOffset = 24;
+    const fpgaTopOffset = data.name || data.range || data.clock ? 0 : 24;
+
+    let bx = Math.round(bbox.x * state.zoom + state.pan.x);
+    let by = Math.round(bbox.y * state.zoom + state.pan.y);
+    const bx0 = bx;
+    const by0 = by;
+    const bw = bbox.width;
+    let bh = bbox.height;
+
+    const box = this.nativeDom.box;
+
+    if (typeof box.dataset.osize === 'undefined') {
+      box.dataset.osize = `w:${bw}|h:${bh}`;
+
+      Object.assign(box.style, {
+        'left': '0px',
+        'top': '0px',
+        'width': `${bw}px`,
+        'height': `${bh}px`,
+        'transform-origin': '0 0',
+      });
+
+      bx = Math.round((bbox.width / 2.0) * (state.zoom - 1));
+      by = Math.round(
+        ((bbox.height - virtualtopOffset) / 2.0) * (state.zoom - 1) +
+          (virtualtopOffset / 2.0) * state.zoom
+      );
+      bh = Math.round(bbox.height - virtualtopOffset);
+
+      this.nativeDom.virtualContentSelector.forEach((el) => {
+        Object.assign(el.style, {
+          left: '0px',
+          top: '20%',
+          width: `${bw}px`,
+          height: `${bh}px`,
+        });
+      });
+    }
+
+    bh = Math.round(bbox.height - fpgaTopOffset);
+
+    this.nativeDom.fpgaContentSelector.forEach((el) => {
+      Object.assign(el.style, {
+        left: '0px',
+        top: '0px',
+        width: `${bw}px`,
+        height: `${bh}px`,
+      });
+    });
+
+    box.style.transform = `translate3d(${bx0}px, ${by0}px, 0) scale(${state.zoom})`;
+
+    if (this.headerSelector) {
+      if (data.name || data.range || data.clock) {
+        this.headerSelector.removeClass('hidden');
+      } else {
+        this.headerSelector.addClass('hidden');
+      }
+    }
+  },
+
+  setupResizer: function () {
     if (!this.model.get('disabled')) {
       this.resizing = false;
       this.resizer = this.$box.find('.resizer');

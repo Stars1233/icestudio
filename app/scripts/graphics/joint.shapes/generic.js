@@ -1,6 +1,3 @@
-//-- jshint rules
-/* global  placementCssTasks */
-
 'use strict';
 
 // Generic block
@@ -157,11 +154,55 @@ joint.shapes.ice.GenericView = joint.shapes.ice.ModelView.extend({
     this.updateBox();
   },
 
-  place: placementCssTasks,
   onUpdating: false,
   initialized: false,
 
+  // place:placementCssTasks,
+
   updateBox: function () {
+    if (this.onUpdating === false) {
+      this.onUpdating = true;
+
+      const bbox = this.model.getBBox();
+      const data = this.model.get('data');
+      const state = this.model.get('state');
+      const rules = this.model.get('rules');
+      const modelId = this.model.id;
+
+      let tokId = 'port-wire-' + modelId + '-';
+      this.cacheDome = {};
+
+      if (data && data.ports && data.ports.in) {
+        tokId = 'port-default-' + modelId + '-';
+        for (let i = 0; i < data.ports.in.length; i++) {
+          const port = data.ports.in[i];
+          const ckey = tokId + port.name;
+          let portDefault =
+            typeof this.cacheDome[ckey] !== 'undefined'
+              ? this.cacheDome[ckey]
+              : document.getElementById(tokId + port.name);
+          this.cacheDome[ckey] = portDefault;
+
+          if (
+            portDefault !== null &&
+            rules &&
+            port.default &&
+            port.default.apply
+          ) {
+            portDefault.classList.add('port-visible');
+          } else {
+            if (portDefault !== null) {
+              portDefault.classList.remove('port-visible');
+            }
+          }
+        }
+      }
+
+      this.onUpdating = false;
+      this.place('.generic-content', bbox, state, []);
+    }
+  },
+  updateBoxOriginal: function () {
     if (this.onUpdating === false) {
       this.onUpdating = true;
       let pendingTasks = [];
@@ -171,70 +212,15 @@ joint.shapes.ice.GenericView = joint.shapes.ice.ModelView.extend({
       let data = this.model.get('data');
       const state = this.model.get('state');
       const rules = this.model.get('rules');
-      // const leftPorts = this.model.get('leftPorts');
-      //const rightPorts = this.model.get('rightPorts');
       const modelId = this.model.id;
 
-      /// let width = WIRE_WIDTH * state.zoom;
-
       this.initialized = true;
-      // const nwidth = width * 3;
       let tokId = 'port-wire-' + modelId + '-';
       let dome;
       this.cacheDome = {};
       let ckey = '--';
 
-      // CODE IN TESTING REMOVE IN NEXT ITERATION, NOT REMOVE FOR THE MOMENT
-      /*  if (typeof this.pwires === 'undefined') {
-          this.pwires = this.$el[0].getElementsByClassName('port-wire');
-        }
-
-        for (i = 0; i < this.pwires.length; i++) {
-          pendingTasks.push({
-            e: this.pwires[i],
-            property: 'stroke-width',
-            value: width + 'px',
-          });
-        }
-        for (i = 0; i < leftPorts.length; i++) {
-          port = leftPorts[i];
-          if (port.size > 1) {
-            ckey = tokId + port.id;
-            dome =
-              typeof this.cacheDome[ckey] !== 'undefined'
-                ? this.cacheDome[ckey]
-                : document.getElementById(tokId + port.id);
-            this.cacheDome[ckey] = dome;
-
-            pendingTasks.push({
-              e: dome,
-              property: 'stroke-width',
-              value: nwidth + 'px',
-            });
-          }
-        }
-
-        for (i = 0; i < rightPorts.length; i++) {
-          port = rightPorts[i];
-          if (port.size > 1) {
-            //dome = document.getElementById(tokId + port.id);
-            ckey = tokId + port.id;
-            dome =
-              typeof this.cacheDome[ckey] !== 'undefined'
-                ? this.cacheDome[ckey]
-                : document.getElementById(tokId + port.id);
-            this.cacheDome[ckey] = dome;
-
-            pendingTasks.push({
-              e: dome,
-              property: 'stroke-width',
-              value: nwidth + 'px',
-            });
-          }
-        }*/
-
-      // Render rules
-      var portDefault; //, paths, rects, j;
+      var portDefault;
 
       if (data && data.ports && data.ports.in) {
         tokId = 'port-default-' + modelId + '-';
@@ -254,56 +240,17 @@ joint.shapes.ice.GenericView = joint.shapes.ice.ModelView.extend({
             port.default.apply
           ) {
             portDefault.classList.add('port-visible');
-
-            /* pendingTasks.push({
-                e: portDefault,
-                property: 'display',
-                value: 'inline',
-              });*/
-
-            /* paths = domCache[tokId + port.name + 'path'];
-              if (!paths) {
-                paths = portDefault.querySelectorAll('path');
-                domCache[tokId + port.name + 'path'] = paths;
-              }
-
-              for (j = 0; j < paths.length; j++) {
-                pendingTasks.push({
-                  e: paths[j],
-                  property: 'stroke-width',
-                  value: width + 'px',
-                });
-              }
-              rects = domCache[tokId + port.name + 'rect'];
-              if (!rects) {
-                rects = portDefault.querySelectorAll('rect');
-                domCache[tokId + port.name + 'rect'] = rects;
-              }
-
-              for (j = 0; j < rects.length; j++) {
-                pendingTasks.push({
-                  e: rects[j],
-                  property: 'stroke-width',
-                  value: state.zoom + 'px',
-                });
-              }*/
           } else {
             if (portDefault !== null) {
               portDefault.classList.remove('port-visible');
             }
-            /*
-              pendingTasks.push({
-                e: portDefault,
-                property: 'display',
-                value: 'none',
-              });*/
           }
         }
       }
 
       this.onUpdating = false;
-      return this.place('.generic-content', bbox, state, pendingTasks);
+      this.place('.generic-content', bbox, state, pendingTasks);
     }
-    return false;
+    //return false;
   },
 });

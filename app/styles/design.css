@@ -176,7 +176,7 @@
 
 g {
   fill: transparent;
-  transition: opacity 0.2s;
+  /*  transition: opacity 0.2s;*/
 }
 
 .disable-port {
@@ -541,7 +541,7 @@ g {
   position: absolute;
   pointer-events: none;
   z-index: 0;
-  transition: opacity 0.2s;
+  /*transition: opacity 0.2s;*/
   overflow: hidden;
 }
 
@@ -949,4 +949,12 @@ g {
 .js-codeblock-io-edit .fa-edit:before {
   padding-left: 8px;
   font-size: small;
+}
+
+.body.onzoom .ace-editor {
+  display: none;
+}
+.body.onzoom .code-content {
+  background: transparent;
+  border-width: 5px;
 }

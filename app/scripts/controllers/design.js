@@ -235,7 +235,6 @@ cells.sort((a, b) => {
             common.isEditingSubmodule = true;
             subModuleActive = true;
           }
-          //requestAnimationFrame(() => {
           setTimeout(() => {
             $rootScope.$broadcast('navigateProject', {
               update: false,
@@ -244,9 +243,9 @@ cells.sort((a, b) => {
               fromDoubleClick: false,
             });
             utils.rootScopeSafeApply();
+
             utils.endBlockingTask();
           }, 0);
-          // });
         }
       };
 
@@ -254,7 +253,7 @@ cells.sort((a, b) => {
         utils.beginBlockingTask();
         setTimeout(function () {
           _decoupledLoadSelectedGraph();
-        }, 500);
+        }, 0);
       }
 
       function _decoupledLoadSelectedGraph() {

@@ -80,3 +80,8 @@
   stroke-width: 1.2;
   stroke-linejoin round;
 }
+
+.ace-editor{
+//transition: opacity 0.2s ease-in-out;
+
+}

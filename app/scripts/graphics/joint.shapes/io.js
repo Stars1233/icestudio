@@ -17,9 +17,9 @@ joint.shapes.ice.IO = joint.shapes.ice.Model.extend({
   },
 
   updateSize: function () {
+    let name = this.get('data').name;
     const fontSize = 14;
 
-    let name = this.get('data').name;
     const pins = this.get('data').pins;
 
     for (let i in pins) {
@@ -380,8 +380,9 @@ joint.shapes.ice.IOView = joint.shapes.ice.ModelView.extend({
     this.renderPorts();
     joint.dia.ElementView.prototype.update.apply(this, arguments);
   },
-  place: placementCssIOTasks,
+  //place: placementCssIOTasks,
   pendingRender: false,
+  //place:placementCssIOTasks,
   updateBox: function () {
     const size = this.model.get('size');
     this.virtualContentSelector.width(size.width);
@@ -397,128 +398,8 @@ joint.shapes.ice.IOView = joint.shapes.ice.ModelView.extend({
     var portDefault, tokId, dome;
     var paths, rects;
     var width = WIRE_WIDTH * state.zoom;
-
-    /*FOR THE MOMENT NOT DELETE COMMENTED OLD CODE */
-    /* var pwires = this.$el[0].getElementsByClassName('port-wire');
-    for (i = 0; i < pwires.length; i++) {
-      pendingTasks.push({
-        e: pwires[i],
-        property: 'stroke-width',
-        value: width + 'px',
-      });
-    }
-
-    // Set buses
-    var nwidth = width * 3;
-    tokId = 'port-wire-' + modelId + '-';
-    let ckey = '--';
-    this.cacheDome = {};
-    for (i = 0; i < leftPorts.length; i++) {
-      port = leftPorts[i];
-      if (port.size > 1) {
-        //dome = document.getElementById(tokId + port.id);
-        ckey = tokId + port.id;
-        dome =
-          typeof this.cacheDome[ckey] !== 'undefined'
-            ? this.cacheDome[ckey]
-            : document.getElementById(ckey);
-        this.cacheDome[ckey] = dome;
-
-        pendingTasks.push({
-          e: dome,
-          property: 'stroke-width',
-          value: nwidth + 'px',
-        });
-      }
-    }
-
-    for (i = 0; i < rightPorts.length; i++) {
-      port = rightPorts[i];
-      if (port.size > 1) {
-        // dome = document.getElementById(tokId + port.id);
-        ckey = tokId + port.id;
-        dome =
-          typeof this.cacheDome[ckey] !== 'undefined'
-            ? this.cacheDome[ckey]
-            : document.getElementById(ckey);
-        this.cacheDome[ckey] = dome;
-
-        pendingTasks.push({
-          e: dome,
-          property: 'stroke-width',
-          value: nwidth + 'px',
-        });
-      }
-    }
-    // Render rules
-    if (data && data.ports && data.ports.in) {
-      tokId = 'port-default-' + modelId + '-';
-      for (i = 0; i < data.ports.in.length; i++) {
-        port = data.ports.in[i];
-        ckey = tokId + port.name;
-        portDefault =
-          typeof this.cacheDome[ckey] !== 'undefined'
-            ? this.cacheDome[ckey]
-            : document.getElementById(ckey);
-        this.cacheDome[ckey] = portDefault;
-
-        // portDefault = document.getElementById(tokId + port.name);
-        if (
-          portDefault !== null &&
-          rules &&
-          port.default &&
-          port.default.apply
-        ) {
-          pendingTasks.push({
-            e: portDefault,
-            property: 'display',
-            value: 'inline',
-          });
-
-          paths = portDefault.querySelectorAll('path');
-          for (j = 0; j < paths.length; j++) {
-            pendingTasks.push({
-              e: paths[j],
-              property: 'stroke-width',
-              value: width + 'px',
-            });
-          }
-
-          rects = portDefault.querySelectorAll('rect');
-          for (j = 0; j < rects.length; j++) {
-            pendingTasks.push({
-              e: rects[j],
-              property: 'stroke-width',
-              value: state.zoom + 'px',
-            });
-          }
-        } else {
-          pendingTasks.push({
-            e: portDefault,
-            property: 'display',
-            value: 'none',
-          });
-        }
-      }
-    }*/
-
-    //
-    return this.place(data, bbox, state, pendingTasks);
+    return this.placeIO(data, bbox, state, pendingTasks);
   },
-  /*
-  drawPendingTasks: function (tasks) {
-    let _this = this;
-    function applyDrawPendingTasks() {
-      var i = tasks.length;
-      for (i = 0; i < tasks.length; i++) {
-        if (_this.tasks[i].e !== null) {
-          tasks[i].e.style[tasks[i].property] = tasks[i].value;
-        }
-      }
-    }
-    requestAnimationFrame(applyDrawPendingTasks);
-  },
-*/
   removeBox: function () {
     // Close select options on remove
     this.$box.find('select').select2('close');
