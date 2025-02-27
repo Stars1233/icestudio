@@ -21,6 +21,7 @@ let graph = null;
 //-- It is created by the joint.dia.Paper constructor
 let paper = null;
 
+let queuePanZoom = [];
 angular.module('icestudio').service(
   'graph',
   function (
@@ -442,8 +443,7 @@ angular.module('icestudio').service(
         cacheEditors = [];
 
         cacheEditors.push(...document.querySelectorAll('.ace_editor'));
-        cacheEditors.push(...document.querySelectorAll('.io-block'));
-        console.log(cacheEditors);
+        // cacheEditors.push(...document.querySelectorAll('.io-block'));
         requestAnimationFrame(() => {
           cacheEditors.forEach((editor) => {
             editor.style.display = 'none';
@@ -503,11 +503,11 @@ angular.module('icestudio').service(
               oncePerZoomHook = true;
               disableAceEditors();
               // Close expanded combo
-              /* if (
+              if (
                 document.activeElement.className === 'select2-search__field'
               ) {
                 $('select').select2('close');
-              }*/
+              }
             }
           }
           //-- Optimization strategy, try to launch a timeout that is deleted
@@ -524,21 +524,23 @@ angular.module('icestudio').service(
               //-- Remove because i link updateCellboxes action to render browser flow
               //-- maintain to remember it and do a window frame time for testing until
               //-- remove it
-              updateCellBoxes();
+              // updateCellBoxes();
+              queuePanZoom.push(1);
             }
           }, 400);
         },
         onPan: function (newPan) {
           state.pan = newPan;
-          graph.trigger('state', state);
-
+          //graph.trigger('state', state);
           // updateCellBoxes();
+          queuePanZoom.push(1);
         },
       });
 
       let isUpdatingCells = false;
       function updateCellBoxes() {
         if (!isUpdatingCells) {
+          //console.log('UPDBOX ==>');
           isUpdatingCells = true;
           /* jshint ignore:start */
           const cells = graph.getCells().filter((cell) => !cell.isLink());
@@ -554,7 +556,7 @@ angular.module('icestudio').service(
           graph.startBatch('batch-update');
 
           let index = 0;
-          const batchSize = 50; // Mantener pequeño por DOM en placementCssIOTasks
+          const batchSize = 100; // Small set for DOM manipulation batch
 
           function processBatch() {
             const startTime = performance.now();
@@ -562,7 +564,6 @@ angular.module('icestudio').service(
             const end = Math.min(index + batchSize, cells.length);
             const updates = [];
 
-            // Preparar celdas
             for (
               ;
               index < end && performance.now() - startTime < maxTimePerFrame;
@@ -573,9 +574,8 @@ angular.module('icestudio').service(
               updates.push(viewCache.get(cell.id));
             }
 
-            // Aplicar actualizaciones en lote
             updates.forEach((elementView) => {
-              elementView.updateBox(); // Incluye placementCssIOTasks optimizado
+              elementView.updateBox();
               selectionView.updateBox(elementView.model);
             });
 
@@ -583,8 +583,9 @@ angular.module('icestudio').service(
               requestAnimationFrame(processBatch);
             } else {
               graph.stopBatch('batch-update');
-              graph.trigger('change'); // Forzar renderizado en 2.0.1
+              graph.trigger('change');
               isUpdatingCells = false;
+              //  console.log('<===UPDBOX');
             }
           }
           requestAnimationFrame(processBatch);
@@ -593,6 +594,16 @@ angular.module('icestudio').service(
       }
 
       // Events
+
+      function loopUpdateBoxes() {
+        if (!isUpdatingCells && queuePanZoom.length > 0) {
+          queuePanZoom.length = 0;
+          updateCellBoxes();
+        }
+        requestAnimationFrame(loopUpdateBoxes);
+      }
+
+      requestAnimationFrame(loopUpdateBoxes);
 
       let shiftPressed = false;
 
