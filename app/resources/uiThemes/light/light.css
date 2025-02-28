@@ -967,3 +967,26 @@
 .js-codeblock-io-edit:hover {
   color: #aaa;
 }
+
+.tabs {
+  border-color: #e7e7e7;
+}
+
+.tabs li {
+  background: #f5f6f7;
+  color: #333;
+}
+
+li.active {
+  border-color: #3593d2 !important;
+  background: #e7e7e7;
+}
+
+.tabs li:hover {
+  background: #eee;
+}
+
+.tab-content {
+  border-color: #e7e7e7;
+  color: #333;
+}

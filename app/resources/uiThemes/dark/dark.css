@@ -957,3 +957,26 @@
 .js-codeblock-io-edit:hover {
   color: #7ccff4;
 }
+
+.tabs {
+  border-color: #666;
+}
+
+.tabs li {
+  background: #444;
+  color: white;
+}
+
+.tabs li.active {
+  border-color: #7bc5ff;
+  background: #666;
+}
+
+.tabs li:hover {
+  background: #666;
+}
+
+.tab-content {
+  border-color: #666;
+  color: white;
+}
