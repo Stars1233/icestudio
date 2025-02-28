@@ -305,7 +305,6 @@ joint.shapes.ice.ModelView = joint.dia.ElementView.extend({
       } else {
         console.log('HIT');
       }
-      console.log(domCache, ' ==>' + cacheKey);
 
       // Estilos de gcontent
       for (let i = 0; i < gcontent.length; i++) {

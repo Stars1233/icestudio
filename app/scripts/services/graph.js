@@ -20,7 +20,7 @@ let graph = null;
 //-- The diagrams are place on a Paper
 //-- It is created by the joint.dia.Paper constructor
 let paper = null;
-
+let state = false;
 let queuePanZoom = [];
 angular.module('icestudio').service(
   'graph',
@@ -111,7 +111,7 @@ angular.module('icestudio').service(
 
     //-- Current view state: Position and Zoom
     //-- It is initialized from VIEWSTATE_INIT
-    let state = utils.clone(VIEWSTATE_INIT);
+    state = utils.clone(VIEWSTATE_INIT);
     state.mutateZoom = false;
     let z = { index: 100 };
     let selection = null;
@@ -531,7 +531,7 @@ angular.module('icestudio').service(
         },
         onPan: function (newPan) {
           state.pan = newPan;
-          //graph.trigger('state', state);
+          graph.trigger('state', state);
           // updateCellBoxes();
           queuePanZoom.push(1);
         },
@@ -600,12 +600,12 @@ angular.module('icestudio').service(
           queuePanZoom.length = 0;
           updateCellBoxes();
         }
-        //  requestAnimationFrame(loopUpdateBoxes);
-        setTimeout(() => loopUpdateBoxes(), 150);
+        requestAnimationFrame(loopUpdateBoxes);
+        //setTimeout(() => loopUpdateBoxes(), 150);
       }
 
-      // requestAnimationFrame(loopUpdateBoxes);
-      setTimeout(() => loopUpdateBoxes(), 150);
+      requestAnimationFrame(loopUpdateBoxes);
+      //setTimeout(() => loopUpdateBoxes(), 150);
 
       let shiftPressed = false;
 

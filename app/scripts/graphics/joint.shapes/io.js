@@ -394,7 +394,8 @@ joint.shapes.ice.IOView = joint.shapes.ice.ModelView.extend({
     var pendingTasks = [];
     var bbox = this.model.getBBox();
     var data = this.model.get('data');
-    var state = this.model.get('state');
+    // var state = this.model.get('state');
+    console.log('STATE', state);
     return this.placeIO(data, bbox, state, pendingTasks);
   },
   removeBox: function () {
