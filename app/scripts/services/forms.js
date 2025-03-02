@@ -9,6 +9,55 @@ angular
     'forms',
     function (gettextCatalog, common, profile, blocks, utils, nodeFs) {
       //---------------------------------------------------------
+      //-- LABELFIELD. It represents a static text label in the Form
+      //---------------------------------------------------------
+      //-- This is how this field is rendered in the Form
+      //
+      //    Label text
+      //    +-----------------+
+      //----------------------------------------------------------
+      class LabelField {
+        //-----------------------------------------------------------------------
+        //-- Input parameters:
+        //--   * msg: The label text to be displayed
+        //--   * formId: Form identification number
+        //-----------------------------------------------------------------------
+        constructor(msg, formId) {
+          //-- Properties
+          this.msg = msg;
+          this.formId = formId;
+
+          //-- Html template for rendering the label
+          //-- The parameters are:
+          //--  %TEXT% : Label text
+          //--  %ID% : Form identification number
+          this.htmlTemplate = `
+            <p id="label%ID%" class="form-label"> %TEXT% </p>
+          `;
+        }
+
+        //---------------------------------------------------------
+        //-- Return a string with the HTML code for this field
+        //---------------------------------------------------------
+        html() {
+          //-- Insert the parameters in the html template
+          let html = this.htmlTemplate.replace('%TEXT%', this.msg);
+          html = html.replace('%ID%', this.formId);
+
+          return html;
+        }
+
+        //---------------------------------------------
+        //-- Read the Field value (returns the label text)
+        //---------------------------------------------
+        read() {
+          //-- Read the text content from the DOM
+          let value = $(`#label${this.formId}`).text();
+          return value;
+        }
+      }
+
+      //---------------------------------------------------------
       //-- TEXTFIELD. It represents a Form Input text field
       //---------------------------------------------------------
       //-- This is how this field is rendered in the Form
@@ -1710,6 +1759,12 @@ angular
           }
 
           const toolsLabel = gettextCatalog.getString('Tools');
+
+          let field5 = new LabelField(
+            gettextCatalog.getString('Import Verilog code from file'), //-- Label text
+            5 //-- Field id
+          );
+          this.addField(field5, toolsLabel);
 
           this.code = '';
           let self = this;
