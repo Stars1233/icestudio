@@ -641,6 +641,17 @@ angular
 
           return value;
         }
+
+        //------------------------------------------------
+        //-- Attach a callback function to the change event
+        //-- INPUT:
+        //--   * callback: Function to execute on change
+        //------------------------------------------------
+        onChange(callback) {
+          $(`#form${this.formId}`).on('change', function () {
+            callback($(this).val());
+          });
+        }
       }
 
       //---------------------------------------------------------
