@@ -81,6 +81,7 @@ angular
           this.msg = msg;
           this.value = value;
           this.formId = formId;
+          this.onChangeCallback = null;
 
           //-- Html template for building the text field
           //-- The parameters are:
@@ -127,6 +128,20 @@ angular
         write(value) {
           //-- Write the value to the DOM
           $(`#form${this.formId}`).val(value);
+        }
+
+        //------------------------------------------------
+        onChange(callback) {
+          this.onChangeCallback = callback;
+        }
+
+        init() {
+          const selector = `#form${this.formId}`;
+          if (this.onChangeCallback && $(selector).length) {
+            $(selector).on('input', (e) => {
+              this.onChangeCallback($(e.target).val());
+            });
+          }
         }
       }
 
