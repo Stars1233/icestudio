@@ -764,6 +764,8 @@ angular
             allowDeleteRow: true,
             allowInsertColumn: false,
             allowManualInsertRow: false,
+            tableOverflow: true,
+            tableHeight: '200px',
           });
         }
 
