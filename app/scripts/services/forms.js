@@ -1,3 +1,5 @@
+/* global jspreadsheet */
+
 //---------------------------------------------------------------------------
 //-- Forms managment
 //---------------------------------------------------------------------------
@@ -79,6 +81,7 @@ angular
           this.msg = msg;
           this.value = value;
           this.formId = formId;
+          this.onChangeCallback = null;
 
           //-- Html template for building the text field
           //-- The parameters are:
@@ -125,6 +128,20 @@ angular
         write(value) {
           //-- Write the value to the DOM
           $(`#form${this.formId}`).val(value);
+        }
+
+        //------------------------------------------------
+        onChange(callback) {
+          this.onChangeCallback = callback;
+        }
+
+        init() {
+          const selector = `#form${this.formId}`;
+          if (this.onChangeCallback && $(selector).length) {
+            $(selector).on('input', (e) => {
+              this.onChangeCallback($(e.target).val());
+            });
+          }
         }
       }
 
@@ -711,6 +728,56 @@ angular
         }
       }
 
+      //---------------------------------------------------------
+      //-- GRIDFIELD. It represents a grid in a Form
+      //---------------------------------------------------------
+      class GridField {
+        constructor(formId, className, cols, data) {
+          this.cols = cols;
+          this.data = data;
+          this.tableId = `table${formId}`;
+          this.table = null;
+          this.className = className;
+
+          //-- Html template for building the grid
+          this.htmlTemplate = `
+            <div id="%TABLE_ID%" class="%CLASS_NAME%"></div>
+          `;
+        }
+
+        //---------------------------------------------------------
+        //-- Return a string with the HTML code for this grid
+        //---------------------------------------------------------
+        html() {
+          return this.htmlTemplate
+            .replace('%TABLE_ID%', `${this.tableId}`)
+            .replace('%CLASS_NAME%', `${this.className}`);
+        }
+
+        //---------------------------------------------
+        init() {
+          this.table = jspreadsheet(document.getElementById(this.tableId), {
+            data: this.data,
+            columns: this.cols,
+            rowDrag: true,
+            allowInsertRow: true,
+            allowDeleteRow: true,
+            allowInsertColumn: false,
+            allowManualInsertRow: false,
+            tableOverflow: true,
+            tableHeight: '200px',
+          });
+        }
+
+        //---------------------------------------------
+        //-- Read the Field value
+        //-- Return the data in the grid
+        //---------------------------------------------
+        read() {
+          return this.table.getData();
+        }
+      }
+
       class Form {
         //-- Build a blank form
         constructor() {
@@ -922,6 +989,26 @@ angular
           return html;
         }
 
+        init() {
+          if (Array.isArray(this.fields)) {
+            //-- Initialize the fields
+            this.fields.forEach((field) => {
+              if ('init' in field) {
+                field.init();
+              }
+            });
+          } else {
+            //-- Initialize the fields
+            Object.keys(this.fields).forEach((tab) => {
+              this.fields[tab].forEach((field) => {
+                if ('init' in field) {
+                  field.init();
+                }
+              });
+            });
+          }
+        }
+
         //-----------------------------------------------------------------
         //-- Display the Form
         //-- INPUT:
@@ -930,16 +1017,24 @@ angular
         display(callback) {
           //-- Create the HTML
           let html = this.html();
-          //-- Display the Form
-          alertify
-            .confirm(html)
+          const self = this;
 
-            //-- Set the callback for the OK button
-            .set('onok', callback)
+          const dialog = alertify.confirm();
+          dialog.setContent(html);
 
-            //-- Set the callback for the Candel button:
-            //--   Do nothing...
-            .set('oncancel', function (/*evt*/) {});
+          //-- Set the callback for the OK button
+          dialog.set('onok', callback);
+
+          //-- Set the callback for the Cancel button:
+          //--   Do nothing...
+          dialog.set('oncancel', function (/*evt*/) {});
+
+          //-- Set the callback for the show event:
+          dialog.set('onshow', function () {
+            self.init();
+          });
+
+          dialog.show();
 
           $(document).on('click', '.tabs .tab-item', function () {
             const selectedTab = $(this).attr('data-tab');
@@ -1858,15 +1953,48 @@ angular
             },
           ];
 
-          let field7 = new ComboboxField(
+          const columns = [
+            { type: 'text', title: 'Name', width: 150 },
+            {
+              type: 'dropdown',
+              title: 'Type',
+              width: 70,
+              source: ['IN', 'OUT', 'BIDI'],
+            },
+            { type: 'numeric', title: 'Bus width', width: 80 },
+            { type: 'checkbox', title: 'Signed', width: 55 },
+            { type: 'checkbox', title: 'Registered', width: 80 },
+            { type: 'checkbox', title: 'Enable', width: 60 },
+          ];
+          const data = [['', 'IN', 0, false, false, true]];
+
+          let field7 = new GridField(7, 'ports-table', columns, data);
+          this.addField(field7, modulePortsLabel);
+
+          field0.onChange((value) => {
+            updateIOPortsTable(field7.table, value, 'IN');
+          });
+          field1.onChange((value) => {
+            updateIOPortsTable(field7.table, value, 'OUT');
+          });
+          if (allowInoutPorts) {
+            field3.onChange((value) => {
+              updateIOPortsTable(field7.table, value, 'BIDI');
+            });
+            field4.onChange((value) => {
+              updateIOPortsTable(field7.table, value, 'BIDI');
+            });
+          }
+
+          let field8 = new ComboboxField(
             options,
             gettextCatalog.getString('Display mode:'), //-- Top message
             1, //-- Default value
-            7, //-- Field id
+            8, //-- Field id
             'fit-content' //-- Width
           );
 
-          this.addField(field7, modulePortsLabel);
+          this.addField(field8, modulePortsLabel);
 
           //-- Control the notifications generated by
           //-- the errors when processing the form
@@ -2700,5 +2828,74 @@ angular
       this.FormExternalPlugins = FormExternalPlugins;
       this.FormPythonEnv = FormPythonEnv;
       this.FormExternalCollections = FormExternalCollections;
+
+      //------------------------------------------------------------------------
+      //-- Private functions
+      //------------------------------------------------------------------------
+      function updateIOPortsTable(instance, textList, type) {
+        const newNames = textList
+          .split(',')
+          .map((n) => n.trim())
+          .filter((n) => n !== '');
+
+        const defaultRow = ['', 'IN', 0, false, false, true];
+        const data = instance.getData();
+
+        const nameToRowIndex = new Map();
+        const usedIndexes = new Set();
+
+        data.forEach((row, index) => {
+          const name = row[0];
+          if (name) {
+            nameToRowIndex.set(name, index);
+          }
+        });
+
+        newNames.forEach((name) => {
+          if (nameToRowIndex.has(name)) {
+            const i = nameToRowIndex.get(name);
+            const row = instance.getData()[i];
+            if (row[1] !== type) {
+              instance.setValueFromCoords(1, i, type);
+            }
+            usedIndexes.add(i);
+          } else {
+            let reused = false;
+            for (let i = 0; i < data.length; i++) {
+              const [existingName, existingType] = data[i];
+              if (
+                existingType === type &&
+                !newNames.includes(existingName) &&
+                !usedIndexes.has(i) &&
+                existingName
+              ) {
+                instance.setValueFromCoords(0, i, name);
+                usedIndexes.add(i);
+                reused = true;
+                break;
+              }
+            }
+            if (!reused) {
+              instance.insertRow([name, type, 0, false, false, true]);
+            }
+          }
+        });
+
+        for (let i = instance.getData().length - 1; i >= 0; i--) {
+          const [name, rowType] = instance.getData()[i];
+          if (rowType === type && name && !newNames.includes(name)) {
+            instance.deleteRow(i);
+          }
+        }
+
+        const updated = instance.getData();
+        for (let i = updated.length - 1; i >= 0; i--) {
+          if (!updated[i][0]) {
+            instance.deleteRow(i);
+          }
+        }
+
+        instance.insertRow([...defaultRow]);
+      }
     }
   );
