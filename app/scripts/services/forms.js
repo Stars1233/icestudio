@@ -1,3 +1,5 @@
+/* global jspreadsheet */
+
 //---------------------------------------------------------------------------
 //-- Forms managment
 //---------------------------------------------------------------------------
@@ -710,6 +712,53 @@ angular
           return '';
         }
       }
+
+      //---------------------------------------------------------
+      //-- GRIDFIELD. It represents a grid in a Form
+      //---------------------------------------------------------
+      class GridField {
+        constructor(cols, formId, data = []) {
+          this.cols = cols;
+          this.data = data;
+          this.tableId = `table${formId}`;
+          this.table = null;
+
+          //-- Html template for building the grid
+          this.htmlTemplate = `
+            <div id="%TABLE_ID%" class="grid-table"></div>
+          `;
+        }
+
+        //---------------------------------------------------------
+        //-- Return a string with the HTML code for this grid
+        //---------------------------------------------------------
+        html() {
+          return this.htmlTemplate.replace('%TABLE_ID%', `${this.tableId}`);
+        }
+
+        //---------------------------------------------
+        init() {
+          this.table = jspreadsheet(document.getElementById(this.tableId), {
+            data: [], //this.data,
+            columns: this.cols,
+            rowDrag: true,
+            allowInsertRow: true,
+            allowDeleteRow: true,
+            allowInsertColumn: false,
+            allowManualInsertRow: false,
+          });
+        }
+
+        //---------------------------------------------
+        //-- Read the Field value
+        //-- Return the data in the grid
+        //---------------------------------------------
+        read() {
+          return this.table.getData();
+        }
+      }
+
+      void GridField;
 
       class Form {
         //-- Build a blank form
