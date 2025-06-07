@@ -127,7 +127,7 @@ angular
         //---------------------------------------------
         write(value) {
           //-- Write the value to the DOM
-          $(`#form${this.formId}`).val(value);
+          $(`#form${this.formId}`).val(value).trigger('input');
         }
 
         //------------------------------------------------
