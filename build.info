@@ -1,8 +1,9 @@
-2025-02-27 21:32 (GMT+1)
+2025-04-19 08:36 (GMT+1)
 ========================
 Type: WIP
 
 App Changes:
+  - First attempt to new io/params form by @lcapacho @cavearr @Timrudy @jomo
   - Rendering queue to improve performance by @cavearr
   - Speed optimization, better css placement functions, calculus reduction and better render syncronization by @cavearr
   - Fix z-index modals and better waitter spinner by @cavearr
