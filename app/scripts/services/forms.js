@@ -768,6 +768,11 @@ angular
             tableOverflow: true,
             tableHeight: '200px',
             contextMenu: false,
+            onchange: () => {
+              if (typeof this.onEnter === 'function') {
+                this.onEnter(this);
+              }
+            },
           });
         }
 
@@ -2880,8 +2885,51 @@ angular
       //-- Private functions
       //------------------------------------------------------------------------
       function onEnterIOPortsTable(self) {
+        const grouped = {
+          IN: [],
+          OUT: [],
+          BIDI: [],
+        };
+
+        self.table.getData().forEach((row) => {
+          const enabled = row[5] !== false;
+          if (!enabled) {
+            return;
+          }
+          let name = row[0]?.trim();
+          const type = row[1]?.toUpperCase();
+          const busWidth = parseInt(row[2], 10);
+          const signed = row[3] === true;
+
+          if (!name || !type) {
+            return;
+          }
+
+          if (!isNaN(busWidth) && busWidth > 1) {
+            name += `[${busWidth - 1}:0]`;
+          }
+
+          if (signed) {
+            name = `@${name}`;
+          }
+
+          if (grouped[type]) {
+            grouped[type].push(name);
+          }
+        });
+
+        const inInput = document.querySelector('#form0');
+        const outInput = document.querySelector('#form1');
+        const bidiInput1 = document.querySelector('#form3');
+        const bidiInput2 = document.querySelector('#form4');
+
+        inInput.value = grouped.IN.join(', ');
+        outInput.value = grouped.OUT.join(', ');
+        bidiInput1.value = grouped.BIDI.join(', ');
+        bidiInput2.value = grouped.BIDI.join(', ');
+
         const coords = self.table.selectedCell || [];
-        const row = coords[0] || 0;
+        const row = coords[1] || 0;
         const data = self.table.getData();
         const rowData = self.table.getRowData(row);
         const name = rowData[0];
