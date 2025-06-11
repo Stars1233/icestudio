@@ -115,8 +115,8 @@ angular.module('icestudio').service(
     this.ICESTUDIO_HOME =
       this.WIN32 && process.arch === 'ia32' ? 'icestudio_home' : '.icestudio';
     this.BASE_DIR = process.env.HOME || process.env.USERPROFILE;
-    this.LOGFILE = nodePath.join(this.BASE_DIR, 'icestudio.log');
-    this.ICESTUDIO_DIR = nodePath.join(this.BASE_DIR, this.ICESTUDIO_HOME);
+    this.LOGFILE = process.env.ICESTUDIO_LOGFILE || nodePath.join(this.BASE_DIR, 'icestudio.log');
+    this.ICESTUDIO_DIR = process.env.ICESTUDIO_DIR || nodePath.join(this.BASE_DIR, this.ICESTUDIO_HOME);
 
     this.INTERNAL_COLLECTIONS_DIR = nodePath.join(
       this.ICESTUDIO_DIR,
