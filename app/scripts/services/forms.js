@@ -2345,10 +2345,10 @@ angular
             this.bidiInput2.write(grouped.BIDI.join(', '));
           }
 
-          const coords = self.table.selectedCell || [];
+          const coords = table.selectedCell || [];
           const row = coords[1] || 0;
-          const data = self.table.getData();
-          const rowData = self.table.getRowData(row);
+          const data = table.getData();
+          const rowData = table.getRowData(row);
           const name = rowData[0];
           const totalRows = data.length;
 
