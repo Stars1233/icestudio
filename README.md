@@ -23,7 +23,7 @@ Find all the information on this [WIKI PAGE](https://github.com/FPGAwars/icestud
 
 # Introduction
 
-Icestudio is a design tool focused on new comers to the FPGA world
+Icestudio is a design tool focused on newcomers to the FPGA world
 
 - **Step 1**: Draw your circuit
 
