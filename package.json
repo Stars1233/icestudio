@@ -52,7 +52,7 @@
     "json": "^11.0.0",
     "npm-platform-dependencies": "^0.1.0",
     "nw": "0.101.2",
-    "nw-builder": "^4.5.4",
+    "nw-builder": "4.13.16",
     "prettier": "^3.4.2"
   },
   "darwinDependencies": {
