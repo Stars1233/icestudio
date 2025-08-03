@@ -1,8 +1,9 @@
-2025-08-02 08:08 (GMT+1)
+2025-08-03 08:08 (GMT+1)
 ========================
 Type: WIP
 
 App Changes:
+  - Configure nwjs without sdk version to build the wip bundle
   - Force rebuild wip
   - Advances in the new io/params form by @lcapacho
   - First attempt to new io/params form by @lcapacho @cavearr @Timrudy @jomo
