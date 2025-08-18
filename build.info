@@ -1,8 +1,9 @@
-2025-08-03 08:08 (GMT+1)
+2025-08-18 17:02 (GMT+1)
 ========================
 Type: WIP
 
 App Changes:
+  - Fix code block render error for bad state.zoom management
   - Backward to nwjs 0.101.2 wip nwjs version
   - Configure nwjs without sdk version to build the wip bundle
   - Force rebuild wip
