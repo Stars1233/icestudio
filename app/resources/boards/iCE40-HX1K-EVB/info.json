@@ -1,0 +1,12 @@
+{
+  "label": "iCE40-HX1K-EVB",
+  "SysClkMhz": 100,
+  "datasheet": "https://github.com/OLIMEX/iCE40HX1K-EVB/blob/master/iCE40HX1K-EVB_Rev_B.pdf",
+  "interface": "FTDI",
+  "toolchain": "apio",
+  "FPGAResources": {
+    "pios": 206,
+    "plbs": 960,
+    "brams": 32
+  }
+}

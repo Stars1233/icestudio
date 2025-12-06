@@ -1,0 +1,372 @@
+[
+    {
+    "type": "input",
+    "name": "CLK",
+    "value": "15"
+  },
+  {
+    "type": "output",
+    "name": "GPIO1_12_LED1",
+    "value": "40"
+  },
+  {
+    "type": "output",
+    "name": "GPIO1_12_LED2",
+    "value": "51"
+  },
+  {
+    "type": "input",
+    "name": "BUT1",
+    "value": "41"
+  },
+  {
+    "type": "input",
+    "name": "BUT2",
+    "value": "42"
+  },
+  {
+    "type": "inout",
+    "name": "GPIO1_16_RXD",
+    "value": "36"
+  },
+  {
+    "type": "inout",
+    "name": "GPIO1_14_TXD",
+    "value": "37"
+  },
+  {
+    "type": "inout",
+    "name": "GPIO1_5",
+    "value": "1"
+  },
+  {
+    "type": "inout",
+    "name": "GPIO1_7",
+    "value": "2"
+  },
+  {
+    "type": "inout",
+    "name": "GPIO1_9",
+    "value": "3"
+  },
+  {
+    "type": "inout",
+    "name": "GPIO1_11",
+    "value": "4"
+  },
+  {
+    "type": "inout",
+    "name": "GPIO1_13",
+    "value": "7"
+  },
+  {
+    "type": "inout",
+    "name": "GPIO1_15",
+    "value": "8"
+  },
+  {
+    "type": "inout",
+    "name": "GPIO1_17",
+    "value": "9"
+  },
+  {
+    "type": "inout",
+    "name": "GPIO1_19",
+    "value": "10"
+  },
+  {
+    "type": "inout",
+    "name": "GPIO1_21",
+    "value": "12"
+  },
+  {
+    "type": "output",
+    "name": "GPIO1_23",
+    "value": "13"
+  },
+  {
+    "type": "inout",
+    "name": "GPIO1_25",
+    "value": "16"
+  },
+  {
+    "type": "inout",
+    "name": "GPIO1_27",
+    "value": "18"
+  },
+  {
+    "type": "inout",
+    "name": "GPIO1_29",
+    "value": "19"
+  },
+  {
+    "type": "inout",
+    "name": "GPIO1_31",
+    "value": "20"
+  },
+  {
+    "type": "inout",
+    "name": "GPIO1_33",
+    "value": "21"
+  },
+  {
+    "type": "inout",
+    "name": "GPIO1_34",
+    "value": "24"
+  },
+  {
+    "type": "inout",
+    "name": "GPIO1_32",
+    "value": "25"
+  },
+  {
+    "type": "inout",
+    "name": "GPIO1_30",
+    "value": "26"
+  },
+  {
+    "type": "inout",
+    "name": "GPIO1_28",
+    "value": "27"
+  },
+  {
+    "type": "inout",
+    "name": "GPIO1_26",
+    "value": "28"
+  },
+  {
+    "type": "inout",
+    "name": "GPIO1_24",
+    "value": "29"
+  },
+  {
+    "type": "inout",
+    "name": "GPIO1_22",
+    "value": "30"
+  },
+  {
+    "type": "inout",
+    "name": "GPIO1_20",
+    "value": "33"
+  },
+  {
+    "type": "inout",
+    "name": "GPIO1_18",
+    "value": "34"
+  },
+  {
+    "type": "inout",
+    "name": "SRAM_D15",
+    "value": "52"
+  },
+  {
+    "type": "inout",
+    "name": "SRAM_D14",
+    "value": "53"
+  },
+  {
+    "type": "inout",
+    "name": "SRAM_D13",
+    "value": "54"
+  },
+  {
+    "type": "inout",
+    "name": "SRAM_D12",
+    "value": "56"
+  },
+  {
+    "type": "inout",
+    "name": "SRAM_D11",
+    "value": "57"
+  },
+  {
+    "type": "inout",
+    "name": "SRAM_D10",
+    "value": "59"
+  },
+  {
+    "type": "inout",
+    "name": "SRAM_D9",
+    "value": "60"
+  },
+  {
+    "type": "inout",
+    "name": "SRAM_D0",
+    "value": "62"
+  },
+  {
+    "type": "inout",
+    "name": "SRAM_D1",
+    "value": "63"
+  },
+  {
+    "type": "inout",
+    "name": "SRAM_D2",
+    "value": "64"
+  },
+  {
+    "type": "inout",
+    "name": "SRAM_D3",
+    "value": "65"
+  },
+  {
+    "type": "inout",
+    "name": "SRAM_D4",
+    "value": "66"
+  },
+  {
+    "type": "inout",
+    "name": "SRAM_D5",
+    "value": "68"
+  },
+  {
+    "type": "inout",
+    "name": "SRAM_D6",
+    "value": "69"
+  },
+  {
+    "type": "inout",
+    "name": "SRAM_D7",
+    "value": "71"
+  },
+  {
+    "type": "inout",
+    "name": "SRAM_D8",
+    "value": "72"
+  },
+  {
+    "type": "inout",
+    "name": "SRAM_WE",
+    "value": "73"
+  },
+  {
+    "type": "inout",
+    "name": "SRAM_OE",
+    "value": "74"
+  },
+  {
+    "type": "inout",
+    "name": "SRAM_CS",
+    "value": "78"
+  },
+  {
+    "type": "inout",
+    "name": "SRAM_A0",
+    "value": "79"
+  },
+  {
+    "type": "inout",
+    "name": "SRAM_A1",
+    "value": "80"
+  },
+  {
+    "type": "inout",
+    "name": "SRAM_A2",
+    "value": "81"
+  },
+  {
+    "type": "inout",
+    "name": "SRAM_A3",
+    "value": "82"
+  },
+  {
+    "type": "inout",
+    "name": "SRAM_A4",
+    "value": "83"
+  },
+  {
+    "type": "inout",
+    "name": "SRAM_A5",
+    "value": "85"
+  },
+  {
+    "type": "inout",
+    "name": "SRAM_A6",
+    "value": "86"
+  },
+  {
+    "type": "inout",
+    "name": "SRAM_A7",
+    "value": "87"
+  },
+  {
+    "type": "inout",
+    "name": "SRAM_A8",
+    "value": "89"
+  },
+  {
+    "type": "inout",
+    "name": "SRAM_A9",
+    "value": "90"
+  },
+  {
+    "type": "inout",
+    "name": "SRAM_A10",
+    "value": "91"
+  },
+  {
+    "type": "inout",
+    "name": "SRAM_A11",
+    "value": "93"
+  },
+  {
+    "type": "inout",
+    "name": "SRAM_A12",
+    "value": "94"
+  },
+  {
+    "type": "inout",
+    "name": "SRAM_A13",
+    "value": "95"
+  },
+  {
+    "type": "inout",
+    "name": "SRAM_A14",
+    "value": "96"
+  },
+  {
+    "type": "inout",
+    "name": "SRAM_A15",
+    "value": "97"
+  },
+  {
+    "type": "inout",
+    "name": "SRAM_A16",
+    "value": "99"
+  },
+  {
+    "type": "inout",
+    "name": "SRAM_A17",
+    "value": "100"
+  },
+  {
+    "type": "inout",
+    "name": "RISK_FLASH_CDONE",
+    "value": "43"
+  },
+  {
+    "type": "inout",
+    "name": "RISK_FLASH_CRESET_B",
+    "value": "44"
+  },
+  {
+    "type": "inout",
+    "name": "RISK_FLASH_SDO",
+    "value": "45"
+  },
+  {
+    "type": "inout",
+    "name": "RISK_FLASH_SDI",
+    "value": "46"
+  },
+  {
+    "type": "inout",
+    "name": "RISK_FLASH_SCK",
+    "value": "48"
+  },
+  {
+    "type": "inout",
+    "name": "RISK_FLASH_SS",
+    "value": "49"
+  }
+]
