@@ -1,5 +1,5 @@
 [
-  { "type": "HX1K", "boards": ["icezum", "go-board", "icestick"] },
+  { "type": "HX1K", "boards": ["icezum", "go-board", "icestick", "iCE40-HX1K-EVB"] },
   {
     "type": "HX8K",
     "boards": [
