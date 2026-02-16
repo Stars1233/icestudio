@@ -1,0 +1,14 @@
+{
+  "label": "Icepi Zero",
+  "SysClkMhz": 50,
+  "datasheet": "https://github.com/cheyao/icepi-zero",
+  "interface": "FTDI",
+  "arch": "ecp5",
+  "FPGAResources": {
+    "ffs": 24288,
+    "luts": 24288,
+    "pios": 39,
+    "plbs": 660,
+    "brams": 30
+  }
+}
