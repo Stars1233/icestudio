@@ -298,8 +298,11 @@ module.exports = function (grunt) {
   //-- (**not** the Icestudio package, but the one in the top level)
   let topPkg = grunt.file.readJSON(PACKAGE_JSON);
 
-  //-- Get the NW version from the package (the one that is installed)
-  const NW_VERSION = topPkg.devDependencies['nw'];
+  //-- Get the NW version from the package (the one that is installed).
+  //-- The npm package can include the flavor suffix (e.g. "0.101.2-sdk"),
+  //-- but nw-builder expects the bare version and receives the flavor
+  //-- separately through NW_FLAVOR below.
+  const NW_VERSION = topPkg.devDependencies['nw'].replace(/-sdk$/, '');
 
   //-- Select the NW build flavor
   //-- Currently the "sdk" flavour is selected always
@@ -1127,8 +1130,19 @@ module.exports = function (grunt) {
         icon: MAC_ICON,
         winico: WIN_ICON,
         app: {
+          name: pkg.name,
+          icon: MAC_ICON,
           CFBundleIconFile: 'app',
-          icon: WIN_ICON,
+          CFBundleIdentifier: 'io.icestudio.icestudio',
+          CFBundleName: pkg.name,
+          CFBundleDisplayName: pkg.name,
+          CFBundleSpokenName: pkg.name,
+          CFBundleVersion: pkg.version,
+          CFBundleShortVersionString: pkg.version,
+          LSApplicationCategoryType: 'public.app-category.developer-tools',
+          NSHumanReadableCopyright: 'Copyright Icestudio contributors',
+          NSLocalNetworkUsageDescription:
+            'Icestudio may use local network access for development workflows.',
         },
 
         //-- Where the Icestudio NW app is located

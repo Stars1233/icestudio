@@ -64,6 +64,15 @@ angular
             possibleExecutables.push('python');
           }
 
+          if (!common.WIN32) {
+            possibleExecutables.unshift('/usr/local/bin/python3.11');
+            possibleExecutables.unshift('/usr/local/bin/python3.12');
+            possibleExecutables.unshift('/usr/local/bin/python3.13');
+            possibleExecutables.unshift('/opt/homebrew/bin/python3.11');
+            possibleExecutables.unshift('/opt/homebrew/bin/python3.12');
+            possibleExecutables.unshift('/opt/homebrew/bin/python3.13');
+          }
+
           //-- Move through all the possible executables
           //-- checking if they are executable
           for (let executable of possibleExecutables) {
@@ -104,7 +113,7 @@ angular
             return (
               pythonVersion !== null &&
               pythonVersion.length === 3 &&
-              parseInt(pythonVersion[1]) >= 7
+              parseInt(pythonVersion[1]) >= 11
             );
           }
         } catch (e) {}
@@ -433,32 +442,22 @@ angular
         );
 
         if (
-          iceStudio.toolchain.apio >= '0.9.6' ||
+          isApioVersionAtLeast(iceStudio.toolchain.apio, 1, 0) ||
+          isApioVersionAtLeast(_package.apio.min, 1, 0) ||
           common.APIO_VERSION === common.APIO_VERSION_DEV
         ) {
-          let args = 'install';
-          let edge = 'packages';
-          /* switch(pkg){
-              case 'drivers':
-                edge='drivers';
-                args='--install-ftdi';
-                pkg='';
-                break;
-              default:
+          removeMacOSMetadataFiles(common.APIO_HOME_DIR);
+          let command = [common.APIO_CMD, 'packages', 'install'];
 
-              }*/
-          iceConsole.log(
-            'OSS-CAD-SUITE? ' +
-              common.APIO_CMD +
-              ' ' +
-              edge +
-              ' ' +
-              args +
-              ' ' +
-              pkg
-          );
+          if (pkg === 'drivers') {
+            command = [common.APIO_CMD, 'drivers', 'install', 'ftdi'];
+          }
+
+          iceConsole.log('APIO COMMAND: ' + command.join(' '));
+          this.executeCommand(command, null, true, callback);
+        } else if (iceStudio.toolchain.apio >= '0.9.6') {
           this.executeCommand(
-            [common.APIO_CMD, edge, args, pkg],
+            [common.APIO_CMD, 'packages', 'install', pkg],
             null,
             true,
             callback
@@ -474,6 +473,33 @@ angular
           );
         }
       };
+
+      function isApioVersionAtLeast(version, major, minor) {
+        var match = /^([0-9]+)\.([0-9]+)/.exec(version || '');
+        if (!match) {
+          return false;
+        }
+        var versionMajor = parseInt(match[1]);
+        var versionMinor = parseInt(match[2]);
+        return (
+          versionMajor > major ||
+          (versionMajor === major && versionMinor >= minor)
+        );
+      }
+
+      function removeMacOSMetadataFiles(dir) {
+        if (!common.DARWIN || !nodeFs.existsSync(dir)) {
+          return;
+        }
+        nodeFs.readdirSync(dir).forEach(function (file) {
+          var filePath = nodePath.join(dir, file);
+          if (file === '.DS_Store') {
+            nodeFs.unlinkSync(filePath);
+          } else if (nodeFs.lstatSync(filePath).isDirectory()) {
+            removeMacOSMetadataFiles(filePath);
+          }
+        });
+      }
 
       //-- The toolchains are NOT disabled by default
       this.toolchainDisabled = false;

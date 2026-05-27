@@ -161,7 +161,7 @@ angular.module('icestudio').service(
     this.APIO_VERSION = this.APIO_VERSION_STABLE; //-- Default apio version: STABLE
 
     //-- Apio PACKAGES VERSION to install for the Stable Version
-    this.APIO_PKG_OSS_CAD_SUITE_VERSION = '0.0.9';
+    this.APIO_PKG_OSS_CAD_SUITE_VERSION = '2026-03-24';
 
     //-- Get the System PATH
     this.PATH = process.env.PATH;
@@ -189,6 +189,9 @@ angular.module('icestudio').service(
 
       //-- APIO_HOME_DIR env variable
       this.APIO_CMD =
+        'set APIO_HOME="' +
+        this.APIO_HOME_DIR +
+        '"& ' +
         'set APIO_HOME_DIR="' +
         this.APIO_HOME_DIR +
         '"& ' +
@@ -211,6 +214,9 @@ angular.module('icestudio').service(
 
       this.APIO_CMD =
         //-- APIO_HOME_DIR env variable
+        'APIO_HOME="' +
+        this.APIO_HOME_DIR +
+        '" ' +
         'APIO_HOME_DIR="' +
         this.APIO_HOME_DIR +
         '" ' +
