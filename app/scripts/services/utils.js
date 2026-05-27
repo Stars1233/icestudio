@@ -442,7 +442,8 @@ angular
         );
 
         if (
-          iceStudio.toolchain.apio >= '1.0.0' ||
+          isApioVersionAtLeast(iceStudio.toolchain.apio, 1, 0) ||
+          isApioVersionAtLeast(_package.apio.min, 1, 0) ||
           common.APIO_VERSION === common.APIO_VERSION_DEV
         ) {
           removeMacOSMetadataFiles(common.APIO_HOME_DIR);
@@ -472,6 +473,19 @@ angular
           );
         }
       };
+
+      function isApioVersionAtLeast(version, major, minor) {
+        var match = /^([0-9]+)\.([0-9]+)/.exec(version || '');
+        if (!match) {
+          return false;
+        }
+        var versionMajor = parseInt(match[1]);
+        var versionMinor = parseInt(match[2]);
+        return (
+          versionMajor > major ||
+          (versionMajor === major && versionMinor >= minor)
+        );
+      }
 
       function removeMacOSMetadataFiles(dir) {
         if (!common.DARWIN || !nodeFs.existsSync(dir)) {
