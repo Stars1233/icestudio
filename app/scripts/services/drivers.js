@@ -416,7 +416,7 @@ angular
 
       function enableDarwinDrivers(brewPackages, profileSetting) {
         const brewExec = returnBrewPath();
-        let brewCommands = [];
+        let brewCommands = [`${brewExec} update`];
         for (var i in brewPackages) {
           brewCommands = brewCommands.concat(
             brewInstall(brewExec, brewPackages[i])
