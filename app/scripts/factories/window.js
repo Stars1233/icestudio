@@ -34,8 +34,11 @@ angular
     //-- Access to the timetamp
     const _buildinfo = require('./buildinfo.json');
 
-    //-- Build the final version: version + timestamp!
-    _package.version = `${_package.version}${_buildinfo.ts}`;
+    //-- Original version, without timestamp
+    _package.versionIni = `${_package.version}`;
+
+    //-- Version with timestamp
+    _package.versionTs = `${_package.versionIni}${_buildinfo.ts}`;
 
     return _package;
   });
