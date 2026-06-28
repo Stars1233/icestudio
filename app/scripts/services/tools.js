@@ -525,9 +525,14 @@ angular
             else {
               //-- Convert the object received to a string
               let msg = '' + output;
+              console.log(`------------------> DEBUG: ${msg}`);
 
               //-- Get the version number
-              toolchain.apio = msg.match(/apio,\sversion\s(.+)/)[1];
+              const version = msg.match(/\d+\.\d+\.\d+/);
+              toolchain.apio = version ? version[0] : null;
+
+              //toolchain.apio = msg.match(/apio,\sversion\s(.+)/)[1];
+              console.log(`---> DEBUG: ${toolchain.apio}`);
 
               iceStudio.toolchain.apio = toolchain.apio;
               //-- Check if the apio version is ok with the specification
@@ -1367,12 +1372,15 @@ angular
           resultAlert.dismiss(false);
         }
 
+        //-- Show a confirmation dialog
         alertify.confirm(
           gettextCatalog.getString(
             'Install the <b>STABLE Toolchain</b>. This operation requires Internet connection.<br>' +
               '<p><b>NOTE:</b> You need to disconnect your VPN (if any) to allow the toolchain installation</p> ' +
               '<p>Do you want to continue?</p>'
           ),
+
+          //-- This function is executed when the user press OK
           function () {
             //-- Remove the toolchain for starting a fresh installation
             utils.removeToolchain();
@@ -1521,6 +1529,7 @@ angular
           '</div>',
         ].join('\n');
 
+        //-- Show the progress window
         toolchainAlert = alertify.alert(content, function () {
           setTimeout(function () {
             initProgress();
@@ -1559,10 +1568,10 @@ angular
 
           repairPermissions,
           //--------- Install the apio packages
-          //--------- apio install <pkg>
-          //-- oss-cad-suite: Main toolchain: Yosys, nextpnr, programmers...
+          //--------- apio packages install -f
           apioInstallOssCadSuite,
           repairPermissions,
+
           //-- Drivers
           apioInstallDrivers,
 
@@ -1688,7 +1697,7 @@ angular
         }
 
         updateProgress(
-          gettextCatalog.getString('Apio install {{name}}', {
+          gettextCatalog.getString('Apio packages install -f', {
             name: pkgName,
           }),
           60

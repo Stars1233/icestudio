@@ -438,6 +438,7 @@ angular
         ) {
           let args = 'install';
           let edge = 'packages';
+          let pkg = '-f';
           /* switch(pkg){
               case 'drivers':
                 edge='drivers';
