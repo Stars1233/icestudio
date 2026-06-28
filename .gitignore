@@ -13,7 +13,6 @@
 *~
 *.failed
 .tmp
-.vscode
 dist
 cache
 docs/_build
