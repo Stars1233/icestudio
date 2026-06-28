@@ -20,6 +20,23 @@
     { "type": "input", "name": "BTNU", "value": "T18" },
     { "type": "input", "name": "BTND", "value": "U17" },
     { "type": "input", "name": "BTNR", "value": "T17" },
-    { "type": "input", "name": "BTNL", "value": "W19" }
+    { "type": "input", "name": "BTNL", "value": "W19" },
+
+    { "type": "input", "name": "SW0", "value": "V17" },
+    { "type": "input", "name": "SW1", "value": "V16" },
+    { "type": "input", "name": "SW2", "value": "W17" },
+    { "type": "input", "name": "SW3", "value": "W16" },
+    { "type": "input", "name": "SW4", "value": "W15" },
+    { "type": "input", "name": "SW5", "value": "V15" },
+    { "type": "input", "name": "SW6", "value": "W14" },
+    { "type": "input", "name": "SW7", "value": "W13" },
+    { "type": "input", "name": "SW8", "value": "V2" },
+    { "type": "input", "name": "SW9", "value": "T3" },
+    { "type": "input", "name": "SW10", "value": "T2" },
+    { "type": "input", "name": "SW11", "value": "R3" },
+    { "type": "input", "name": "SW12", "value": "W2" },
+    { "type": "input", "name": "SW13", "value": "U1" },
+    { "type": "input", "name": "SW14", "value": "T1" },
+    { "type": "input", "name": "SW15", "value": "R2" }
 
 ]
