@@ -43,6 +43,8 @@ angular.module('icestudio').controller(
     //-- Ex.
     //-------------------------------------------------------------------------
 
+    console.log('---> scripts/controllers/menu.js (RUN)');
+
     //-- Initialize scope
 
     $scope.profile = profile;
@@ -1247,7 +1249,7 @@ angular.module('icestudio').controller(
       //-- The encodeURIComponent() function the characters so that the spaces and
       //-- other special characters can be place on the original URL
       let URL =
-        `resources/viewers/system/system.html?version=${common.ICESTUDIO_VERSION}` +
+        `resources/viewers/system/system.html?version=${common.ICESTUDIO_VERSION_TS}` +
         `&base_dir=${encodeURIComponent(common.BASE_DIR)}---` +
         `&icestudio_dir=${encodeURIComponent(common.ICESTUDIO_DIR)}---` +
         `&profile_path=${encodeURIComponent(common.PROFILE_PATH)}---` +
