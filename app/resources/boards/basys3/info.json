@@ -1,5 +1,5 @@
 {
-  "label": "Basys 3",
+  "label": "Basys3",
   "SysClkMhz": 50,
   "datasheet": "https://digilent.com/reference/_media/basys3:basys3_rm.pdf?srsltid=AfmBOoqvHQWcBvSbDs1NMi9Ok-QiwHIoufQUGIMk0Opv0rldGLkdAlUC",
   "interface": "FTDI",

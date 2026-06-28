@@ -1130,6 +1130,7 @@ angular
           //-- could be refactorized instead of repeating code
           //-- (i usually name this as plural and singular cases)
 
+          //-- CASE: The pin is a BUS
           if (block.data.pins.length > 1) {
             for (var p in block.data.pins) {
               pin = block.data.pins[p];
@@ -1140,32 +1141,12 @@ angular
               code += ' IOSTANDARD LVCMOS33 }';
               code += '[get_ports {';
               code += utils.digestId(block.id); //-- Future improvement: use pin.name. It should also be changed in the main module
+              code += '[' + pin.index + ']';
               code += '}]';
               code += '\n';
-
-              // code += 'LOCATE COMP "';
-              // code += utils.digestId(block.id); //-- Future improvement: use pin.name. It should also be changed in the main module
-              // code += '[' + pin.index + ']" SITE "';
-              // code += value;
-              // code += '";\n';
-
-              // code += 'IOBUF PORT "';
-              // code += utils.digestId(block.id);
-              // code += '[' + pin.index + ']" ';
-
-              //-- Get the pullmode property of the physical pin (its id is pin.value)
-              // let pullmode = common.selectedBoard.pinout.find(
-              //   (x) => x.value === value
-              // ).pullmode;
-              // if (
-              //   pullmode === 'UP' ||
-              //   pullmode === 'DOWN' ||
-              //   pullmode === 'NONE'
-              // ) {
-              //   code += 'PULLMODE=' + pullmode;
-              // }
-              code += ' ;\n\n';
             }
+
+            //-- CASE: Only 1 pin
           } else if (block.data.pins.length > 0) {
             pin = block.data.pins[0];
             value = block.data.virtual ? '' : pin.value;
@@ -1177,29 +1158,6 @@ angular
             code += utils.digestId(block.id); //-- Future improvement: use pin.name. It should also be changed in the main module
             code += '}]';
             code += '\n';
-
-            // code += 'LOCATE COMP "';
-            // code += utils.digestId(block.id); //-- Future improvement: use pin.name. It should also be changed in the main module
-            // code += '" SITE "';
-            // code += value;
-            // code += '";\n';
-
-            // code += 'IOBUF PORT "';
-            // code += utils.digestId(block.id);
-            // code += '" ';
-
-            //-- Get the pullmode property of the physical pin (its id is pin.value)
-            // let pullmode = common.selectedBoard.pinout.find(
-            //   (x) => x.value === value
-            // ).pullmode;
-            // if (
-            //   pullmode === 'UP' ||
-            //   pullmode === 'DOWN' ||
-            //   pullmode === 'NONE'
-            // ) {
-            //   code += 'PULLMODE=' + pullmode;
-            // }
-            code += ' ;\n\n';
           }
         }
       }

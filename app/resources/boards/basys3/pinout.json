@@ -1,3 +1,19 @@
 [
-    { "type": "output", "name": "LED0", "value": "U16" }
+    { "type": "output", "name": "LED0", "value": "U16" },
+    { "type": "output", "name": "LED1", "value": "E19" },
+    { "type": "output", "name": "LED2", "value": "U19" },
+    { "type": "output", "name": "LED3", "value": "V19" },
+    { "type": "output", "name": "LED4", "value": "W18" },
+    { "type": "output", "name": "LED5", "value": "U15" },
+    { "type": "output", "name": "LED6", "value": "U14" },
+    { "type": "output", "name": "LED7", "value": "V14" },
+    { "type": "output", "name": "LED8", "value": "V13" },
+    { "type": "output", "name": "LED9", "value": "V3" },
+    { "type": "output", "name": "LED10", "value": "W3" },
+    { "type": "output", "name": "LED11", "value": "U3" },
+    { "type": "output", "name": "LED12", "value": "P3" },
+    { "type": "output", "name": "LED13", "value": "N3" },
+    { "type": "output", "name": "LED14", "value": "P1" },
+    { "type": "output", "name": "LED15", "value": "L1" }
+
 ]
