@@ -14,6 +14,12 @@
     { "type": "output", "name": "LED12", "value": "P3" },
     { "type": "output", "name": "LED13", "value": "N3" },
     { "type": "output", "name": "LED14", "value": "P1" },
-    { "type": "output", "name": "LED15", "value": "L1" }
+    { "type": "output", "name": "LED15", "value": "L1" },
+
+    { "type": "input", "name": "BTNC", "value": "U18" },
+    { "type": "input", "name": "BTNU", "value": "T18" },
+    { "type": "input", "name": "BTND", "value": "U17" },
+    { "type": "input", "name": "BTNR", "value": "T17" },
+    { "type": "input", "name": "BTNL", "value": "W19" }
 
 ]
