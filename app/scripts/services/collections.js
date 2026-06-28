@@ -5,6 +5,8 @@ angular
   .service(
     'collections',
     function (common, profile, gettextCatalog, $exceptionHandler) {
+      console.log('---> scripts/services/collections.js (RUN)');
+
       let iceColl = new IceCollection({
         location: {
           default: common.DEFAULT_COLLECTION_DIR,
