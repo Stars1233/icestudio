@@ -155,6 +155,11 @@ angular.module('icestudio').service(
 
     //-- Get the Icestudio Version
     this.ICESTUDIO_VERSION = _package.version;
+    this.ICESTUDIO_VERSION_TS = _package.versionTs;
+    this.ICESTUDIO_VERSION_INI = _package.versionIni;
+    console.log(
+      `---> scripts/services/common.js: Version: ${this.ICESTUDIO_VERSION_TS}`
+    );
 
     //-- Apio version values
     this.APIO_VERSION_STABLE = 0; //-- Use the stable version

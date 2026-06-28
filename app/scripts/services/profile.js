@@ -8,6 +8,8 @@
 angular
   .module('icestudio')
   .service('profile', function (utils, common, _package, nodeFs) {
+    console.log('---> scripts/services/profile.js (RUN)');
+
     //-- Information stored in the profile file
     this.data = {
       board: '', //-- Selected board

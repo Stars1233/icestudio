@@ -27,6 +27,9 @@ angular
       $rootScope,
       gui
     ) {
+      //-- Debug
+      console.log('---> scripts/services/tools.js (RUN)');
+
       //-- Flag that indicates if there is an apio command already running
       var taskRunning = false;
 

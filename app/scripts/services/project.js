@@ -18,6 +18,8 @@ angular
       nodeFs,
       nodePath
     ) {
+      console.log('---> scripts/services/project.js (RUN)');
+
       this.name = ''; // Used in File dialogs
       this.path = ''; // Used in Save / Save as
       this.filepath = ''; // Used to find external resources (.v, .vh, .list)

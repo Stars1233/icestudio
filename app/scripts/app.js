@@ -8,6 +8,8 @@
 //---------------------------------------------------------------------------
 'use strict';
 
+console.log('---> scripts/app.js (LOAD)');
+
 //-- Global Icestudio
 //-- This is the core system with services, api and communications.
 //-- Group inside different object for efficiency model by V8 engine.
