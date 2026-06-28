@@ -1,4 +1,6 @@
 [
+    { "type": "input", "name": "CLK", "value": "W5" },
+
     { "type": "output", "name": "LED0", "value": "U16" },
     { "type": "output", "name": "LED1", "value": "E19" },
     { "type": "output", "name": "LED2", "value": "U19" },

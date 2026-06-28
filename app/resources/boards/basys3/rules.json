@@ -1,8 +1,8 @@
  {
-    "output": [
+    "input": [
         {
-            "pin": "U16",
-            "bit": "0"
+            "port": "clk",
+            "pin": "W5"
         }
     ]
 }
