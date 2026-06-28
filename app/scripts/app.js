@@ -40,7 +40,7 @@ angular.module('icestudio', ['ui.bootstrap', 'ngRoute', 'gettext']).run(
     gettextCatalog
   ) {
     /* jshint +W098 */
-    console.log('->DEBUG: app.js');
+    console.log('---> scripts/app.js (RUN)');
 
     /* If in package.json appears development:{mode:true}*/
     /* activate development tools */
@@ -121,7 +121,7 @@ angular.module('icestudio', ['ui.bootstrap', 'ngRoute', 'gettext']).run(
         `=======================================================================================`
       );
       iceConsole.log(` Icestudio session ${now.toString()}`);
-      iceConsole.log(` Version: ${common.ICESTUDIO_VERSION}`);
+      iceConsole.log(` Version: ${common.ICESTUDIO_VERSION_TS}`);
       iceConsole.log(
         `=======================================================================================`
       );
@@ -178,6 +178,7 @@ angular.module('icestudio', ['ui.bootstrap', 'ngRoute', 'gettext']).run(
       collections.loadAllCollections();
 
       utils.loadLanguage(profile, function () {
+        //-- No board specified
         if (profile.get('board') === '') {
           tools.selectBoardPrompt(function (selectedBoard) {
             var newBoard = boards.selectBoard(selectedBoard);
@@ -196,6 +197,8 @@ angular.module('icestudio', ['ui.bootstrap', 'ngRoute', 'gettext']).run(
               false //-- No error notifications
             );
           });
+
+          //-- There is a board in the profile
         } else {
           profile.set('board', boards.selectBoard(profile.get('board')).name);
           tools.checkToolchain(
@@ -204,7 +207,11 @@ angular.module('icestudio', ['ui.bootstrap', 'ngRoute', 'gettext']).run(
           );
         }
 
+        //-- Set the interface language
         $('html').attr('lang', profile.get('language'));
+
+        //-- Update the Icestudio window with the current project file
+        //-- Initially there is no file: 'untitled'
         collections.sort();
         profile.set(
           'collection',
@@ -214,7 +221,7 @@ angular.module('icestudio', ['ui.bootstrap', 'ngRoute', 'gettext']).run(
       });
     });
 
-    console.log('->DEBUG: app.js: END');
+    console.log('---> scripts/app.js: Profile Loaded');
   }
 );
 
@@ -226,14 +233,24 @@ async function initAfterLoad() {
   await iceSleepMs(1000); //-- this custom 1s wait smooth the loading screen
 
   angular.element(document).ready(function () {
+    //-- DOM is ready!!
+    //-- Create an observer: Wait for changes in the DOM's body
     const observer = new MutationObserver(() => {
+      //-- Changes in the splash screen
       requestAnimationFrame(() => {
+        //-- Start the fading of the splash screen
         $('#main-icestudio-load-wrapper').addClass('fade-loaded');
+
+        //-- It is finished in half a second
         setTimeout(function () {
+          //-- Remove completely the splash screen
           $('#main-icestudio-load-wrapper').addClass('loaded');
         }, 500);
+
+        //-- No splash screen screen. The user is ready to use the GUI
         iceStudioReady = true;
 
+        //-- Stop the observer. It is done
         observer.disconnect(); // Detener el observador después de ocultar el splash
       });
     });
