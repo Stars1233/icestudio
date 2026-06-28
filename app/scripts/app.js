@@ -252,7 +252,7 @@ async function initAfterLoad() {
 
         //-- Stop the observer. It is done
         observer.disconnect();
-        console.log('* scripts/app.js: Icestudio is READY!');
+        console.log('🟢 scripts/app.js: Icestudio is READY!');
       });
     });
 
