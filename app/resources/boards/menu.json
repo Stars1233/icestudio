@@ -80,5 +80,9 @@
       "Cynthion-r1.4",
       "mimas-ecp5-mini"
     ]
+  },
+  {
+    "type": "Artix7",
+    "boards": ["basys3"]
   }
 ]

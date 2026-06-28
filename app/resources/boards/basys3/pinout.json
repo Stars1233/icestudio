@@ -1,0 +1,3 @@
+[
+    { "type": "output", "name": "LED0", "value": "U16" }
+]

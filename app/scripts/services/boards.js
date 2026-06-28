@@ -40,6 +40,9 @@
 angular
   .module('icestudio')
   .service('boards', function (utils, common, nodeFs, nodePath) {
+    //-- DEBUG
+    console.log('---> scripts/services/boards.js (RUN)');
+
     //-- Default board
     const DEFAULT = 'alhambra-ii';
 
