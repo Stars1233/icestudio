@@ -20,6 +20,8 @@ angular
       //-- Module initialization
       //----------------------------------------------------------------
 
+      console.log('---> scripts/controllers/design.js (RUN)');
+
       $scope.graph = graph;
       $scope.common = common;
       $scope.profile = profile;
