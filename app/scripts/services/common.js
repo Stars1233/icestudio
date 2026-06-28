@@ -19,6 +19,8 @@ angular.module('icestudio').service(
     nodeFs,
     _package
   ) {
+    console.log('---> scripts/services/common.js (RUN)');
+
     // Project version. It defines the current structure for the
     // icestudio projects (Both in memory and on the .ice files)
     this.VERSION = '1.2';
