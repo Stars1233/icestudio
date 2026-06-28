@@ -388,6 +388,17 @@ angular
                 lpfFile.content,
                 'utf8'
               );
+
+              //-- Xilinx FPGA
+            } else if (archName === 'xc7') {
+              //-- XDC file
+              console.log('* Generating .xdc file......');
+              var xdcFile = compiler.generate('xdc', project.get(), opt)[0];
+              nodeFs.writeFileSync(
+                nodePath.join(common.BUILD_DIR, xdcFile.name),
+                xdcFile.content,
+                'utf8'
+              );
             } else {
               // PCF file
               var pcfFile = compiler.generate('pcf', project.get(), opt)[0];

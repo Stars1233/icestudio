@@ -4,6 +4,7 @@
   "datasheet": "https://digilent.com/reference/_media/basys3:basys3_rm.pdf?srsltid=AfmBOoqvHQWcBvSbDs1NMi9Ok-QiwHIoufQUGIMk0Opv0rldGLkdAlUC",
   "interface": "FTDI",
   "toolchain": "apio",
+  "arch": "xc7",
   "FPGAResources": {
     "ffs": 9999,
     "luts": 9999,

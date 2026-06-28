@@ -3,6 +3,9 @@
 angular
   .module('icestudio')
   .service('compiler', function (common, utils, blocks, _package) {
+    //-- Debug
+    console.log('---> scripts/services/compiler.js (RUN)');
+
     let currentLibrary = false;
     this.generate = function (target, project, opt) {
       var content = '';
@@ -32,6 +35,17 @@ angular
           content += lpfCompiler(project, opt);
           files.push({
             name: 'main.lpf',
+            content: content,
+          });
+          break;
+
+        //-- Generate a .xdc file
+        //-- Xilinx Design Constraint file
+        case 'xdc':
+          content += header('#', opt);
+          content += xdcCompiler(project, opt);
+          files.push({
+            name: 'main.xdc',
             content: content,
           });
           break;
@@ -996,6 +1010,105 @@ angular
 
     function lpfCompiler(project, opt) {
       var i,
+        j,
+        block,
+        pin,
+        value,
+        code = '';
+      var blockArray = project.design.graph.blocks;
+      opt = opt || {};
+
+      for (i in blockArray) {
+        block = blockArray[i];
+        if (
+          block.type === blocks.BASIC_INPUT ||
+          block.type === blocks.BASIC_OUTPUT
+        ) {
+          if (block.data.pins.length > 1) {
+            for (var p in block.data.pins) {
+              pin = block.data.pins[p];
+              value = block.data.virtual ? '' : pin.value;
+              code += 'set_io ';
+              code += utils.digestId(block.id);
+              code += '[' + pin.index + '] ';
+              code += value;
+              code += '\n';
+            }
+          } else if (block.data.pins.length > 0) {
+            pin = block.data.pins[0];
+            value = block.data.virtual ? '' : pin.value;
+            code += 'set_io ';
+            code += utils.digestId(block.id);
+            code += ' ';
+            code += value;
+            code += '\n';
+          }
+        }
+      }
+
+      if (opt.boardRules) {
+        // Declare init input ports
+
+        var used = [];
+        var initPorts = opt.initPorts || getInitPorts(project);
+        let pname = '';
+        for (i in initPorts) {
+          var initPort = initPorts[i];
+          if (used.indexOf(initPort.pin) !== -1) {
+            break;
+          }
+          used.push(initPort.pin);
+
+          // Find existing input block with the initPort value
+          var found = false;
+          for (j in blockArray) {
+            block = blockArray[j];
+            if (
+              block.type === blocks.BASIC_INPUT &&
+              !block.data.range &&
+              !block.data.virtual &&
+              initPort.pin === block.data.pins[0].value
+            ) {
+              found = true;
+              used.push(initPort.pin);
+              break;
+            }
+          }
+
+          pname =
+            initPorts[i].name.charAt(0) === '@'
+              ? initPorts[i].name.substr(1)
+              : initPorts[i].name;
+          if (!found) {
+            code += 'set_io v';
+            code += pname;
+            code += ' ';
+            code += initPorts[i].pin;
+            code += '\n';
+          }
+        }
+
+        // Declare init output pins
+
+        var initPins = opt.initPins || getInitPins(project);
+        if (initPins.length > 1) {
+          for (i in initPins) {
+            code += 'set_io vinit[' + i + '] ';
+            code += initPins[i].pin;
+            code += '\n';
+          }
+        } else if (initPins.length > 0) {
+          code += 'set_io vinit ';
+          code += initPins[0].pin;
+          code += '\n';
+        }
+      }
+
+      return code;
+    }
+
+    function xdcCompiler(project, opt) {
+      var i,
         block,
         pin,
         value,
@@ -1021,53 +1134,71 @@ angular
             for (var p in block.data.pins) {
               pin = block.data.pins[p];
               value = block.data.virtual ? '' : pin.value;
-              code += 'LOCATE COMP "';
-              code += utils.digestId(block.id); //-- Future improvement: use pin.name. It should also be changed in the main module
-              code += '[' + pin.index + ']" SITE "';
-              code += value;
-              code += '";\n';
 
-              code += 'IOBUF PORT "';
-              code += utils.digestId(block.id);
-              code += '[' + pin.index + ']" ';
+              code += 'set_property -dict { PACKAGE_PIN ';
+              code += value;
+              code += ' IOSTANDARD LVCMOS33 }';
+              code += '[get_ports {';
+              code += utils.digestId(block.id); //-- Future improvement: use pin.name. It should also be changed in the main module
+              code += '}]';
+              code += '\n';
+
+              // code += 'LOCATE COMP "';
+              // code += utils.digestId(block.id); //-- Future improvement: use pin.name. It should also be changed in the main module
+              // code += '[' + pin.index + ']" SITE "';
+              // code += value;
+              // code += '";\n';
+
+              // code += 'IOBUF PORT "';
+              // code += utils.digestId(block.id);
+              // code += '[' + pin.index + ']" ';
 
               //-- Get the pullmode property of the physical pin (its id is pin.value)
-              let pullmode = common.selectedBoard.pinout.find(
-                (x) => x.value === value
-              ).pullmode;
-              if (
-                pullmode === 'UP' ||
-                pullmode === 'DOWN' ||
-                pullmode === 'NONE'
-              ) {
-                code += 'PULLMODE=' + pullmode;
-              }
+              // let pullmode = common.selectedBoard.pinout.find(
+              //   (x) => x.value === value
+              // ).pullmode;
+              // if (
+              //   pullmode === 'UP' ||
+              //   pullmode === 'DOWN' ||
+              //   pullmode === 'NONE'
+              // ) {
+              //   code += 'PULLMODE=' + pullmode;
+              // }
               code += ' ;\n\n';
             }
           } else if (block.data.pins.length > 0) {
             pin = block.data.pins[0];
             value = block.data.virtual ? '' : pin.value;
-            code += 'LOCATE COMP "';
-            code += utils.digestId(block.id); //-- Future improvement: use pin.name. It should also be changed in the main module
-            code += '" SITE "';
-            code += value;
-            code += '";\n';
 
-            code += 'IOBUF PORT "';
-            code += utils.digestId(block.id);
-            code += '" ';
+            code += 'set_property -dict { PACKAGE_PIN ';
+            code += value;
+            code += ' IOSTANDARD LVCMOS33 }';
+            code += '[get_ports {';
+            code += utils.digestId(block.id); //-- Future improvement: use pin.name. It should also be changed in the main module
+            code += '}]';
+            code += '\n';
+
+            // code += 'LOCATE COMP "';
+            // code += utils.digestId(block.id); //-- Future improvement: use pin.name. It should also be changed in the main module
+            // code += '" SITE "';
+            // code += value;
+            // code += '";\n';
+
+            // code += 'IOBUF PORT "';
+            // code += utils.digestId(block.id);
+            // code += '" ';
 
             //-- Get the pullmode property of the physical pin (its id is pin.value)
-            let pullmode = common.selectedBoard.pinout.find(
-              (x) => x.value === value
-            ).pullmode;
-            if (
-              pullmode === 'UP' ||
-              pullmode === 'DOWN' ||
-              pullmode === 'NONE'
-            ) {
-              code += 'PULLMODE=' + pullmode;
-            }
+            // let pullmode = common.selectedBoard.pinout.find(
+            //   (x) => x.value === value
+            // ).pullmode;
+            // if (
+            //   pullmode === 'UP' ||
+            //   pullmode === 'DOWN' ||
+            //   pullmode === 'NONE'
+            // ) {
+            //   code += 'PULLMODE=' + pullmode;
+            // }
             code += ' ;\n\n';
           }
         }
