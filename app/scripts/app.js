@@ -210,13 +210,14 @@ angular.module('icestudio', ['ui.bootstrap', 'ngRoute', 'gettext']).run(
         //-- Set the interface language
         $('html').attr('lang', profile.get('language'));
 
-        //-- Update the Icestudio window with the current project file
-        //-- Initially there is no file: 'untitled'
         collections.sort();
         profile.set(
           'collection',
           collections.selectCollection(profile.get('collection'))
         );
+
+        //-- Update the Icestudio window with the current project file
+        //-- Initially there is no file: 'untitled'
         project.updateTitle(gettextCatalog.getString('Untitled'));
       });
     });

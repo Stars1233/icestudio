@@ -758,12 +758,24 @@ angular
         }
       };
 
+      //--------------------------------------------------------
+      //-- Update the Project Window tittle (in the top bar)
+      //--------------------------------------------------------
       this.updateTitle = function (name) {
         if (name) {
           this.name = name;
           graph.resetBreadcrumbs(name);
         }
-        var title = (this.changed ? '*' : '') + this.name + ' ─ Icestudio';
+
+        //-- Generate the new tittle: Project name + Icestudio
+        var title =
+          (this.changed ? '*' : '') +
+          this.name +
+          ' ─ Icestudio' +
+          ' ' +
+          common.ICESTUDIO_VERSION_TS;
+
+        //-- Set the new tittle
         utils.updateWindowTitle(title);
       };
 
