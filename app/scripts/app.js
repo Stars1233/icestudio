@@ -251,10 +251,12 @@ async function initAfterLoad() {
         iceStudioReady = true;
 
         //-- Stop the observer. It is done
-        observer.disconnect(); // Detener el observador después de ocultar el splash
+        observer.disconnect();
+        console.log('* scripts/app.js: Icestudio is READY!');
       });
     });
 
+    //-- Activate the observer
     observer.observe(document.body, { childList: true, subtree: true });
   });
 }
