@@ -941,7 +941,7 @@ angular
                 //-- Read the value from the field
                 let value = field.read();
 
-                //-- Add the value to the array
+                //-- Add the value to the array, if it is not null
                 values.push(value);
               });
             });
@@ -2188,21 +2188,31 @@ angular
           //-- Parse the input parameters
           this.inParams = Form.parseNames(this.values[2].replace(/\s+/g, ''));
 
+          //-- This part is temporaly disabled
+          //-- When not using inputoutput ports (which is the normal case)
+          //-- This code does not work.
+          //-- This.values[3] and this.values[4] are arrays, so it has no
+          //-- sense to use this.values[3].replace(...)... It generates
+          //-- and excepcion and the block cannot be created
+          //-- This should be FIXED. But for the moment, it is disabled
+
           //-- Values[3]: InputOutput port names at the left of the block
           //-- If field is present in Values, then parse the inout port names
-          if (this.values[3]) {
-            this.inoutLeftPorts = Form.parseNames(
-              this.values[3].replace(/\s+/g, '')
-            );
-          }
+          // if (this.values[3]) {
+          //   this.inoutLeftPorts = Form.parseNames(
+          //     //-- BUG!! this.values[3] is an array! (¿?)
+          //     this.values[3].replace(/\s+/g, '')
+          //   );
+          // }
 
           //-- Values[4]: InputOutput port names at the right of the block
           //-- If field is present in Values, then parse the inout port names
-          if (this.values[4]) {
-            this.inoutRightPorts = Form.parseNames(
-              this.values[4].replace(/\s+/g, '')
-            );
-          }
+          //-- Idem
+          // if (this.values[4]) {
+          //   this.inoutRightPorts = Form.parseNames(
+          //     this.values[4].replace(/\s+/g, '')
+          //   );
+          // }
         }
 
         //------------------------------------------------
