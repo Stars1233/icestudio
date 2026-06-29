@@ -284,6 +284,17 @@ joint.shapes.ice.ModelView = joint.dia.ElementView.extend({
   },
 
   place: function (selector, bbox, state, queue) {
+    //-- Bug: For unkown reasons, when creating a constant block
+    //-- the state parameter passed is undefined...
+    //-- If that is the case, create a new one...
+    //-- It is a temporary patch. At least the constant blocks can be placed...
+    if (state === undefined) {
+      state = {
+        zoom: 1,
+        pan: { x: 0, y: 0 },
+      };
+    }
+
     const bw = Math.round(bbox.width);
     const bh = Math.round(bbox.height);
     const bx = Math.round(bbox.x * state.zoom + state.pan.x);

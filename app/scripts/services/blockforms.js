@@ -119,7 +119,8 @@ angular.module('icestudio').service(
 
         //-- Constant parameter block
         case blocks.BASIC_CONSTANT:
-          newBasicConstant2(callback);
+          form = new forms.FormBasicConstant();
+          newBasicConstant2(form, callback);
           break;
 
         case blocks.BASIC_MEMORY:
@@ -321,10 +322,7 @@ angular.module('icestudio').service(
       });
     }
 
-    function newBasicConstant2(callback) {
-      //-- Create the form
-      let form = new forms.FormBasicConstant();
-
+    function newBasicConstant2(form, callback) {
       //-- Display the form
       form.display((evt) => {
         //-- The callback is executed when the user has pressed the OK button
@@ -358,7 +356,7 @@ angular.module('icestudio').service(
           block.position.x = positionX;
 
           //-- Build the cell
-          let cell = loadBasicConstant(block);
+          let cell = loadBasic(block);
 
           //-- Insert the block into the array
           cells.push(cell);
