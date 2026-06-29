@@ -4,6 +4,8 @@
 'use strict';
 
 angular.module('icestudio').service('blocks', function () {
+  console.log('---> scripts/services/blocks.js (RUN)');
+
   //-------------------------------------------------------------------------
   //-- CONSTANTS for the blocks
   //-------------------------------------------------------------------------

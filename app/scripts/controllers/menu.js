@@ -2145,7 +2145,8 @@ angular.module('icestudio').controller(
     //////////////////////////////////////
 
     //----------------------------------------------------
-    //-- Callback function for launching CM from Menu
+    //-- Callback function for launching CM (Collection manager)
+    //-- from Menu
     //----------------------------------------------------
 
     function showCollectionManager() {
