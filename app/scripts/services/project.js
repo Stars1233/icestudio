@@ -785,6 +785,12 @@ angular
         return compiler.generate(target, project, opt);
       };
 
+      //----------------------------------------------------
+      //-- addBasicBlock: Add a basic block to the project
+      //-- Basic blocks are:
+      //--   Inputs, outputs, input/output labels, constant,
+      //--   memory, code, info...
+      //-----------------------------------------------------
       this.addBasicBlock = function (type) {
         graph.createBasicBlock(type);
       };
