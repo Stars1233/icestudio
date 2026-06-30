@@ -101,17 +101,30 @@ jobs:
           export DISPLAY=:0.0
           npm run buildWindows
 
+      - name: Stage Windows artifacts
+        run: |
+          # `grunt dist` runs clean:dist on every build, wiping the WHOLE dist/
+          # folder. Move the Windows artifacts out (to nightly/) before building
+          # Linux, otherwise the Linux build deletes them.
+          mkdir -p nightly
+          mv dist/icestudio-*-win64.exe "nightly/icestudio-${VERSION}-${DATE}-win64.exe"
+          mv dist/icestudio-*-win64.zip "nightly/icestudio-${VERSION}-${DATE}-win64.zip"
+
       - name: Build Linux
         run: |
           export DISPLAY=:0.0
+          # appimagetool appends $VERSION to the AppImage filename when it is set
+          # (-> Icestudio-$VERSION-x86_64.AppImage), which breaks
+          # scripts/appImageBuild.sh (it renames the expected, unversioned
+          # Icestudio-x86_64.AppImage). Unset it so the build produces the
+          # correct icestudio-<build-id>-linux64.AppImage.
+          unset VERSION
           npm run buildLinux64
 
-      - name: Rename artifacts to nightly names
+      - name: Stage Linux artifacts
         run: |
-          mv dist/icestudio-*-win64.exe "dist/icestudio-${VERSION}-${DATE}-win64.exe"
-          mv dist/icestudio-*-win64.zip "dist/icestudio-${VERSION}-${DATE}-win64.zip"
-          mv dist/icestudio-*-linux64.AppImage "dist/icestudio-${VERSION}-${DATE}-linux64.AppImage"
-          mv dist/icestudio-*-linux64.zip "dist/icestudio-${VERSION}-${DATE}-linux64.zip"
+          mv dist/icestudio-*-linux64.AppImage "nightly/icestudio-${VERSION}-${DATE}-linux64.AppImage"
+          mv dist/icestudio-*-linux64.zip "nightly/icestudio-${VERSION}-${DATE}-linux64.zip"
 
       - name: Generate changelog
         run: |
@@ -138,10 +151,10 @@ jobs:
           target_commitish: develop
           body_path: changelog.md
           files: |
-            dist/icestudio-${{ env.VERSION }}-${{ env.DATE }}-win64.exe
-            dist/icestudio-${{ env.VERSION }}-${{ env.DATE }}-win64.zip
-            dist/icestudio-${{ env.VERSION }}-${{ env.DATE }}-linux64.AppImage
-            dist/icestudio-${{ env.VERSION }}-${{ env.DATE }}-linux64.zip
+            nightly/icestudio-${{ env.VERSION }}-${{ env.DATE }}-win64.exe
+            nightly/icestudio-${{ env.VERSION }}-${{ env.DATE }}-win64.zip
+            nightly/icestudio-${{ env.VERSION }}-${{ env.DATE }}-linux64.AppImage
+            nightly/icestudio-${{ env.VERSION }}-${{ env.DATE }}-linux64.zip
 
   # ---------------------------------------------------------------------------
   # macOS arm64 (ad-hoc signed)
