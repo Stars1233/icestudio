@@ -1151,8 +1151,10 @@ module.exports = function (grunt) {
     'watch': {
       scripts: {
         //-- Watch these files for changes...
+        //-- NOTE: resources/boards is intentionally NOT watched. The boardEditor
+        //-- plugin writes there at runtime (menu.json, board files); watching it
+        //-- would restart nwjs mid-write and can corrupt the running process.
         files: [
-          APP_RESOURCES + '/boards/**/*.*',
           APP_RESOURCES + '/fonts/**/*.*',
           APP_RESOURCES + '/images/**/*.*',
           APP_LOCALE + '/locale/**/*.*',
