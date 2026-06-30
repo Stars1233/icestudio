@@ -2617,3 +2617,11 @@ msgstr ""
 #: app/resources/plugins/boardEditor/js/boardEditor.js
 msgid "Reload the board list (regenerates menu.json in developer mode)"
 msgstr ""
+
+#: app/resources/plugins/boardEditor/js/boardEditor.js
+msgid "Import constraints"
+msgstr ""
+
+#: app/resources/plugins/boardEditor/js/boardEditor.js
+msgid "Import a constraint file (PCF/LPF/CST/XDC) into the pinout"
+msgstr ""

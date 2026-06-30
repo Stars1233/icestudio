@@ -57,6 +57,7 @@ angular
         'UP5K',
         'ECP5',
         'GOWIN',
+        'XILINX',
       ];
 
       $scope.boardModal = {

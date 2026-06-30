@@ -2827,3 +2827,9 @@ msgstr "Board saved but not shown in the menu: set a supported Arch and FPGA fam
 
 msgid "Reload the board list (regenerates menu.json in developer mode)"
 msgstr "Reload the board list (regenerates menu.json in developer mode)"
+
+msgid "Import constraints"
+msgstr "Import constraints"
+
+msgid "Import a constraint file (PCF/LPF/CST/XDC) into the pinout"
+msgstr "Import a constraint file (PCF/LPF/CST/XDC) into the pinout"

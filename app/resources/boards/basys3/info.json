@@ -1,10 +1,15 @@
 {
   "label": "Basys3",
-  "SysClkMhz": 50,
-  "datasheet": "https://digilent.com/reference/_media/basys3:basys3_rm.pdf?srsltid=AfmBOoqvHQWcBvSbDs1NMi9Ok-QiwHIoufQUGIMk0Opv0rldGLkdAlUC",
-  "interface": "FTDI",
-  "toolchain": "apio",
+  "mode": "apio",
+  "SysClkMhz": 100,
   "arch": "xc7",
+  "fpga": "xc7a35tcpg236-1",
+  "interface": "FTDI",
+  "datasheet": "https://digilent.com/reference/_media/basys3:basys3_rm.pdf?srsltid=AfmBOoqvHQWcBvSbDs1NMi9Ok-QiwHIoufQUGIMk0Opv0rldGLkdAlUC",
+  "group": "XILINX",
+  "apio": {
+    "board": "basys3"
+  },
   "FPGAResources": {
     "ffs": 9999,
     "luts": 9999,

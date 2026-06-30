@@ -138,6 +138,14 @@ function inferFamily(info) {
   ) {
     return 'GOWIN';
   }
+  //-- Xilinx 7-series (openXC7): arch "xc7" or an fpga part like "xc7a35t…".
+  if (
+    arch.indexOf('xc7') !== -1 ||
+    arch.indexOf('xilinx') !== -1 ||
+    fpga.indexOf('xc7') !== -1
+  ) {
+    return 'XILINX';
+  }
 
   //-- ice40 sub-families, matched by an fpga token (e.g. ice40hx8k-…)
   var ICE40 = [
@@ -177,11 +185,18 @@ var MENU_FAMILY_ORDER = [
   'UP5K',
   'ECP5',
   'GOWIN',
+  'XILINX',
 ];
 
-//-- Architectures supported by the open toolchain. Boards on other archs (e.g.
-//-- Xilinx "xc7") are left out of the menu.
-var MENU_SUPPORTED_ARCH = { ice40: true, ecp5: true, gowin: true };
+//-- Architectures supported by the open toolchain (icestorm/trellis/apicula and
+//-- openXC7 for Xilinx 7-series). Boards on any other arch are left out of the
+//-- menu.
+var MENU_SUPPORTED_ARCH = {
+  ice40: true,
+  ecp5: true,
+  gowin: true,
+  xc7: true,
+};
 
 //-- Rebuild resources/boards/menu.json from scratch by scanning the boards
 //-- folder, so the file no longer has to be hand-maintained. A board is listed
@@ -354,10 +369,12 @@ function beTranslateUI() {
     '#be-delete',
     gettextCatalog.getString('Delete board (project boards only)')
   );
-  beTxt('#be-import-pcf', gettextCatalog.getString('Import PCF/LPF'));
+  beTxt('#be-import-pcf', gettextCatalog.getString('Import constraints'));
   beTitle(
     '#be-import-pcf',
-    gettextCatalog.getString('Import a PCF/LPF constraint file into the pinout')
+    gettextCatalog.getString(
+      'Import a constraint file (PCF/LPF/CST/XDC) into the pinout'
+    )
   );
   beTxt('#be-import-apio', gettextCatalog.getString('Import from apio'));
   beTitle(

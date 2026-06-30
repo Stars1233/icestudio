@@ -136,6 +136,42 @@ function sortPins(pins) {
   });
 }
 
+//-- Xilinx Vivado / openXC7 .xdc constraints. Pin assignments look like:
+//--   set_property PACKAGE_PIN <pin> [get_ports <name>]
+//--   set_property -dict { PACKAGE_PIN <pin> IOSTANDARD ... } [get_ports <name>]
+//-- XDC does not carry the port direction, so it defaults to "inout" unless a
+//-- trailing "# input|output|inout" comment says otherwise.
+function parseXDC(text) {
+  var pins = [];
+  var lines = String(text).split(/\r?\n/);
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i];
+    var type = 'inout';
+    //-- Strip line comment (# ...) and read an optional direction hint
+    var hashIdx = line.indexOf('#');
+    if (hashIdx !== -1) {
+      var comment = line.slice(hashIdx + 1);
+      line = line.slice(0, hashIdx);
+      var tm = comment.match(/\b(input|output|inout)\b/i);
+      if (tm) {
+        type = tm[1].toLowerCase();
+      }
+    }
+    var pm = line.match(/PACKAGE_PIN\s+(\S+)/i);
+    if (!pm) {
+      continue;
+    }
+    var gp =
+      line.match(/get_ports\s+\{([^}]+)\}/i) ||
+      line.match(/get_ports\s+([^\s\]]+)/i);
+    if (!gp) {
+      continue;
+    }
+    pins.push({ name: gp[1].trim(), value: pm[1], type: type });
+  }
+  return sortPins(pins);
+}
+
 //-- Dispatch by file extension
 function parseConstraint(filename, text) {
   if (/\.lpf$/i.test(filename)) {
@@ -143,6 +179,9 @@ function parseConstraint(filename, text) {
   }
   if (/\.cst$/i.test(filename)) {
     return parseCST(text);
+  }
+  if (/\.xdc$/i.test(filename)) {
+    return parseXDC(text);
   }
   return parsePCF(text);
 }

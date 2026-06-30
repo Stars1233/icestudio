@@ -1,8 +1,9 @@
- {
-    "input": [
-        {
-            "port": "clk",
-            "pin": "W5"
-        }
-    ]
+{
+  "input": [
+    {
+      "port": "clk",
+      "pin": "W5"
+    }
+  ],
+  "output": []
 }

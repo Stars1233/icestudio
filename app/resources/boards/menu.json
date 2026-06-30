@@ -129,5 +129,11 @@
       "Sipeed-Tang-Nano-4K",
       "Sipeed-Tang-Nano-9K"
     ]
+  },
+  {
+    "type": "XILINX",
+    "boards": [
+      "basys3"
+    ]
   }
 ]

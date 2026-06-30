@@ -2846,3 +2846,9 @@ msgstr "Placa guardada pero no visible en el menú: indica un Arch soportado y u
 
 msgid "Reload the board list (regenerates menu.json in developer mode)"
 msgstr "Recargar la lista de placas (regenera menu.json en modo desarrollador)"
+
+msgid "Import constraints"
+msgstr "Importar constraints"
+
+msgid "Import a constraint file (PCF/LPF/CST/XDC) into the pinout"
+msgstr "Importar un fichero de restricciones (PCF/LPF/CST/XDC) al pinout"
