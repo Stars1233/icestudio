@@ -1,5 +1,14 @@
 [
-  { "type": "HX1K", "boards": ["icezum", "go-board", "icestick", "iCE40-HX1K-EVB"] },
+  {
+    "type": "HX1K",
+    "boards": [
+      "icezum",
+      "go-board",
+      "icestick",
+      "iCE40-HX1K-EVB",
+      "iCEblink40-HX1K"
+    ]
+  },
   {
     "type": "HX8K",
     "boards": [
@@ -14,12 +23,37 @@
       "iCE40-HX8K",
       "icefun",
       "iceWerx",
-      "ThetaMachines-ETH4K"
+      "ThetaMachines-ETH4K",
+      "iCE40-HX8K-EVB",
+      "Pi-sicle"
     ]
   },
-  { "type": "LP8K", "boards": ["TinyFPGA-B2", "TinyFPGA-BX"] },
-  { "type": "LP1K", "boards": ["iCESugar-nano"] },
-  { "type": "U4K", "boards": ["ODT_IcyBlue_Feather", "ODT_RPGA_Feather"] },
+  {
+    "type": "LP8K",
+    "boards": [
+      "TinyFPGA-B2",
+      "TinyFPGA-BX"
+    ]
+  },
+  {
+    "type": "LP1K",
+    "boards": [
+      "iCESugar-nano"
+    ]
+  },
+  {
+    "type": "UL1K",
+    "boards": [
+      "iCE40-UL1K-Breakout"
+    ]
+  },
+  {
+    "type": "U4K",
+    "boards": [
+      "ODT_IcyBlue_Feather",
+      "ODT_RPGA_Feather"
+    ]
+  },
   {
     "type": "UP5K",
     "boards": [
@@ -38,7 +72,8 @@
       "fomu",
       "iCESugar_1_5",
       "OK-iCE40Pro",
-      "pico-ice"
+      "pico-ice",
+      "ARiCE-v1"
     ]
   },
   {
@@ -78,11 +113,21 @@
       "ColorLight-i9-v7.2_(USB-Blaster)",
       "ColorLight-i9-v7.2_(CMSIS-DAP)",
       "Cynthion-r1.4",
-      "mimas-ecp5-mini"
+      "mimas-ecp5-mini",
+      "TinyFPGA-EX-rev1",
+      "TinyFPGA-EX-rev2",
+      "ECP5-Versa"
     ]
   },
   {
-    "type": "Artix7",
-    "boards": ["basys3"]
+    "type": "GOWIN",
+    "boards": [
+      "Sipeed-Tang-Nano",
+      "Sipeed-Tang-Nano-1K",
+      "Sipeed-Tang-Nano-4K",
+      "Sipeed-Tang-Nano-9K",
+      "Sipeed-Tang-Nano-20K",
+      "BRS-100-GW1NR9"
+    ]
   }
-]
+  ]

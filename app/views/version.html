@@ -2,77 +2,138 @@
 
 <!-- This page is initially hidden -->
 <div id="version-info-tab" class="hidden">
-  <div class="version-info-tab--bg"></div>
+  <div class="version-info-tab--bg" ng-click="closeVersionInfoWindow()"></div>
   <div class="version-info-tab--body">
+    <!-- Splash header: same background image + author credit + blue band with
+         logos as the boot splash. Image and credit are loaded dynamically from
+         resources/images/splash/splash.json (see openVersionInfoWindow), so this
+         window updates by itself when the splash changes. -->
+    <div class="version-info-tab--splash">
+      <div
+        class="version-info-tab--splash--bg"
+        ng-style="{ 'background-image': splashBg }"
+      ></div>
+      <a
+        class="version-info-tab--splash--credits"
+        ng-show="splashCredit"
+        ng-href="{{ splashLink }}"
+        ng-click="openUrl(splashLink, $event)"
+        >{{ splashCredit }}</a
+      >
+      <div class="version-info-tab--splash--band">
+        <img
+          class="version-info-tab--splash--logo-icestudio"
+          src="resources/images/icestudio-github.svg"
+          alt="Icestudio"
+        />
+        <img
+          class="version-info-tab--splash--logo-fpgawars"
+          src="resources/images/fpgawars-logo.png"
+          alt="FPGA wars"
+        />
+      </div>
+    </div>
+
+    <!-- Language tabs. Default tab follows the app language (set in
+         openVersionInfoWindow): Spanish app -> Castellano, otherwise English. -->
+    <div class="version-info-tab--tabs">
+      <button
+        type="button"
+        class="version-info-tab--tab"
+        ng-class="{ active: releaseNotesLang === 'es' }"
+        ng-click="releaseNotesLang = 'es'"
+      >
+        Castellano
+      </button>
+      <button
+        type="button"
+        class="version-info-tab--tab"
+        ng-class="{ active: releaseNotesLang === 'en' }"
+        ng-click="releaseNotesLang = 'en'"
+      >
+        English
+      </button>
+    </div>
+
+    <!-- Scrollable content -->
     <div class="version-info-tab--body--content">
-      <p>
-        <a
-          ng-click="openUrl('https://github.com/FPGAwars/icestudio/wiki', $event)"
-          href="https://github.com/FPGAwars/icestudio/wiki"
-        >
-          <img
-            class="img-responsive"
-            src="resources/images/icestudio-github.svg"
-          />
-        </a>
-      </p>
+      <h1 class="version-info-tab--title">Icestudio {{ version }} (WIP)</h1>
 
-      <h1>Icestudio {{ version }} (WIP)</h1>
-      <hr />
-      <h2>{{ 'Welcome to Icestudio!' | translate }}</h2>
+      <!-- ============================ CASTELLANO ============================ -->
+      <div ng-show="releaseNotesLang === 'es'">
+        <h2>¡Bienvenido a Icestudio!</h2>
+        <p>
+          Puedes leer las notas de la versión en el
+          <a
+            ng-click="openUrl(
+               'https://github.com/FPGAwars/icestudio/wiki/Release-history',
+                $event)"
+            href="https://github.com/FPGAwars/icestudio/wiki/Release-history"
+            >WIKI de historial de versiones</a
+          >.
+        </p>
 
-      <p>
-        {{ 'You can read the release notes on the' | translate }}
-        <a
-          ng-click="openUrl(
-             'https://github.com/FPGAwars/icestudio/wiki/Release-history',
-              $event)"
-          href="https://github.com/FPGAwars/icestudio/wiki/Release-history"
-        >
-          {{ 'Release History WIKI' | translate }}
-        </a>
-      </p>
+        <h2>Agradecimiento</h2>
+        <p>
+          Esta versión ha sido posible gracias al gran trabajo de un equipo
+          activo, creciente y entusiasta, la
+          <a
+            ng-click="openUrl('https://groups.google.com/g/fpga-wars-explorando-el-lado-libre', $event)"
+            href="https://groups.google.com/g/fpga-wars-explorando-el-lado-libre"
+            >comunidad FPGAwars.</a
+          >
+          ¡Muchas gracias a todos!
+        </p>
+        <p>
+          Icestudio forma parte del
+          <a
+            ng-click="openUrl('https://fpgawars.github.io', $event)"
+            href="https://fpgawars.github.io"
+            >proyecto FPGAwars en GitHub</a
+          >.
+        </p>
 
-      <h2>{{ 'Acknowledgment' | translate }}</h2>
+        <h2>Registro de cambios</h2>
+        <pre class="version-info-tab--changelog" ng-bind="changelogEs"></pre>
+      </div>
 
-      <p>
-        <!-- prettier-ignore -->
-        <span translate>
-          This release has been possible thanks to the great work done
-          by an active, growing, enthusiastic team, the
-        </span>
-        <a
-          ng-click="openUrl('https://groups.google.com/g/fpga-wars-explorando-el-lado-libre', $event)"
-          href="https://groups.google.com/g/fpga-wars-explorando-el-lado-libre"
-        >
-          {{ 'FPGAwars community.' | translate }}
-        </a>
-        {{ 'Thank you very much all!' | translate }}
-      </p>
+      <!-- ============================== ENGLISH ============================= -->
+      <div ng-show="releaseNotesLang === 'en'">
+        <h2>Welcome to Icestudio!</h2>
+        <p>
+          You can read the release notes on the
+          <a
+            ng-click="openUrl(
+               'https://github.com/FPGAwars/icestudio/wiki/Release-history',
+                $event)"
+            href="https://github.com/FPGAwars/icestudio/wiki/Release-history"
+            >Release History WIKI</a
+          >.
+        </p>
 
-      <br />
+        <h2>Acknowledgment</h2>
+        <p>
+          This release has been possible thanks to the great work done by an
+          active, growing, enthusiastic team, the
+          <a
+            ng-click="openUrl('https://groups.google.com/g/fpga-wars-explorando-el-lado-libre', $event)"
+            href="https://groups.google.com/g/fpga-wars-explorando-el-lado-libre"
+            >FPGAwars community.</a
+          >
+          Thank you very much all!
+        </p>
+        <p>
+          Icestudio is part of the
+          <a
+            ng-click="openUrl('https://fpgawars.github.io', $event)"
+            href="https://fpgawars.github.io"
+            >FPGAwars GitHub project</a
+          >.
+        </p>
 
-      <p>
-        {{ 'Icestudio is part of' | translate }}
-        <a
-          ng-click="openUrl('https://fpgawars.github.io', $event)"
-          href="https://fpgawars.github.io"
-        >
-          {{ 'FPGAwars GitHub project' | translate }}
-        </a>
-      </p>
-
-      <p>
-        <a
-          ng-click="openUrl('https://fpgawars.github.io', $event)"
-          href="https://fpgawars.github.io"
-        >
-          <img
-            class="img-responsive"
-            src="resources/images/fgpawars-banner.svg"
-          />
-        </a>
-      </p>
+        <h2>Changelog</h2>
+        <pre class="version-info-tab--changelog" ng-bind="changelogEn"></pre>
+      </div>
     </div>
 
     <div class="version-info-tab--options">
@@ -87,8 +148,6 @@
       <!-- Close button -->
       <div class="version-info-tab--options--group"></div>
       <div class="version-info-tab--options--group util--text-align-right">
-        <!-- Callback function. It call when the close button -->
-        <!--    is pressed                                    -->
         <button ng-click="closeVersionInfoWindow()">
           {{ 'Close' | translate }}
         </button>

@@ -53,14 +53,135 @@ function getFilesizeInBytes(filename) {
   return fileSizeInBytes;
 }
 
+//-- Update the plugin window title (and the document title) so the user can
+//-- always see which serial device the terminal is connected to.
+function setWindowTitle(title) {
+  try {
+    document.title = title;
+  } catch (e) {
+    /* ignore */
+  }
+  try {
+    if (typeof nw !== 'undefined' && nw.Window) {
+      nw.Window.get().title = title;
+    }
+  } catch (e) {
+    /* ignore */
+  }
+}
+
+//-- Common USB serial vendor IDs -> human name (best-effort identification).
+var USB_VENDORS = {
+  0x0403: 'FTDI',
+  0x10c4: 'Silicon Labs',
+  0x1a86: 'QinHeng (CH34x)',
+  0x067b: 'Prolific',
+  0x2341: 'Arduino',
+  0x2a03: 'Arduino',
+  0x303a: 'Espressif',
+  0x0483: 'STMicroelectronics',
+  0x1366: 'SEGGER',
+  0x0d28: 'ARM mbed',
+  0x04d8: 'Microchip',
+  0x239a: 'Adafruit',
+  0x16c0: 'Van Ooijen',
+  0x1209: 'pid.codes',
+  0x0925: 'Lakeview',
+  0x1b4f: 'SparkFun',
+};
+
+//-- Build a descriptive label for the connected port from what Web Serial
+//-- exposes (port.getInfo() -> { usbVendorId, usbProductId }), e.g.
+//-- "FTDI (0403:6010) @ 115200 8N1". The VID:PID is shown in parentheses; the
+//-- vendor name is added when the VID is known.
+function serialPortLabel(port, options) {
+  let info = {};
+  try {
+    info = port.getInfo() || {};
+  } catch (e) {
+    info = {};
+  }
+
+  let dev;
+  if (typeof info.usbVendorId === 'number') {
+    let hex = function (n) {
+      return (typeof n === 'number' ? n : 0)
+        .toString(16)
+        .toUpperCase()
+        .padStart(4, '0');
+    };
+    let vidpid = hex(info.usbVendorId) + ':' + hex(info.usbProductId);
+    let name = USB_VENDORS[info.usbVendorId];
+    dev = name ? name + ' (' + vidpid + ')' : 'USB device (' + vidpid + ')';
+  } else if (typeof info.bluetoothServiceClassId !== 'undefined') {
+    dev = 'Bluetooth serial';
+  } else {
+    dev = 'Serial port';
+  }
+
+  let parityInitial = { no: 'N', odd: 'O', even: 'E' };
+  let framing =
+    (options.dataBits === 'seven' ? '7' : '8') +
+    (parityInitial[options.parityBit] || 'N') +
+    (options.stopBits === 'two' ? '2' : '1');
+  return dev + ' @ ' + options.bitrate + ' ' + framing;
+}
+
+//-- Return the whole terminal content (visible + scrollback) as plain text.
+function getTerminalText() {
+  if (typeof term === 'undefined' || !term || !term.selectAll) {
+    return '';
+  }
+  try {
+    term.selectAll();
+    let text = term.getSelection() || '';
+    term.clearSelection();
+    //-- Drop trailing blank lines / spaces produced by the empty terminal grid
+    return text.replace(/[ \t]+$/gm, '').replace(/\n{2,}$/, '\n');
+  } catch (e) {
+    return '';
+  }
+}
+
+//-- Copy a string to the clipboard.
+function copyText(text) {
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text);
+    }
+  } catch (e) {
+    /* ignore */
+  }
+}
+
+//-- Open a native "Save As" dialog (NW.js) and write `text` to the chosen
+//-- file. Lets the user pick any path and file name on the system.
+function saveTextToFile(text, defaultName) {
+  let input = document.createElement('input');
+  input.type = 'file';
+  input.setAttribute('nwsaveas', defaultName || 'serial-terminal.txt');
+  input.setAttribute('accept', '.txt,.log');
+  input.style.display = 'none';
+  document.body.appendChild(input);
+  input.addEventListener('change', function () {
+    let path = input.value;
+    document.body.removeChild(input);
+    if (!path) {
+      //-- User cancelled the dialog
+      return;
+    }
+    try {
+      nodeFs.writeFileSync(path, text);
+    } catch (e) {
+      window.alert(
+        'Could not save the file:\n' + (e && e.message ? e.message : e)
+      );
+    }
+  });
+  input.click();
+}
+
 var serialManager = function () {
-  //-- Serial device information:
-  //--  DeviceInfo:
-  //--   * displayName (String): Serial device name
-  //--   * path (String): Device's system path
-  //--   * productId: USB product ID
-  //--   * vendorId: number optional
-  this.devices = [];
   this.sessionBuffer = [];
 
   //-- Information about the current device state
@@ -101,27 +222,40 @@ var serialManager = function () {
   this.registeredCallbacks = {};
 
   //-----------------------------------------------------------------------
-  //-- Function: Read all the available serial devices
-  //-- When the devices are ready, the callback(devInfo) function is
-  //-- executed
+  //-- Show the native port chooser and connect to the chosen device.
+  //--   * userOptions: serial configuration (bitrate, dataBits, ...)
+  //--   * callback_onconnect / callback_onreceive: same as plug()
+  //--
+  //-- Web Serial authorises one port at a time through the native chooser
+  //-- (requestPort), so there is no "list every device" table any more: the
+  //-- Connect button picks AND opens the device in a single step.
   //-----------------------------------------------------------------------
-  this.refreshDevices = function (callback) {
-    //-- Call the Serial Chrome API
-    //-- TODO: Chrome.Serial API is deprecatedd
-    //-- use Web Serial API instead:
-    //-- https://developer.chrome.com/docs/extensions/reference/serial/
-    //---------------------------------------------------------------------
-    //-- Callback(DeviceInfo)
-    //---------------------------------------------------------------------
-    chrome.serial.getDevices(
-      function (devInfo) {
-        //-- Store the serial devices in the serial manager
-        this.devices = devInfo;
-        console.log(devInfo);
-        //-- Execute the callback function
-        callback(devInfo);
-      }.bind(this)
-    );
+  this.requestAndConnect = function (
+    userOptions,
+    callback_onconnect,
+    callback_onreceive
+  ) {
+    let self = this;
+
+    if (!navigator.serial) {
+      console.error('Web Serial API not available (navigator.serial)');
+      return;
+    }
+
+    //-- The native chooser needs the Connect button's user gesture, so this
+    //-- must run synchronously from the click handler.
+    navigator.serial
+      .requestPort()
+      .then(function (port) {
+        self.plug(port, userOptions, callback_onconnect, callback_onreceive);
+      })
+      .catch(function (e) {
+        //-- NotFoundError = the user closed the chooser without selecting a
+        //-- device: a normal cancel, not an error.
+        if (e && e.name !== 'NotFoundError') {
+          console.error('requestPort error', e);
+        }
+      });
   };
 
   //-----------------------------------------------------------------------
@@ -130,29 +264,86 @@ var serialManager = function () {
   this.unplug = function (callback) {
     if (typeof callback === 'undefined') callback = dummyUnplug;
 
-    if (
-      this.info.status !== false &&
-      this.info.dev !== -1 &&
-      this.info.conn !== false
-    ) {
-      chrome.serial.disconnect(this.info.conn.connectionId, callback);
-      this.info.status = false;
-      this.info.dev = -1;
-      this.info.conn = false;
+    let conn = this.info.conn;
+    let wasOpen = this.info.status !== false && conn && conn !== false;
+
+    //-- Reset state and return the UI to the config screen IMMEDIATELY, so the
+    //-- Disconnect button always responds even if the underlying stream is slow
+    //-- (or fails) to cancel/close. The port is then torn down in the
+    //-- background below.
+    this.info.status = false;
+    this.info.dev = -1;
+    this.info.label = '';
+    this.info.conn = false;
+    setWindowTitle('Serial Terminal');
+    callback();
+
+    if (!wasOpen) {
+      return;
     }
+
+    //-- Background teardown: cancel the reader (with a timeout so a hung cancel
+    //-- never blocks us), release both stream locks, then close the port.
+    let port = conn.port;
+    let withTimeout = function (p, ms) {
+      return Promise.race([
+        Promise.resolve(p),
+        new Promise(function (resolve) {
+          setTimeout(resolve, ms);
+        }),
+      ]);
+    };
+    let closePort = function () {
+      try {
+        if (port && port.close) {
+          port.close().catch(function () {});
+        }
+      } catch (e) {
+        /* ignore */
+      }
+    };
+
+    Promise.resolve()
+      .then(function () {
+        if (conn.reader) {
+          return withTimeout(conn.reader.cancel(), 1500).then(
+            function () {
+              try {
+                conn.reader.releaseLock();
+              } catch (e) {
+                /* a pending read may still hold the lock; ignore */
+              }
+            },
+            function () {
+              /* cancel rejected: ignore */
+            }
+          );
+        }
+      })
+      .catch(function () {})
+      .then(function () {
+        try {
+          if (conn.writer) {
+            conn.writer.releaseLock();
+          }
+        } catch (e) {
+          /* ignore */
+        }
+      })
+      .then(closePort, closePort);
   };
 
   //-----------------------------------------------------------------------
-  //-- Configure the serial device. All the callback functions are set
+  //-- Open and configure a serial device. All the callback functions are set
   //--
   //-- INPUTS:
-  //--   * id: Devide identifiction
+  //--   * port: a live Web Serial port (from navigator.serial.requestPort)
   //--   * userOptions: User configuration
   //--   * callback_onconnect: Executed when the conection is done
   //--   * callbacl_onreceive: Executed when data is received
   //-----------------------------------------------------------------------
   this.plug = function (
-    id,
+    port,
     userOptions,
     callback_onconnect,
     callback_onreceive
@@ -171,141 +362,120 @@ var serialManager = function () {
         options[prop] = userOptions[prop];
       }
     }
-    let _this = this;
+    let self = this;
+
+    //-- The port is a live Web Serial port obtained from requestPort()
+    if (!port || typeof port.open !== 'function') {
+      console.error('No serial port to open');
+      return;
+    }
+
+    //-- Map the chrome.serial option names to the Web Serial open() options
+    let dataBitsMap = { seven: 7, eight: 8 };
+    let stopBitsMap = { one: 1, two: 2 };
+    let parityMap = { no: 'none', odd: 'odd', even: 'even' };
+    let openOptions = {
+      baudRate: options.bitrate,
+      dataBits: dataBitsMap[options.dataBits] || 8,
+      stopBits: stopBitsMap[options.stopBits] || 1,
+      parity: parityMap[options.parityBit] || 'none',
+    };
+
     //-- Open the serial device
-    chrome.serial.connect(
-      this.devices[id].path, //-- Path
-      options, //-- User options
-      function (connectionInfo) {
-        //-- If the connection was ok, configure the serial manager
-        if (
-          typeof connectionInfo !== 'undefined' &&
-          connectionInfo !== false &&
-          typeof connectionInfo.connectionId !== 'undefined'
-        ) {
-          //-- Connection stablished
-          this.info.status = true;
+    port
+      .open(openOptions)
+      .then(function () {
+        //-- Connection stablished
+        self.info.status = true;
+        self.info.dev = port;
 
-          //-- Store the current devide id
-          this.info.dev = id;
-
-          //-- Store the connection Information
-          this.info.conn = connectionInfo;
-
-          //-- Set the callback function for the data received
-          let reader_callback = this.reader.bind(this);
-          if (typeof callback_onreceive !== 'undefined') {
-            this.receiverUserF = callback_onreceive;
-          } else {
-            this.receiverUserF = false;
-          }
-
-          if (
-            typeof this.registeredCallbacks[reader_callback.name] ===
-            'undefined'
-          ) {
-            chrome.serial.onReceive.addListener(reader_callback);
-            this.registeredCallbacks[reader_callback.name] = true;
-          }
-
-          //-- Set the callback function for the connection
-          if (typeof callback_onconnect !== 'undefined')
-            callback_onconnect(connectionInfo);
+        //-- Keep the raw getInfo() for diagnostics (what the device exposes)
+        try {
+          self.info.rawInfo = port.getInfo();
+          console.log('serial getInfo()', self.info.rawInfo);
+        } catch (e) {
+          self.info.rawInfo = null;
         }
-      }.bind(this)
-    );
+
+        //-- Human-readable label shown in the window title and status line
+        self.info.label = serialPortLabel(port, options);
+        setWindowTitle('Serial Terminal — ' + self.info.label);
+
+        //-- Synthetic connectionId (Web Serial has no numeric id; reader()
+        //-- still compares info.connectionId against this value)
+        self.connCounter = (self.connCounter || 0) + 1;
+        let writer = port.writable.getWriter();
+        let reader = port.readable.getReader();
+        self.info.conn = {
+          connectionId: self.connCounter,
+          port: port,
+          reader: reader,
+          writer: writer,
+          keepReading: true,
+        };
+
+        //-- Set the callback function for the data received
+        if (typeof callback_onreceive !== 'undefined') {
+          self.receiverUserF = callback_onreceive;
+        } else {
+          self.receiverUserF = false;
+        }
+
+        //-- Read loop (replaces chrome.serial.onReceive). Feeds the same
+        //-- reader(info) handler with { connectionId, data } as before.
+        let readLoop = function () {
+          reader
+            .read()
+            .then(function (res) {
+              if (res.done) {
+                return;
+              }
+              if (res.value && res.value.length) {
+                self.reader({
+                  connectionId: self.connCounter,
+                  data: res.value,
+                });
+              }
+              if (self.info.conn && self.info.conn.keepReading) {
+                readLoop();
+              }
+            })
+            .catch(function () {
+              //-- reader cancelled / port closed: stop silently
+            });
+        };
+        readLoop();
+
+        //-- Set the callback function for the connection
+        if (typeof callback_onconnect !== 'undefined') {
+          callback_onconnect(self.info.conn);
+        }
+      })
+      .catch(function (e) {
+        console.error('serial open error', e);
+        self.info.status = false;
+        //-- Give the user clear feedback: the most common failure is the port
+        //-- already being in use (e.g. an upload/monitor is running).
+        try {
+          window.alert(
+            'Could not open the serial port:\n' +
+              (e && e.message ? e.message : e) +
+              '\n\nIt may be in use by another program (e.g. a running upload).'
+          );
+        } catch (err) {
+          /* ignore */
+        }
+      });
   };
+  //-- Dump the current terminal content to a file chosen by the user through
+  //-- a native "Save As" dialog.
   this.dump = function () {
-    function concat(arrays) {
-      // sum of individual array lengths
-      let totalLength = arrays.reduce((acc, value) => acc + value.length, 0);
-
-      if (!arrays.length) return null;
-
-      let result = new Uint8Array(totalLength);
-
-      // for each array - copy it over result
-      // next array is copied right after the previous one
-      let length = 0;
-      for (let array of arrays) {
-        result.set(array, length);
-        length += array.length;
-      }
-
-      return result;
+    let text = getTerminalText();
+    if (!text) {
+      window.alert('The terminal is empty — there is nothing to dump.');
+      return;
     }
-
-    //Getting environment config, event that start everything inside the plugin
-    iceStudio.bus.events.publish('pluginManager.getEnvironment');
-
-    var captureFileFD = false;
-    var captureFileFD8 = false;
-    let workingPath = appEnv.BUILD_DIR;
-    console.log('ÁREA DE TRABAJO ' + workingPath);
-    let OS = require('os').platform();
-    let slashOS = OS === 'win32' ? '\\' : '/';
-    let captureFile = workingPath + slashOS + 'icerok16bit.raw';
-    let captureFile8 = workingPath + slashOS + 'icerok8bit.raw';
-
-    captureFileFD = nodeFs.openSync(captureFile, 'w+');
-    captureFileFD8 = nodeFs.openSync(captureFile8, 'w+');
-    let total = 0;
-    /* let z = false;
-         let i = 0, j = 0;
-         let str = '';
-
-         for (i = 0; i < this.sessionBuffer.length; i++) {
-             total += this.sessionBuffer.length;
-             //  z = Buffer.from(this.sessionBuffer[i]);
-             //nodeFs.write(captureFileFD, z, 0, z.length, null, function (err) { });
-             for (j = 0; j < z.length; j++) {
-                 // console.log(typeof z[j]);
-                 // nodeFs.write(captureFileFD, Buffer.from(z[j]), 0, 1, null, function (err) { });
-                 //total++;
-
-                 //console.log(z[j]);
-                 // str = z[j].toString(2).padStart(8, '0') + '\n';
-                 // console.log(str);
-                 // nodeFs.write(captureFileFD, str, 0);
-
-             }
-         }*/
-    let dumpdata = concat(this.sessionBuffer); // new Uint8Array(total);
-
-    let wu16 = 0;
-    let stack = [];
-    let stack8 = [];
-    for (let i = 0; i < dumpdata.length; i += 2) {
-      if (i + 1 <= dumpdata.length - 1) {
-        wu16 = ((dumpdata[i] << 8) | dumpdata[i + 1]) << 4;
-        stack.push(wu16);
-        stack8.push(dumpdata[i + 1]);
-        stack8.push(dumpdata[i]);
-        //console.log(wu16, dumpdata[i], dumpdata[i + 1], dumpdata[i + 1] << 8);
-      }
-    }
-    let dumpdata16 = new Uint16Array(stack);
-    let dumpdata8 = new Uint8Array(stack8);
-    nodeFs.write(
-      captureFileFD,
-      dumpdata16,
-      0,
-      dumpdata16.length,
-      null,
-      function (err) {}
-    );
-    nodeFs.write(
-      captureFileFD8,
-      dumpdata8,
-      0,
-      dumpdata8.length,
-      null,
-      function (err) {}
-    );
-
-    console.log('TOTAL', total);
-    nodeFs.close(captureFileFD);
-    nodeFs.close(captureFileFD8);
+    saveTextToFile(text, 'serial-terminal.txt');
   };
   //-----------------------------------------------------------------------
   //-- Data received from the serial device
@@ -343,12 +513,12 @@ var serialManager = function () {
   //-- Send data to the serial device
   //-----------------------------------------------------------------------
   this.write = function (data) {
-    if (this.info.status === true) {
-      chrome.serial.send(
-        this.info.conn.connectionId,
-        this.encoder.encode(data),
-        function (sendInfo) {}
-      );
+    if (this.info.status === true && this.info.conn && this.info.conn.writer) {
+      this.info.conn.writer
+        .write(this.encoder.encode(data))
+        .catch(function (e) {
+          console.error('serial write error', e);
+        });
     }
   };
 };
@@ -376,66 +546,6 @@ let hexView = false;
 let onEnterMode = '\r\n'; //by default
 
 let sm = new serialManager();
-
-function renderSerialDevices(dev) {
-  let infoLe = document.getElementById('device-info');
-  let connectLe = document.getElementById('bt-connect');
-  addClass(connectLe, 'hidden');
-
-  html = `<table  class="table-auto">
-      <thead>
-        <tr>
-          <th  class="w-1/2 px-4 py-2">Select</th>
-          <th  class="w-1/2 px-4 py-2">Name</th>
-          <th  class="w-1/2 px-4 py-2">Path</th>
-          <th  class="w-1/2 px-4 py-2">productId</th>
-          <th  class="w-1/2 px-4 py-2">vendorId</th></tr>
-      </thead>
-    <tbody>`;
-
-  if (typeof dev !== 'undefined' && dev !== false && dev.length > 0) {
-    /* Each device object is as:
-            displayName: "Alhambra_II_v1.0A_-_B06-158"
-            path: "/dev/ttyUSB1"
-            productId: 24592
-            vendorId: 1027
-        */
-
-    let checked = 'checked';
-    for (let i = dev.length - 1; i > -1; i--) {
-      html +=
-        '<tr>' +
-        `<td class="border px-4 py-2">
-                  <input type="radio" name="serial-dev" value="` +
-        i +
-        '" ' +
-        checked +
-        `>
-                </td>` +
-        '<td class="border px-4 py-2">' +
-        dev[i].displayName +
-        '</td>' +
-        '<td class="border px-4 py-2">' +
-        dev[i].path +
-        '</td>' +
-        '<td class="border px-4 py-2">' +
-        dev[i].productId +
-        '</td>' +
-        '<td class="border px-4 py-2">' +
-        dev[i].vendorId +
-        `</td>
-                </tr>`;
-
-      checked = '';
-    }
-
-    removeClass(connectLe, 'hidden');
-  }
-  html += '</tbody></table>';
-
-  infoLe.innerHTML = html;
-  removeClass(infoLe, 'hidden');
-}
 
 //---------------------------------------------------------------------------
 //-- Callback function. It is executed when data is received from the
@@ -519,6 +629,14 @@ function renderPlug(connectionInfo) {
   let xtermLe = document.getElementById('panel-xterm');
   addClass(configLe, 'hidden');
   removeClass(xtermLe, 'hidden');
+
+  //-- Show which device the terminal is connected to (unified in the header)
+  let label = sm.info.label || 'serial port';
+  let statusLe = document.getElementById('st-status');
+  if (statusLe) {
+    statusLe.textContent = '🟢 ' + label;
+    statusLe.classList.add('is-connected');
+  }
 
   const terminal = document.getElementById('terminal');
   let inputlengthprev = 0;
@@ -615,6 +733,12 @@ function renderUnPlug() {
   let xtermLe = document.getElementById('panel-xterm');
   removeClass(configLe, 'hidden');
   addClass(xtermLe, 'hidden');
+
+  let statusLe = document.getElementById('st-status');
+  if (statusLe) {
+    statusLe.textContent = '○ Not connected';
+    statusLe.classList.remove('is-connected');
+  }
 }
 
 //---------------------------------------------------------------------------
@@ -697,60 +821,36 @@ confOnEnter.addEventListener(
 );
 
 //---------------------------------------------------------------------------
-//-- Refresh all the Serial devices
+//-- Connect to a serial device
 //---------------------------------------------------------------------------
-let getDevicesLe = document.querySelectorAll(
-  '[data-action="serial-getdevices"]'
-);
+//-- Read the serial configuration chosen by the user in the settings panel
+function readSerialOptions() {
+  let opts = {};
+  let bps = parseInt(document.getElementById('sconf-bps').value);
+  if (bps === -1) {
+    //-- "Custom" selected: read the free-text baud rate field
+    bps = parseInt(document.getElementById('sconf-cbps').value);
+  }
+  if (!bps || isNaN(bps)) {
+    bps = 115200;
+  }
+  opts.bitrate = bps;
+  opts.dataBits = document.getElementById('sconf-databits').value;
+  opts.parityBit = document.getElementById('sconf-paritybit').value;
+  opts.stopBits = document.getElementById('sconf-stopbits').value;
+  return opts;
+}
 
-//-- Callback function for the "Reload Serial Device" button
-getDevicesLe[0].addEventListener(
-  'click',
-  (e) => {
-    e.preventDefault();
-    sm.refreshDevices(renderSerialDevices);
-    return false;
-  },
-  false
-);
-
+//-- Connect button: opens the native port chooser and connects to the chosen
+//-- device using the current settings. Web Serial authorises one port at a
+//-- time through that chooser, so there is no device list/table to maintain.
 let connectLe = document.querySelectorAll('[data-action="serial-connect"]');
 
 connectLe[0].addEventListener(
   'click',
   function (e) {
     e.preventDefault();
-    let listedDevices = document.getElementsByName('serial-dev');
-    for (let i = 0; i < listedDevices.length; i++) {
-      (currentOperator = [i]), (result = '');
-
-      if (listedDevices[i].checked) {
-        let opts = {};
-        let opt = document.getElementById('sconf-bps');
-        let val = parseInt(opt.value);
-        switch (val) {
-          case -1:
-            opt = document.getElementById('sconf-cbps');
-            val = parseInt(opt.value);
-            opts.bitrate = val;
-            break;
-          default:
-            opts.bitrate = val;
-        }
-
-        opt = document.getElementById('sconf-databits');
-        val = opt.value;
-        opts.dataBits = val;
-        opt = document.getElementById('sconf-paritybit');
-        val = opt.value;
-        opts.parityBit = val;
-        opt = document.getElementById('sconf-stopbits');
-        val = opt.value;
-        opts.stopBits = val;
-        sm.plug(listedDevices[i].value, opts, renderPlug, renderRec);
-      }
-    }
-
+    sm.requestAndConnect(readSerialOptions(), renderPlug, renderRec);
     return false;
   },
   false
@@ -799,6 +899,74 @@ dumpLe[0].addEventListener(
   },
   false
 );
+
+//---------------------------------------------------------------------------
+//-- Manual / help side panel (slides in from the right, overlays the window
+//-- content on both the config and terminal screens).
+//---------------------------------------------------------------------------
+(function () {
+  let sideLe = document.getElementById('st-manual');
+  let backdropLe = document.getElementById('st-manual-backdrop');
+
+  function setManual(open) {
+    if (sideLe) {
+      sideLe.classList.toggle('is-open', open);
+      sideLe.setAttribute('aria-hidden', open ? 'false' : 'true');
+    }
+    if (backdropLe) {
+      backdropLe.classList.toggle('is-open', open);
+    }
+  }
+
+  document
+    .querySelectorAll('[data-action="serial-manual"]')
+    .forEach(function (b) {
+      b.addEventListener('click', function (e) {
+        e.preventDefault();
+        setManual(true);
+      });
+    });
+  document
+    .querySelectorAll('[data-action="serial-manual-close"]')
+    .forEach(function (b) {
+      b.addEventListener('click', function (e) {
+        e.preventDefault();
+        setManual(false);
+      });
+    });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      setManual(false);
+    }
+  });
+})();
+
+//---------------------------------------------------------------------------
+//-- Copy the terminal content to the clipboard (button at the top-right of
+//-- the terminal).
+//---------------------------------------------------------------------------
+(function () {
+  document
+    .querySelectorAll('[data-action="serial-copy"]')
+    .forEach(function (btn) {
+      btn.addEventListener('click', function (e) {
+        e.preventDefault();
+        let text = getTerminalText();
+        if (!text) {
+          return;
+        }
+        copyText(text);
+        //-- Brief "Copied" feedback on the button label
+        let original = btn.getAttribute('data-label') || btn.textContent;
+        btn.setAttribute('data-label', original);
+        btn.textContent = '✓ Copied';
+        setTimeout(function () {
+          btn.textContent = btn.getAttribute('data-label') || original;
+        }, 1200);
+      });
+    });
+})();
+
 function onClose() {
   if (typeof sm !== 'undefined' && sm !== false && sm !== null) {
     sm.unplug();

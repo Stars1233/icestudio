@@ -1,86 +1,48 @@
 name: 'Icestudio for ARM 64'
 
-# Controls when the action will run.
+# On-demand Linux aarch64 build.
+#
+# Triggered manually from the Actions tab (workflow_dispatch): pick the branch
+# in the "Use workflow from" selector and it builds THAT branch, uploading the
+# aarch64 .zip as a workflow artifact (no release/tag is created).
 on:
-  # Workflow run automatically when prettier hook finish succesfully
-  workflow_run:
-    workflows: ['Code standardizer hook for PRs']
-    types:
-      - completed
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
   build:
-    # Only runs if standardizer runs OK
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
-
-    # The type of runner that the job will run on
-    runs-on: ubuntu-22.04
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
+    runs-on: ubuntu-24.04
     steps:
-      # Checkout the develop branch
       - uses: actions/checkout@v4
 
-      # Check commit message for keyword RUN_BUILD
-      - name: Check commit message for RUN_BUILD
-        id: commit_message_check
-        run: |
-          COMMIT_MESSAGE=$(git log -1 --pretty=%B)
-          echo "Commit message: $COMMIT_MESSAGE"
-          if [[ "$COMMIT_MESSAGE" != *"RUN_BUILD"* ]]; then
-            echo "Commit message does not contain RUN_BUILD, skipping build."
-            echo "skip_build=true" >> $GITHUB_ENV
-          fi
-
-      - name: 🔍 Replace NW SDK version for normal before install npm packages
-        run: |
-          sed -i 's/\("nw": "[^"]*\)-sdk"/\1"/g' package.json
-
-      - name: Setup por arm64
-        if: env.skip_build != 'true'
-        run: ./scripts/preInstallArm64.sh
-
       - name: Setup Nodejs version
-        if: env.skip_build != 'true'
         uses: actions/setup-node@v4
         with:
-          node-version: '19.3.0'
+          node-version: '23.3.0'
 
       - name: Install npm dependencies
-        if: env.skip_build != 'true'
         run: npm install --legacy-peer-deps
 
-      - name: Build Linux
-        if: env.skip_build != 'true'
+      - name: Build Aarch64
         run: |
           export DISPLAY=:0.0
           npm run buildAarch64
 
-      # jq is bash command for reading properties from a json file
       - name: Install jq package
-        if: env.skip_build != 'true'
-        run: sudo apt install jq
+        run: sudo apt install -y jq
 
       # Read the icestudio version from package.json (version property)
       - id: icestudio_json
-        if: env.skip_build != 'true'
         run: |
           version=$(jq -r '.version' package.json)
           echo "icestudio_version=${version}" >> $GITHUB_OUTPUT
 
       # Timestamp for the build
       - id: build_date
-        if: env.skip_build != 'true'
         run: |
           timestamp=$(jq -r '.ts' app/buildinfo.json)
           echo "icestudio_timestamp=${timestamp}" >> $GITHUB_OUTPUT
 
       - name: 'Upload ZIP/Aarch64'
-        if: env.skip_build != 'true'
         env:
           ICESTUDIO_VERSION: '${{steps.icestudio_json.outputs.icestudio_version}}'
           TIMESTAMP: '${{steps.build_date.outputs.icestudio_timestamp}}'

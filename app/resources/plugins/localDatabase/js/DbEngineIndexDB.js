@@ -69,7 +69,92 @@ class DbEngineIndexDB {
         // Handle errors!
       };
       request.onsuccess = function (event) {
-        iceStudio.bus.events.publish('localDatabase.retrieved', request.result);
+        //-- When the key does not exist, IndexedDB returns undefined. Echo
+        //-- back a minimal descriptor carrying the requested id so that
+        //-- subscribers can still react to a "not found" result instead of
+        //-- waiting forever for a record that will never arrive.
+        let result = request.result;
+        if (typeof result === 'undefined') {
+          result = {
+            id: item.data.id,
+            store: item.data.store,
+            notFound: true,
+          };
+        }
+        iceStudio.bus.events.publish('localDatabase.retrieved', result);
+      };
+    }
+  }
+
+  delete(item) {
+    if (this.isReady(item.database.dbId)) {
+      let transaction = this.databases[item.database.dbId].db.transaction(
+        [item.data.store],
+        'readwrite'
+      );
+
+      transaction.onerror = function (event) {
+        console.log(
+          'There has been an error deleting your data: ' + transaction.error
+        );
+      };
+
+      let store = transaction.objectStore(item.data.store);
+      let request = store.delete(item.data.id);
+
+      request.onsuccess = function (e) {
+        iceStudio.bus.events.publish('localDatabase.deleted', item);
+      };
+    }
+  }
+
+  retrieveAll(item) {
+    if (this.isReady(item.database.dbId)) {
+      let transaction = this.databases[item.database.dbId].db.transaction(
+        [item.data.store],
+        'readonly'
+      );
+
+      transaction.onerror = function (event) {
+        console.log(
+          'There has been an error reading the store: ' + transaction.error
+        );
+      };
+
+      let store = transaction.objectStore(item.data.store);
+      let request = store.getAll();
+
+      request.onerror = function (event) {
+        // Handle errors!
+      };
+      request.onsuccess = function (event) {
+        iceStudio.bus.events.publish('localDatabase.retrievedAll', {
+          dbId: item.database.dbId,
+          store: item.data.store,
+          results: request.result || [],
+        });
+      };
+    }
+  }
+
+  clear(item) {
+    if (this.isReady(item.database.dbId)) {
+      let transaction = this.databases[item.database.dbId].db.transaction(
+        [item.data.store],
+        'readwrite'
+      );
+
+      transaction.onerror = function (event) {
+        console.log(
+          'There has been an error clearing the store: ' + transaction.error
+        );
+      };
+
+      let store = transaction.objectStore(item.data.store);
+      let request = store.clear();
+
+      request.onsuccess = function (e) {
+        iceStudio.bus.events.publish('localDatabase.cleared', item);
       };
     }
   }

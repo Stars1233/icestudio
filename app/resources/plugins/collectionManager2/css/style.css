@@ -9,3 +9,70 @@
 .tree-view-root {
   font-size: 12px;
 }
+
+/* Header toolbar (persists across tree re-renders) */
+.cm2-header {
+  height: 30px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 30px 0 8px; /* room on the right for the host close button */
+}
+/* Real-time block filter */
+.cm2-filter {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 22px;
+  box-sizing: border-box;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 3px;
+  outline: none;
+}
+/* Reindex button: icon only */
+.cm2-reindex {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 22px;
+  padding: 0;
+  border-radius: 3px;
+  cursor: pointer;
+  border: 1px solid #bbb;
+  background: transparent;
+  font-size: 13px;
+  line-height: 1;
+}
+.cm2-reindex::before {
+  content: '\21bb'; /* clockwise circular arrow */
+  font-weight: bold;
+}
+.cm2-reindex:hover {
+  border-color: #888;
+}
+.cm2-reindex:active {
+  transform: translateY(1px);
+}
+
+/* Indexing status panel */
+.cm2-status {
+  padding: 22px 12px;
+  text-align: center;
+}
+.cm2-status .lds-grid {
+  position: relative;
+  top: auto;
+  left: auto;
+  right: auto;
+  bottom: auto;
+  margin: 0 auto 12px;
+}
+.cm-loader--path {
+  margin-top: 8px;
+  font-size: 11px;
+  color: #888;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  direction: rtl; /* keep the file name (tail) visible when truncated */
+}

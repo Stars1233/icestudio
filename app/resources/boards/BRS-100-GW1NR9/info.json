@@ -1,0 +1,8 @@
+{
+  "label": "Brisbane Silicon 9k",
+  "SysClkMhz": 0,
+  "datasheet": "https://github.com/BrisbaneSilicon/BRS-100-GW1NR9",
+  "interface": "FTDI",
+  "arch": "gowin",
+  "FPGAResources": {}
+}

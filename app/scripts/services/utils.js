@@ -25,106 +25,6 @@ angular
       sparkMD5,
       fsLock
     ) {
-      let _pythonExecutableCached = null;
-      let _pythonPipExecutableCached = null;
-
-      // Get the system pip executable
-      // It is available in the common.ENV_PIP object
-      this.getPythonPipExecutable = function () {
-        if (!_pythonExecutableCached) {
-          this.getPythonExecutable();
-        }
-        if (!_pythonPipExecutableCached) {
-          _pythonPipExecutableCached = common.ENV_PIP;
-        }
-        return _pythonPipExecutableCached;
-      };
-
-      //------------------------------------------------
-      //-- Get the system python executable
-      //--
-      this.getPythonExecutable = function () {
-        //-- If the executable was not obtained before...
-        if (!_pythonExecutableCached) {
-          //-- The possible executables are stored in this Array
-          const possibleExecutables = [];
-
-          if (
-            typeof common.PYTHON_ENV !== 'undefined' &&
-            common.PYTHON_ENV.length > 0
-          ) {
-            possibleExecutables.push(common.PYTHON_ENV);
-          } //-- Possible python executables in Windows
-          else if (common.WIN32) {
-            possibleExecutables.push('py.exe -3');
-            possibleExecutables.push('python.exe');
-          } //-- Python executables in Linux/Mac
-          else {
-            possibleExecutables.push('python3');
-            possibleExecutables.push('python');
-          }
-
-          //-- Move through all the possible executables
-          //-- checking if they are executable
-          for (let executable of possibleExecutables) {
-            iceConsole.log('Trying executable: ' + executable);
-            if (isPython3(executable)) {
-              _pythonExecutableCached = executable;
-              const pythonExecutablePath = getExecutablePath(executable);
-              if (pythonExecutablePath) {
-                iceConsole.log(
-                  `Using Python 3 executable: ${pythonExecutablePath}`
-                );
-              } else {
-                iceConsole.log(`Using Python 3 executable: ${executable}`);
-              }
-              break;
-            }
-          }
-        }
-        return _pythonExecutableCached;
-      };
-
-      //---------------------------------------------------------
-      //-- Check if the given file is a python3 interpreter
-      //--
-      function isPython3(executable) {
-        //-- Add the '-V' flag for reading the python version
-        executable += ' -V';
-
-        try {
-          //-- Run the executable
-          const result = nodeChildProcess.execSync(executable);
-
-          //-- Check the output. Return true if it is python3
-          if (result !== false && result !== null) {
-            const pythonVersion = /Python 3\.(\d+)\.(\d+)/g.exec(
-              result.toString()
-            );
-            return (
-              pythonVersion !== null &&
-              pythonVersion.length === 3 &&
-              parseInt(pythonVersion[1]) >= 7
-            );
-          }
-        } catch (e) {}
-        return false;
-      }
-
-      //---------------------------------------------------------
-      //-- Get the path of an executable using the `which` shelljs module
-      //--
-      //-- INPUTS:
-      //--   -executable: string for an executable
-      //-- OUTPUTS:
-      //--   string: the path to the executable
-      //--   null: executable not found
-      function getExecutablePath(executable) {
-        // split executable at first space to account for e.g. `python.exe -3`
-        executable = executable.split(' ')[0];
-        return shelljs.which(executable);
-      }
-
       this.extractZip = function (source, destination, callback) {
         nodeExtract(
           source,
@@ -142,6 +42,13 @@ angular
       };
 
       function disableEvent(event) {
+        // Allow clicks inside the installer console panel
+        if (
+          event.target.closest &&
+          event.target.closest('#console-wrapper, #console-toggle')
+        ) {
+          return;
+        }
         event.stopPropagation();
         event.preventDefault();
       }
@@ -197,8 +104,17 @@ angular
         }
 
         //-- Execute the command in background!!
+        //-- Set env vars to force rich/Python to show progress in non-TTY
+        let spawnEnv = Object.assign({}, process.env, {
+          PYTHONUNBUFFERED: '1',
+          FORCE_COLOR: '1',
+          TERM: process.env.TERM || 'xterm',
+          COLUMNS: '80',
+        });
+
         let proccess = nodeChildProcess.spawn(command[0], args, {
           shell: true,
+          env: spawnEnv,
         });
 
         //-- String with the latest output to pass to the callback function
@@ -209,12 +125,13 @@ angular
           //-- Show the output in the log
           iceConsole.log(`>>(OUTPUT): ${data}\n`);
 
-          common.commandOutput = command.join(' ') + '\n\n' + data;
-          $(document).trigger('commandOutputChanged', [common.commandOutput]);
+          var chunk = data.toString();
+          common.commandOutput = command.join(' ') + '\n\n' + chunk;
+          $(document).trigger('commandOutputChanged', [chunk]);
 
-          //-- Store the output string in the output variable
+          //-- Accumulate the output string
           //-- to pass to the callback function
-          output = data;
+          output += data.toString();
         });
 
         //-- If there are errors ...
@@ -222,12 +139,15 @@ angular
           //-- Show them in the log file
           iceConsole.log(`>>(ERROR): ${data}\n`);
 
-          common.commandOutput = command.join(' ') + '\n\n' + data;
-          $(document).trigger('commandOutputChanged', [common.commandOutput]);
+          var chunk = data.toString();
+          common.commandOutput = command.join(' ') + '\n\n' + chunk;
+          $(document).trigger('commandOutputChanged', [chunk]);
         });
 
-        proccess.on('exit', function (code) {
-          if (code !== 0) {
+        proccess.on('close', function (code) {
+          iceConsole.log(`>>>> executeCommand: process closed, code=${code}`);
+
+          if (code !== 0 && code !== null) {
             _this.enableKeyEvents();
             _this.enableClickEvents();
 
@@ -237,7 +157,11 @@ angular
             //-- Error executing the command
             //-- Show the error notification
             if (notifyerror) {
-              alertify.error('Error executing command ' + command, 30);
+              var errMsg = 'Error executing command ' + command;
+              alertify.error(errMsg, 30);
+              $(document).trigger('commandOutputChanged', [
+                '\n[ERROR] ' + errMsg + '\n',
+              ]);
             }
 
             //-- Comand finished with errors. Call the callback function
@@ -259,63 +183,6 @@ angular
         });
       };
 
-      //------------------------------------------
-      //-- Return standard (English) string for Apio version
-      //
-      this.printApioVersion = function (version) {
-        let msg = '';
-
-        switch (version) {
-          case common.APIO_VERSION_LATEST_STABLE:
-            msg = 'Apio LATEST STABLE version';
-            break;
-
-          case common.APIO_VERSION_STABLE:
-            msg = 'Apio STABLE version';
-            break;
-
-          case common.APIO_VERSION_DEV:
-            msg = 'Apio DEVELOPMENT VERSION';
-            break;
-
-          default:
-            msg = 'UNKNOWN Apio Version (ERROR)';
-            break;
-        }
-
-        return msg;
-      };
-
-      //------------------------------------------
-      //-- Create the python virtual environment
-      //-- with the command python -m venv venv
-      //------------------------------------------
-      this.createVirtualenv = function (callback) {
-        //-- Check if the .icestudio folder exist
-        if (!nodeFs.existsSync(common.ICESTUDIO_DIR)) {
-          //-- Create the .icestudio folder
-          nodeFs.mkdirSync(common.ICESTUDIO_DIR);
-        }
-
-        //-- Check if the venv folder exist
-        if (!nodeFs.existsSync(common.ENV_DIR)) {
-          //-- python -m venv venv
-          var command = [
-            this.getPythonExecutable(),
-            '-m venv',
-            coverPath(common.ENV_DIR),
-          ];
-          //-- Check if extra parameter is needed for windows...
-          if (common.WIN32) {
-            //command.push('--always-copy');
-          }
-          this.executeCommand(command, null, true, callback);
-        } else {
-          //-- The virtual environment already existed
-          callback();
-        }
-      };
-
       //-----------------------------------------------------------------
       //-- Check if there is internet connection
       //--
@@ -329,151 +196,247 @@ angular
       };
 
       //-----------------------------------------------------
+      //-- Get the latest release info from a GitHub repo.
+      //-- Calls callback(error, releaseObject).
+      //--
+      //-- Get a GitHub release. channel 'stable' (default) → /releases/latest
+      //-- (latest non-prerelease); channel 'ci' → the most recent published
+      //-- release from /releases (includes prereleases / nightly builds).
+      this.getLatestGithubRelease = function (owner, repo, callback, channel) {
+        var https = require('https');
+        var ci = channel === 'ci';
+        var apiPath = ci
+          ? '/repos/' + owner + '/' + repo + '/releases?per_page=10'
+          : '/repos/' + owner + '/' + repo + '/releases/latest';
+        var options = {
+          hostname: 'api.github.com',
+          path: apiPath,
+          headers: {
+            'User-Agent': 'Icestudio',
+            'Accept': 'application/vnd.github.v3+json',
+          },
+        };
+
+        https
+          .get(options, function (response) {
+            var body = '';
+            response.on('data', function (chunk) {
+              body += chunk;
+            });
+            response.on('end', function () {
+              if (response.statusCode !== 200) {
+                callback(
+                  'GitHub API error (HTTP ' + response.statusCode + '): ' + body
+                );
+                return;
+              }
+              try {
+                var parsed = JSON.parse(body);
+                if (ci) {
+                  //-- releases list (newest first): take the latest published
+                  if (Array.isArray(parsed) && parsed.length > 0) {
+                    callback(null, parsed[0]);
+                  } else {
+                    callback('No CI releases found');
+                  }
+                } else {
+                  callback(null, parsed);
+                }
+              } catch (e) {
+                callback('Failed to parse GitHub response: ' + e.message);
+              }
+            });
+          })
+          .on('error', function (err) {
+            callback('GitHub API request failed: ' + err.message);
+          });
+      };
+
+      //-----------------------------------------------------
+      //-- Download a file from a URL to a local path.
+      //-- Handles GitHub redirects (301/302).
+      //--
+      this.downloadFile = function (url, destPath, callback) {
+        var https = require('https');
+
+        var doRequest = function (currentUrl) {
+          https
+            .get(
+              currentUrl,
+              { headers: { 'User-Agent': 'Icestudio' } },
+              function (response) {
+                // Handle redirects (GitHub releases redirect to CDN)
+                if (
+                  response.statusCode === 301 ||
+                  response.statusCode === 302
+                ) {
+                  doRequest(response.headers.location);
+                  return;
+                }
+                if (response.statusCode !== 200) {
+                  callback(
+                    'Download failed with status: ' + response.statusCode
+                  );
+                  return;
+                }
+                var file = nodeFs.createWriteStream(destPath);
+                response.pipe(file);
+                file.on('finish', function () {
+                  file.close(function () {
+                    callback();
+                  });
+                });
+                file.on('error', function (err) {
+                  nodeFs.unlink(destPath, function () {});
+                  callback(err.message);
+                });
+              }
+            )
+            .on('error', function (err) {
+              nodeFs.unlink(destPath, function () {});
+              callback(err.message);
+            });
+        };
+
+        doRequest(url);
+      };
+
+      //-----------------------------------------------------
+      //-- Download and extract the apio bundle.
+      //--
+      this.downloadAndExtractBundle = function (url, destDir, callback) {
+        var self = this;
+        // Ensure cache dir exists
+        if (!nodeFs.existsSync(common.CACHE_DIR)) {
+          nodeFs.mkdirSync(common.CACHE_DIR, { recursive: true });
+        }
+        // Ensure destination dir exists
+        if (!nodeFs.existsSync(destDir)) {
+          nodeFs.mkdirSync(destDir, { recursive: true });
+        }
+
+        var ext = common.APIO_BUNDLE_EXT;
+        var tempFile = nodePath.join(common.CACHE_DIR, 'apio-bundle.' + ext);
+
+        self.downloadFile(url, tempFile, function (error) {
+          if (error) {
+            callback(error);
+            return;
+          }
+
+          if (ext === 'zip') {
+            //-- The Windows apio bundle zip uses backslash ("\") path
+            //-- separators and wraps everything in a single top-level folder
+            //-- ("apio\..."). extract-zip (yauzl) rejects backslash filenames
+            //-- ("invalid characters in fileName") and silently produces an
+            //-- EMPTY bundle. Extract manually with adm-zip instead: normalize
+            //-- the separators and strip the wrapper folder (equivalent to the
+            //-- tar --strip-components=1 used for the tgz on macOS/Linux).
+            try {
+              var AdmZip = require('adm-zip');
+              var zip = new AdmZip(tempFile);
+              zip.getEntries().forEach(function (entry) {
+                if (entry.isDirectory) {
+                  return;
+                }
+                var name = entry.entryName
+                  .replace(/\\/g, '/') //-- normalize backslash separators
+                  .replace(/^[^/]+\//, ''); //-- strip top-level wrapper folder
+                if (!name) {
+                  return;
+                }
+                var outPath = nodePath.join(destDir, name);
+                nodeFs.mkdirSync(nodePath.dirname(outPath), {
+                  recursive: true,
+                });
+                nodeFs.writeFileSync(outPath, entry.getData());
+              });
+              try {
+                nodeFs.unlinkSync(tempFile);
+              } catch (e) {}
+              callback();
+            } catch (zipError) {
+              try {
+                nodeFs.unlinkSync(tempFile);
+              } catch (e) {}
+              callback(
+                zipError && zipError.message
+                  ? zipError.message
+                  : String(zipError)
+              );
+            }
+          } else {
+            // macOS: clear xattr on tgz BEFORE extracting (per apio docs)
+            // This prevents quarantine/provenance on all extracted files
+            var xattrCmd = common.DARWIN
+              ? 'xattr -c "' + tempFile + '" && '
+              : '';
+            // --strip-components=1 removes the top-level directory from the archive
+            var command =
+              xattrCmd +
+              'tar xzf "' +
+              tempFile +
+              '" -C "' +
+              destDir +
+              '" --strip-components=1';
+            nodeChildProcess.exec(command, function (execError) {
+              // Clean up temp file
+              try {
+                nodeFs.unlinkSync(tempFile);
+              } catch (e) {}
+              if (execError) {
+                callback(execError.message);
+                return;
+              }
+              // Set executable permission
+              try {
+                nodeFs.chmodSync(common.APIO_EXE, '755');
+              } catch (e) {}
+              callback();
+            });
+          }
+        });
+      };
+
+      //-----------------------------------------------------
       //-- Repair OS permissions.
       //--
       //
       this.repairPermissions = function (callback) {
         if (iceStudio.env.DARWIN === true) {
-          this.executeCommand(
-            [
-              'osascript -e \'do shell script "cd ~/.icestudio;sudo find . -exec xattr -d com.apple.quarantine {} \\\\;" with administrator privileges\'',
-            ],
-            null,
-            true,
-            callback
+          // Clear extended attributes on both the apio bundle dir and the
+          // packages dir (quarantine, provenance). Without this, macOS
+          // Gatekeeper blocks binaries like yosys, nextpnr, realpath, etc.
+          nodeChildProcess.exec(
+            'xattr -cr "' +
+              common.APIO_BUNDLE_DIR +
+              '" "' +
+              common.APIO_HOME +
+              '"',
+            function () {
+              // Ignore errors (files may not have xattr)
+              if (typeof callback !== 'undefined' && callback !== null) {
+                callback();
+              }
+            }
           );
         } else {
-          //-- Comand finished with errors. Call the callback function
           if (typeof callback !== 'undefined' && callback !== null) {
             callback();
           }
         }
       };
 
-      //-----------------------------------------------------
-      //-- Install the Apio toolchain. The version to install is taken
-      //-- from the common.APIO_VERSION object
-      //--
-      //-- Installing the apio stable:
-      //-- Ej.  pip install -U apio[extra packages]==0.6.0
-      //
-      //-- Installing the apio latest stable:
-      //-- Ej.  pip install -U apio[extra packages]
-      //
-      //-- Installing the apio dev:
-      //-- Ej.  pip install -U git+https://github.com/FPGAwars/apio.git@develop#egg=apio
-      //
-      this.installOnlineApio = function (callback) {
-        //-- Get the pip executable
-        let pipExec = this.getPythonPipExecutable();
-        //-- Place the executable between quotes ("") just in case there
-        //-- is a path with spaces in their names
-        const executable = coverPath(pipExec);
-
-        //-- Get the pip parameters needed for installing apio
-        //-- The needed apio version is also added
-        const params = this.getApioParameters();
-        //-- Run the pip command!
-        this.executeCommand([executable, params], null, true, callback);
-      };
-
-      //------------------------------------------------------------------------
-      //-- Return the parameters needed for pip for installing
-      //-- the apio toolchains. The version to install is read
-      //-- from the common.APIO_VERSION global object
-      //--
-      this.getApioParameters = function () {
-        //-- Get the extra python packages to install
-        let extraPackages = _package.apio.extras || [];
-        let extraPackagesString = '';
-
-        //-- Get the pip string with the version
-        //-- Stable: "==0.6.0"
-        //-- Latest stable and dev: ""
-        let versionString = '';
-
-        if (common.APIO_VERSION === common.APIO_VERSION_STABLE) {
-          //-- The stable version to installed is read from the
-          //  icestudio app/package.json:
-          //-- apio.min object!
-          versionString = '==' + _package.apio.min;
-
-          //-- Get the extraPackages. Only used when installing the stable
-          //-- version
-          //-- Bug in Windows: If the extra packages are used during the apio
-          //-- upgrading (installing the latest stable), apio is not upgraded
-          extraPackagesString = '[' + extraPackages.toString() + ']';
-        }
-
-        //-- Get the apio package name:
-        //-- Stable and latest stable: "apio"
-        //-- dev: "git+https://github.com/FPGAwars/apio.git@develop#egg=apio"
-        let apio =
-          common.APIO_VERSION === common.APIO_VERSION_DEV
-            ? common.APIO_PIP_VCS
-            : 'apio';
-
-        //-- Get the pip params for installing apio
-        const params =
-          'install -U ' + apio + extraPackagesString + versionString;
-
-        return params;
-      };
-
       //------------------------------------------------------------------
       //-- Install an Apio package
-      //-- apio install <pkg>
+      //-- apio packages install [pkg]
       //--
       this.apioInstall = function (pkg, callback) {
-        iceConsole.log(
-          'APIO VERSION ' +
-            common.APIO_VERSION +
-            ' / ' +
-            iceStudio.toolchain.apio
-        );
-
-        if (
-          iceStudio.toolchain.apio >= '0.9.6' ||
-          common.APIO_VERSION === common.APIO_VERSION_DEV
-        ) {
-          let args = 'install';
-          let edge = 'packages';
-          let pkg = '-f';
-          /* switch(pkg){
-              case 'drivers':
-                edge='drivers';
-                args='--install-ftdi';
-                pkg='';
-                break;
-              default:
-
-              }*/
-          iceConsole.log(
-            'OSS-CAD-SUITE? ' +
-              common.APIO_CMD +
-              ' ' +
-              edge +
-              ' ' +
-              args +
-              ' ' +
-              pkg
-          );
-          this.executeCommand(
-            [common.APIO_CMD, edge, args, pkg],
-            null,
-            true,
-            callback
-          );
-        } else {
-          iceConsole.log('--->OLD APIO');
-          //-- common.APIO_CMD contains the command for executing APIO
-          this.executeCommand(
-            [common.APIO_CMD, 'install', pkg],
-            null,
-            true,
-            callback
-          );
+        var params = [common.APIO_CMD, 'packages', 'install', '--verbose'];
+        if (pkg) {
+          params.push(pkg);
         }
+        this.executeCommand(params, null, true, callback);
       };
 
       //-- The toolchains are NOT disabled by default
@@ -518,11 +481,11 @@ angular
       //-- Remove the toolchains and related folders
       //--
       this.removeToolchain = function () {
-        //-- Remove the Virtual environment
-        this.deleteFolderRecursive(common.ENV_DIR);
+        //-- Remove the apio bundle directory
+        this.deleteFolderRecursive(common.APIO_BUNDLE_DIR);
 
-        //-- Remove APIO
-        this.deleteFolderRecursive(common.APIO_HOME_DIR);
+        //-- Remove APIO home dir (stores apio packages)
+        this.deleteFolderRecursive(common.APIO_HOME);
 
         //-- Remove the cache dir (temporal)
         this.deleteFolderRecursive(common.CACHE_DIR);
@@ -630,6 +593,35 @@ angular
         });
       };
 
+      //-- Atomically read-modify-write a file under the same lock as saveFile.
+      //-- `transform(currentContent | null)` returns the new content string.
+      //-- Used for per-key profile merges so concurrent writers (other windows)
+      //-- don't clobber each other's keys.
+      this.updateFileAtomic = async function (filepath, transform) {
+        return new Promise(async function (resolve, reject) {
+          try {
+            if (!nodeFs.existsSync(filepath)) {
+              nodeFs.writeFileSync(filepath, '');
+            }
+            const release = await fsLock.lock(filepath, { retries: 10 });
+            try {
+              var current = nodeFs.readFileSync(filepath, 'utf8');
+              if (current === '') {
+                current = null;
+              }
+              nodeFs.writeFileSync(filepath, transform(current));
+              await release();
+              resolve();
+            } catch (inner) {
+              await release();
+              reject(inner.toString());
+            }
+          } catch (error) {
+            reject('Error while locking the file: ' + error.toString());
+          }
+        });
+      };
+
       function isJSON(content) {
         try {
           return JSON.parse(content);
@@ -656,6 +648,12 @@ angular
           .concat(common.externalCollections);
         for (var c in collections) {
           var collection = collections[c];
+          //-- Defensive: a collection slot may be null/incomplete very early at
+          //-- startup (e.g. defaultCollection not loaded yet). Skip it instead
+          //-- of dereferencing collection.path and throwing on the language path.
+          if (!collection || !collection.path) {
+            continue;
+          }
           var filepath = nodePath.join(
             collection.path,
             'locale',
@@ -754,9 +752,6 @@ angular
         content.push(
           '  <input id="input-open-svg" type="file" accept=".svg" class="hidden">'
         );
-        content.push(
-          '  <input id="input-save-svg" type="file" accept=".svg" class="hidden" nwsaveas="image.svg">'
-        );
         content.push('  <div>');
         if (image) {
           let embeded = '<div id="preview-svg-wrapper">';
@@ -802,7 +797,7 @@ angular
             '</label>'
         );
         content.push(
-          '    <label id="save-svg" for="input-save-svg" class="btn">' +
+          '    <label id="save-svg" class="btn">' +
             gettextCatalog.getString('Save SVG') +
             '</label>'
         );
@@ -858,26 +853,56 @@ angular
           var label = $('#save-svg');
           if (image) {
             label.removeClass('disabled');
-            label.attr('for', 'input-save-svg');
-            var chooserSave = $('#input-save-svg');
-            chooserSave.unbind('change');
-            chooserSave.change(function (/*evt*/) {
-              if (image) {
-                var filepath = $(this).val();
-                if (!filepath.endsWith('.svg')) {
-                  filepath += '.svg';
-                }
-                nodeFs.writeFile(filepath, decodeURI(image), function (err) {
-                  if (err) {
-                    throw err;
+            label.off('click').on('click', function () {
+              if (!image) {
+                return;
+              }
+              window
+                .showSaveFilePicker({
+                  suggestedName: 'image.svg',
+                  types: [
+                    {
+                      description: 'SVG files',
+                      accept: { 'image/svg+xml': ['.svg'] },
+                    },
+                  ],
+                })
+                .then(function (handle) {
+                  return handle
+                    .createWritable()
+                    .then(function (writable) {
+                      return writable.close();
+                    })
+                    .then(function () {
+                      return handle.getFile();
+                    })
+                    .then(function (file) {
+                      var filepath = file.path;
+                      if (filepath) {
+                        if (!filepath.endsWith('.svg')) {
+                          filepath += '.svg';
+                        }
+                        nodeFs.writeFile(
+                          filepath,
+                          decodeURI(image),
+                          function (err) {
+                            if (err) {
+                              throw err;
+                            }
+                          }
+                        );
+                      }
+                    });
+                })
+                .catch(function (err) {
+                  if (err.name !== 'AbortError') {
+                    console.error('Save SVG error:', err);
                   }
                 });
-                $(this).val('');
-              }
             });
           } else {
             label.addClass('disabled');
-            label.attr('for', '');
+            label.off('click');
           }
         }
 
@@ -997,16 +1022,108 @@ angular
         chooser.trigger('click');
       };
 
-      this.saveDialog = function (inputID, ext, callback) {
+      this.saveDialog = function (suggestedName, ext, callback) {
+        var _this = this;
+        var selectedDir = '';
+        var html =
+          '<div class="form-group">' +
+          '<label>' +
+          gettextCatalog.getString('Design name') +
+          ':</label>' +
+          '<input type="text" id="save-dialog-name" class="ajs-input" value="' +
+          suggestedName +
+          '" style="width:100%;margin-top:4px;" />' +
+          '</div>' +
+          '<div class="form-group">' +
+          '<label>' +
+          gettextCatalog.getString('Location') +
+          ':</label>' +
+          '<div style="display:flex;gap:8px;align-items:center;margin-top:4px;">' +
+          '<input type="text" id="save-dialog-dir" class="ajs-input" readonly ' +
+          'style="flex:1;cursor:pointer;background:#f5f5f5;" ' +
+          'placeholder="' +
+          gettextCatalog.getString('Click to select folder...') +
+          '" />' +
+          '</div>' +
+          '</div>';
+
+        alertify.confirm(
+          gettextCatalog.getString('Save As'),
+          html,
+          function () {
+            var nameInput = document.getElementById('save-dialog-name');
+            var dirInput = document.getElementById('save-dialog-dir');
+            var name = nameInput ? nameInput.value.trim() : '';
+            var dir = dirInput ? dirInput.value.trim() : '';
+            if (!name || !dir) {
+              alertify.warning(
+                gettextCatalog.getString(
+                  'Please enter a name and select a folder'
+                )
+              );
+              return false;
+            }
+            if (!name.endsWith(ext)) {
+              name += ext;
+            }
+            var filepath = nodePath.join(dir, name);
+            if (nodeFs.existsSync(filepath)) {
+              setTimeout(function () {
+                alertify.confirm(
+                  gettextCatalog.getString('File already exists'),
+                  gettextCatalog.getString(
+                    '"{{name}}" already exists. Do you want to replace it?',
+                    { name: name }
+                  ),
+                  function () {
+                    if (callback) {
+                      callback(filepath);
+                    }
+                  },
+                  function () {
+                    // User cancelled overwrite
+                  }
+                );
+              }, 300);
+            } else if (callback) {
+              callback(filepath);
+            }
+          },
+          function () {
+            // cancelled
+          }
+        );
+
+        // Set up directory picker via click on the dir input
+        setTimeout(function () {
+          var dirInput = document.getElementById('save-dialog-dir');
+          if (dirInput) {
+            dirInput.addEventListener('click', function () {
+              _this.directoryDialog(
+                '#input-choose-save-dir',
+                function (dirpath) {
+                  dirInput.value = dirpath;
+                  selectedDir = dirpath;
+                }
+              );
+            });
+          }
+          // Focus the name input and select its text
+          var nameInput = document.getElementById('save-dialog-name');
+          if (nameInput) {
+            nameInput.focus();
+            nameInput.select();
+          }
+        }, 100);
+      };
+
+      this.directoryDialog = function (inputID, callback) {
         var chooser = $(inputID);
         chooser.unbind('change');
-        chooser.change(function (/*evt*/) {
-          var filepath = $(this).val();
-          if (!filepath.endsWith(ext)) {
-            filepath += ext;
-          }
+        chooser.change(function () {
+          var dirpath = $(this).val();
           if (callback) {
-            callback(filepath);
+            callback(dirpath);
           }
           $(this).val('');
         });
@@ -1090,6 +1207,77 @@ angular
               JSON.stringify(dependency.design)
           );
         }
+      };
+
+      //-----------------------------------------------------------------------
+      //-- Compute the canonical, content-addressed dependency id of a block.
+      //-- Mirrors the recipe project.addBlock uses to assign a block's id
+      //-- (pruneBlock + dependencyID), so an id produced here matches the
+      //-- dependency key a design carries for that same block. Used to check
+      //-- whether a block belongs to an installed collection.
+      //-- NOTE: 'generic-*' blocks get a timestamp otid at add time, so their
+      //-- id is intentionally non-deterministic (they are treated as local).
+      //-----------------------------------------------------------------------
+      this.blockId = function (block) {
+        block = this.clone(block);
+        if (!block || !block.package || !block.design || !block.design.graph) {
+          return false;
+        }
+        delete block.version;
+        delete block.design.board;
+        var bs = block.design.graph.blocks || [];
+        for (var i = 0; i < bs.length; i++) {
+          var t = bs[i].type;
+          if (
+            t === 'basic.input' ||
+            t === 'basic.output' ||
+            t === 'basic.inputLabel' ||
+            t === 'basic.outputLabel'
+          ) {
+            if (bs[i].data.size === undefined) {
+              var pins = bs[i].data.pins;
+              bs[i].data.size =
+                pins && pins.length > 1 ? pins.length : undefined;
+            }
+            delete bs[i].data.pins;
+            delete bs[i].data.virtual;
+          }
+        }
+        return this.dependencyID(block);
+      };
+
+      //-- Read a block .ice file from disk and return its canonical block id
+      //-- (or false on any error / invalid content).
+      this.blockIdFromFile = function (filepath) {
+        try {
+          var data = JSON.parse(nodeFs.readFileSync(filepath, 'utf8'));
+          return this.blockId(data);
+        } catch (e) {
+          return false;
+        }
+      };
+
+      //-- All collection ids contributed by a block .ice file: the block's own
+      //-- canonical id PLUS every embedded sub-dependency id. The embedded
+      //-- sub-blocks are collection content too, so editing one (at any depth)
+      //-- must fork rather than mutate the collection's block.
+      this.collectionIdsFromFile = function (filepath) {
+        var ids = [];
+        try {
+          var data = JSON.parse(nodeFs.readFileSync(filepath, 'utf8'));
+          var top = this.blockId(data);
+          if (top) {
+            ids.push(top);
+          }
+          if (data.dependencies) {
+            for (var k in data.dependencies) {
+              ids.push(k);
+            }
+          }
+        } catch (e) {
+          // ignore unreadable / invalid block files
+        }
+        return ids;
       };
 
       //-----------------------------------------------------------------------

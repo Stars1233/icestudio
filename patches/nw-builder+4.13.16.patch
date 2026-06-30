@@ -1,0 +1,19 @@
+diff --git a/node_modules/nw-builder/src/bld/osx.js b/node_modules/nw-builder/src/bld/osx.js
+index 41f01c7..d89d934 100644
+--- a/node_modules/nw-builder/src/bld/osx.js
++++ b/node_modules/nw-builder/src/bld/osx.js
+@@ -87,6 +87,14 @@ export default async function setOsxConfig({ app, outDir, releaseInfo }) {
+       const oldPath = path.resolve(helperBaseDir, helperApp.name);
+       const newPath = path.resolve(helperBaseDir, newHelperAppName);
+ 
++      // Skip helpers that don't exist in this Chromium version
++      // (e.g. "nwjs Helper (Plugin).app" was removed in Chromium 148). Without
++      // this guard the rename throws and aborts the rest of setOsxConfig,
++      // leaving Info.plist's CFBundleExecutable pointing at the old name.
++      if (!fs.existsSync(oldPath)) {
++        continue;
++      }
++
+       // Rename Helper base directory
+       await fs.promises.rename(oldPath, newPath);
+ 

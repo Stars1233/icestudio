@@ -18,8 +18,6 @@ angular
       nodeFs,
       nodePath
     ) {
-      console.log('---> scripts/services/project.js (RUN)');
-
       this.name = ''; // Used in File dialogs
       this.path = ''; // Used in Save / Save as
       this.filepath = ''; // Used to find external resources (.v, .vh, .list)
@@ -134,50 +132,144 @@ angular
         data = this.adaptToTheTop(data);
         project = _safeUpgradeVersion(data, name);
 
-        utils.approveProjectBlock(profile, project, true).then((result) => {
-          if (result === 'cancel') {
-            utils.endBlockingTask();
-            return;
-          }
+        //-- Re-scan the boards including the ones defined inside the active
+        //-- project ("<projectDir>/boards"), so that a board referenced by
+        //-- the project (project.design.board) is resolvable before it is
+        //-- compared and selected below. Distribution boards are unaffected.
+        var projectDir =
+          self.dirname ||
+          (self.filepath ? utils.dirname(self.filepath) : '') ||
+          (self.path ? utils.dirname(self.path) : '');
+        if (projectDir) {
+          boards.loadBoards(projectDir);
+        }
 
-          if (project.design.board !== common.selectedBoard.name) {
-            var projectBoard = boards.boardLabel(project.design.board);
-            alertify.set('confirm', 'labels', {
-              ok: gettextCatalog.getString('Load'),
-              cancel: gettextCatalog.getString('Convert'),
-            });
-            alertify.confirm(
-              gettextCatalog.getString(
-                'This project is designed for the {{name}} board.',
-                { name: utils.bold(projectBoard) }
-              ) +
-                '<br>' +
-                gettextCatalog.getString(
-                  'You can load it as it is or convert it to use the {{name}} board.',
-                  { name: utils.bold(common.selectedBoard.info.label) }
-                ),
-              function () {
-                // Load
-                // setTimeout(function(){
-                _load();
-                // },100);
-              },
-              function () {
-                // Convert
-                //  setTimeout(function(){
+        utils
+          .approveProjectBlock(profile, project, true)
+          .then((result) => {
+            if (result === 'cancel') {
+              utils.endBlockingTask();
+              return;
+            }
+
+            if (
+              common.selectedBoard &&
+              project.design.board !== common.selectedBoard.name
+            ) {
+              var projectBoard = boards.boardLabel(project.design.board);
+              //-- Locate the design's board among the boards currently loaded
+              //-- (distribution + the project-local boards scanned above).
+              var designRec = null;
+              for (var bi = 0; bi < common.boards.length; bi++) {
+                if (common.boards[bi].name === project.design.board) {
+                  designRec = common.boards[bi];
+                  break;
+                }
+              }
+              var isLocalBoard = !!(
+                designRec && designRec.origin === 'project'
+              );
+
+              //-- Convert the design to the currently configured board.
+              var doConvert = function () {
                 project.design.board = common.selectedBoard.name;
-
                 _load(
                   true,
                   boardMigration(projectBoard, common.selectedBoard.name)
                 );
-                //},100);
+              };
+
+              if (!designRec) {
+                //-- Case C: the board is neither installed nor in the project's
+                //-- boards folder. Offer to convert to the configured board, or
+                //-- cancel (loading as-is would fall back to a default board).
+                alertify.set('confirm', 'labels', {
+                  ok: gettextCatalog.getString('Convert'),
+                  cancel: gettextCatalog.getString('Cancel'),
+                });
+                alertify.confirm(
+                  gettextCatalog.getString(
+                    'This design was made for the {{name}} board, which is not installed and is not in the project boards folder.',
+                    { name: utils.bold(projectBoard) }
+                  ) +
+                    '<br>' +
+                    gettextCatalog.getString(
+                      'Convert it to use the {{name}} board?',
+                      { name: utils.bold(common.selectedBoard.info.label) }
+                    ),
+                  function () {
+                    doConvert();
+                  },
+                  function () {
+                    alertify.set('confirm', 'labels', {
+                      ok: gettextCatalog.getString('OK'),
+                      cancel: gettextCatalog.getString('Cancel'),
+                    });
+                    utils.endBlockingTask();
+                  }
+                );
+              } else if (isLocalBoard) {
+                //-- Case B: the board lives in this project's boards folder.
+                //-- Activate it for THIS design only (temporary; not persisted to
+                //-- the profile — see _load) or convert to the configured board.
+                alertify.set('confirm', 'labels', {
+                  ok: gettextCatalog.getString('Activate'),
+                  cancel: gettextCatalog.getString('Convert'),
+                });
+                alertify.confirm(
+                  gettextCatalog.getString(
+                    'This design uses the {{name}} board, found in the project folder.',
+                    { name: utils.bold(projectBoard) }
+                  ) +
+                    '<br>' +
+                    gettextCatalog.getString(
+                      'Activate it for this design only? Your configured {{name}} board will not change.',
+                      { name: utils.bold(common.selectedBoard.info.label) }
+                    ),
+                  function () {
+                    // Activate (temporary)
+                    _load();
+                  },
+                  function () {
+                    doConvert();
+                  }
+                );
+              } else {
+                //-- Case A: distribution board mismatch (existing behavior).
+                alertify.set('confirm', 'labels', {
+                  ok: gettextCatalog.getString('Load'),
+                  cancel: gettextCatalog.getString('Convert'),
+                });
+                alertify.confirm(
+                  gettextCatalog.getString(
+                    'This project is designed for the {{name}} board.',
+                    { name: utils.bold(projectBoard) }
+                  ) +
+                    '<br>' +
+                    gettextCatalog.getString(
+                      'You can load it as it is or convert it to use the {{name}} board.',
+                      { name: utils.bold(common.selectedBoard.info.label) }
+                    ),
+                  function () {
+                    _load();
+                  },
+                  function () {
+                    doConvert();
+                  }
+                );
               }
-            );
-          } else {
-            _load();
-          }
-        });
+            } else {
+              _load();
+            }
+          })
+          .catch(function (e) {
+            //-- Any failure while resolving the project's board must still
+            //-- release the loading spinner opened by project.open(), so an
+            //-- error never leaves it hung over the UI (the first-run crash
+            //-- reported on Windows when no board was configured yet).
+            console.warn('project load failed', e);
+            utils.endBlockingTask();
+          });
 
         function _load(reset, originalBoard) {
           common.allDependencies = project.dependencies;
@@ -207,10 +299,19 @@ angular
           });
 
           if (ret) {
-            profile.set('board', boards.selectBoard(project.design.board).name);
+            //-- Activate the design's board in this window. Persist it as the
+            //-- configured board ONLY when it is a distribution board: a
+            //-- project-local board (origin 'project') is temporary for this
+            //-- design/window, so the configured board and other windows stay
+            //-- on the distribution board.
+            var selBoard = boards.selectBoard(project.design.board);
+            if (selBoard && selBoard.origin !== 'project') {
+              profile.set('board', selBoard.name);
+            }
             self.updateTitle(name);
             let bdir = utils.filepath2buildpath(self.filepath);
             common.setBuildDir(bdir);
+            iceStudio.updateEnv(common);
           } else {
             alertify.error(
               gettextCatalog.getString('Wrong project format: {{name}}', {
@@ -427,7 +528,6 @@ angular
       }
 
       this.save = function (filepath, callback) {
-        var backupProject = false;
         var name = utils.basename(filepath);
         let self = this;
         const doSaveProject = () => {
@@ -436,6 +536,7 @@ angular
             .then(() => {
               let bdir = utils.filepath2buildpath(self.filepath);
               common.setBuildDir(bdir);
+              iceStudio.updateEnv(common);
               alertify.success(
                 gettextCatalog.getString('Project {{name}} saved', {
                   name: utils.bold(name),
@@ -451,10 +552,35 @@ angular
         }; //doSaveProject
 
         if (subModuleActive) {
-          backupProject = utils.clone(project);
-        } else {
-          this.updateTitle(name);
+          //-- Saving while inside a sub-design: fold the current sub-graph
+          //-- into its own dependency and save the ROOT project (whose design
+          //-- and dependency tree already reference it by id) WITHOUT replacing
+          //-- the root design with the sub-graph. The current view is kept, so
+          //-- the user can save at any navigation point.
+          this.path = filepath;
+          this.filepath = filepath;
+          sortGraph();
+          var subId = common.submoduleId;
+          if (subId && common.allDependencies[subId]) {
+            var subData = graph.toJSON();
+            var subP = utils.cellsToProject(subData.cells);
+            var subDep = utils.clone(common.allDependencies[subId]);
+            subDep.design.graph = subP.design.graph;
+            common.allDependencies[subId] = subDep;
+          }
+          //-- Rebuild the embedded dependency tree from the (untouched) root
+          //-- graph so the edited sub-design travels inside the .ice.
+          project.dependencies = {};
+          var usedTypes = utils.findSubDependencies(project);
+          for (var ut = 0; ut < usedTypes.length; ut++) {
+            project.dependencies[usedTypes[ut]] =
+              common.allDependencies[usedTypes[ut]];
+          }
+          doSaveProject();
+          return;
         }
+
+        this.updateTitle(name);
 
         sortGraph();
         this.update();
@@ -494,14 +620,9 @@ angular
           // 4. Save project
           doSaveProject();
         }
-        if (subModuleActive) {
-          project = utils.clone(backupProject);
-          //        sortGraph();
-          //        this.update();
-        } else {
-          this.path = filepath;
-          this.filepath = filepath;
-        }
+        //-- Root save (the submodule case returned earlier).
+        this.path = filepath;
+        this.filepath = filepath;
       };
 
       function sortGraph() {
@@ -758,24 +879,12 @@ angular
         }
       };
 
-      //--------------------------------------------------------
-      //-- Update the Project Window tittle (in the top bar)
-      //--------------------------------------------------------
       this.updateTitle = function (name) {
         if (name) {
           this.name = name;
           graph.resetBreadcrumbs(name);
         }
-
-        //-- Generate the new tittle: Project name + Icestudio
-        var title =
-          (this.changed ? '*' : '') +
-          this.name +
-          ' ─ Icestudio' +
-          ' ' +
-          common.ICESTUDIO_VERSION_TS;
-
-        //-- Set the new tittle
+        var title = (this.changed ? '*' : '') + this.name + ' ─ Icestudio';
         utils.updateWindowTitle(title);
       };
 
@@ -785,12 +894,6 @@ angular
         return compiler.generate(target, project, opt);
       };
 
-      //----------------------------------------------------
-      //-- addBasicBlock: Add a basic block to the project
-      //-- Basic blocks are:
-      //--   Inputs, outputs, input/output labels, constant,
-      //--   memory, code, info...
-      //-----------------------------------------------------
       this.addBasicBlock = function (type) {
         graph.createBasicBlock(type);
       };

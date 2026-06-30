@@ -23,25 +23,41 @@ joint.connectors.ice = function (sourcePoint, targetPoint, vertices) {
   var tx = tq.y === 0 ? Math.sign(tq.x) * step : 0;
   var ty = tq.x === 0 ? Math.sign(tq.y) * step : 0;
 
-  var full = ['M'];
-  var wrap = ['M'];
+  //-- Build an orthogonal (manhattan) path from a point sequence. The A*
+  //-- router snaps to an 8px grid while ports may sit off-grid, which would
+  //-- otherwise leave a small diagonal segment at the port connection. When a
+  //-- segment is diagonal, insert a corner along the dominant axis so every
+  //-- segment stays axis-aligned. Segments between A* vertices are already
+  //-- axis-aligned, so no corner is added there.
+  function orthoPath(seq) {
+    var d = ['M', seq[0].x, seq[0].y];
+    var prev = seq[0];
+    for (var i = 1; i < seq.length; i++) {
+      var cur = seq[i];
+      if (prev.x !== cur.x && prev.y !== cur.y) {
+        if (Math.abs(cur.x - prev.x) >= Math.abs(cur.y - prev.y)) {
+          d.push(cur.x, prev.y);
+        } else {
+          d.push(prev.x, cur.y);
+        }
+      }
+      d.push(cur.x, cur.y);
+      prev = cur;
+    }
+    return d.join(' ');
+  }
 
-  var dVertices = [];
+  var fullSeq = [{ x: sourcePoint.x, y: sourcePoint.y }];
+  var wrapSeq = [{ x: sourcePoint.x - sx, y: sourcePoint.y - sy }];
   _.each(vertices, function (vertex) {
-    dVertices.push(vertex.x, vertex.y);
+    fullSeq.push({ x: vertex.x, y: vertex.y });
+    wrapSeq.push({ x: vertex.x, y: vertex.y });
   });
-
-  full.push(sourcePoint.x, sourcePoint.y);
-  wrap.push(sourcePoint.x - sx, sourcePoint.y - sy);
-
-  full = full.concat(dVertices);
-  wrap = wrap.concat(dVertices);
-
-  full.push(targetPoint.x, targetPoint.y);
-  wrap.push(targetPoint.x - tx, targetPoint.y - ty);
+  fullSeq.push({ x: targetPoint.x, y: targetPoint.y });
+  wrapSeq.push({ x: targetPoint.x - tx, y: targetPoint.y - ty });
 
   return {
-    full: full.join(' '),
-    wrap: wrap.join(' '),
+    full: orthoPath(fullSeq),
+    wrap: orthoPath(wrapSeq),
   };
 };

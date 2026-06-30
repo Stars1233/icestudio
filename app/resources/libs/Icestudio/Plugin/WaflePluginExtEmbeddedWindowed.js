@@ -23,9 +23,26 @@ class WaflePluginExtEmbeddedWindowed extends WaflePlugin {
       this.running = true;
       let _this = this;
 
+      let winOptions = {};
+      if (this.manifest.gui.width) {
+        winOptions.width = this.manifest.gui.width;
+      }
+      if (this.manifest.gui.height) {
+        winOptions.height = this.manifest.gui.height;
+      }
+      if (this.manifest.gui.resizable) {
+        winOptions.resizable = true;
+      }
+      if (this.manifest.gui.title !== false) {
+        winOptions.title = true;
+      }
+      if (this.manifest.gui.minimizable) {
+        winOptions.minimizable = true;
+      }
       this.dom.window = iceStudio.gui.wm.addWindow(
         this.manifest.name,
-        this.uuid
+        this.uuid,
+        winOptions
       );
       this.dom.shadow = iceStudio.gui.addNodeToSelector(
         `#${this.uuid} .ics-wm-window--body`,

@@ -1,0 +1,319 @@
+.ihub-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  font-size: 12px;
+  box-sizing: border-box;
+}
+
+/* Top search */
+/* Search hint (amber, like the iceTutorial videos note) — shown for Examples */
+.ihub-search-note {
+  display: none;
+  flex: 0 0 auto;
+  padding: 8px 8px 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #d6b14a;
+}
+.ihub-search-note.is-visible {
+  display: block;
+}
+.ihub-search {
+  flex: 0 0 auto;
+  padding: 8px;
+}
+.ihub-search--input {
+  width: 100%;
+  box-sizing: border-box;
+  height: 28px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  outline: none;
+}
+
+/* Categories + actions toolbar */
+.ihub-toolbar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 8px 8px;
+}
+.ihub-cats {
+  display: flex;
+  gap: 4px;
+}
+.ihub-cat {
+  padding: 4px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  background: transparent;
+  font-size: 12px;
+}
+.ihub-actions {
+  display: flex;
+  gap: 6px;
+}
+.ihub-btn {
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.ihub-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Body: responsive split 2/3 (list) - 1/3 (detail) */
+.ihub-body {
+  flex: 1 1 auto;
+  display: flex;
+  min-height: 0;
+}
+.ihub-list {
+  flex: 2 1 0;
+  min-width: 0;
+  overflow: auto;
+  padding: 12px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  grid-auto-rows: min-content;
+  gap: 14px;
+  align-content: start;
+}
+.ihub-detail {
+  flex: 1 1 0;
+  min-width: 170px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* Detail content scrolls; footer stays fixed at the bottom */
+.ihub-detail--content {
+  flex: 1 1 auto;
+  overflow: auto;
+  padding: 12px;
+}
+.ihub-detail--footer {
+  flex: 0 0 auto;
+  padding: 10px 12px;
+  display: flex;
+  gap: 8px;
+}
+.ihub-detail--footer:empty {
+  display: none;
+}
+
+/* Cards */
+.ihub-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 6px;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: center;
+}
+.ihub-card * {
+  pointer-events: none; /* clicks always land on the card itself */
+}
+.ihub-card--icon {
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.ihub-card--icon img,
+.ihub-card--icon svg {
+  max-width: 52px;
+  max-height: 52px;
+}
+.ihub-card--name {
+  font-size: 11px;
+  line-height: 1.2;
+  word-break: break-word;
+}
+.ihub-card--check {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  font-weight: bold;
+  font-size: 12px;
+}
+.ihub-card--badge {
+  position: absolute;
+  top: 4px;
+  left: 6px;
+  font-size: 9px;
+  padding: 1px 5px;
+  border-radius: 8px;
+  color: #fff;
+}
+.ihub-card--lock {
+  position: absolute;
+  top: 3px;
+  left: 5px;
+  font-size: 12px;
+  line-height: 1;
+}
+.ihub-detail--lock {
+  font-size: 12px;
+}
+
+/* Detail */
+.ihub-detail--title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  word-break: break-word;
+}
+.ihub-detail--meta {
+  font-size: 11px;
+  margin-bottom: 6px;
+  opacity: 0.8;
+}
+/* Example theme/category (the source folder), shown as a chip */
+.ihub-detail--cat {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0 7px;
+  border: 1px solid currentColor;
+  border-radius: 9px;
+  font-size: 10px;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.ihub-detail--ver {
+  font-size: 11px;
+  margin-bottom: 10px;
+  opacity: 0.85;
+}
+.ihub-update {
+  color: #e08a00;
+  font-weight: 600;
+}
+.ihub-detail--desc {
+  font-size: 12px;
+  line-height: 1.4;
+  word-break: break-word;
+}
+.ihub-detail--placeholder,
+.ihub-empty {
+  padding: 18px;
+  opacity: 0.6;
+  text-align: center;
+}
+
+/* Rendered README (marked) */
+.ihub-md {
+  font-size: 12px;
+  line-height: 1.45;
+  word-break: break-word;
+}
+.ihub-md h1,
+.ihub-md h2,
+.ihub-md h3 {
+  margin: 10px 0 6px;
+  line-height: 1.2;
+}
+.ihub-md h1 {
+  font-size: 16px;
+}
+.ihub-md h2 {
+  font-size: 14px;
+}
+.ihub-md h3 {
+  font-size: 13px;
+}
+.ihub-md p {
+  margin: 6px 0;
+}
+.ihub-md ul,
+.ihub-md ol {
+  margin: 6px 0;
+  padding-left: 20px;
+}
+.ihub-md code {
+  font-family: monospace;
+  font-size: 11px;
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+.ihub-md pre {
+  overflow: auto;
+  padding: 8px;
+  border-radius: 4px;
+}
+.ihub-md pre code {
+  padding: 0;
+}
+.ihub-md img {
+  max-width: 100%;
+  height: auto;
+}
+.ihub-md table {
+  border-collapse: collapse;
+}
+.ihub-md th,
+.ihub-md td {
+  border: 1px solid #ccc;
+  padding: 3px 6px;
+}
+
+/* Blocking overlay (install / remove) */
+.ihub-overlay {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+}
+.ihub-overlay--box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 24px 34px;
+  border-radius: 10px;
+  background: rgba(28, 28, 28, 0.9);
+  max-width: 80%;
+}
+.ihub-spinner {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 4px solid rgba(255, 255, 255, 0.25);
+  border-top-color: #fff;
+  animation: ihub-spin 0.9s linear infinite;
+}
+@keyframes ihub-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.ihub-overlay--msg {
+  color: #fff;
+  font-size: 13px;
+  text-align: center;
+  word-break: break-word;
+}

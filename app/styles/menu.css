@@ -160,10 +160,6 @@
   max-width: 600px;
 }
 
-.alertify .ajs-dialog:has(.ports-table) {
-  max-width: 655px;
-}
-
 .credits-developers-list {
   list-style: none;
   margin-top: 15px;

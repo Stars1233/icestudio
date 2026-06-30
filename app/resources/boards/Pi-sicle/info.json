@@ -1,0 +1,7 @@
+{
+  "label": "Pi-sicle",
+  "SysClkMhz": 0,
+  "datasheet": "https://embedded-tek.com/?product=development-fpga-board-pi-sicle",
+  "interface": "GPIO",
+  "FPGAResources": {}
+}

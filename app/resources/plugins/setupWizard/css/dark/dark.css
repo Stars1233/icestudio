@@ -1,0 +1,15 @@
+#wiz-root {
+  --wiz-bg: #1f2530;
+  --wiz-fg: #e6e9ef;
+  --wiz-muted: #9aa3b2;
+  --wiz-border: #333c4a;
+  --wiz-card-bg: #262d3a;
+  --wiz-card-hover: #2e3747;
+  --wiz-accent: #4a7fd6;
+  --wiz-accent-soft: #2b3a55;
+  --wiz-accent-fg: #ffffff;
+  --wiz-input-bg: #2a313e;
+  --wiz-ok: #3ec27e;
+  --wiz-err: #e06b6b;
+  --wiz-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}

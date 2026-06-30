@@ -1,0 +1,14 @@
+/* Center the Setup Wizard window inside the design sandbox (the area between
+   the top menu and the bottom footer), as a moderate, centered window. The
+   selector targets the window that contains the plugin host (id = manifest id).
+   Overrides the inline geometry set by the window manager. */
+.ics-wm-window:has(#setupWizard) {
+  top: calc(var(--sandbox-menu-height, 48px) + 36px) !important;
+  bottom: calc(var(--sandbox-footer-height, 48px) + 36px) !important;
+  left: 50% !important;
+  right: auto !important;
+  width: min(720px, 84%) !important;
+  margin-left: calc(min(720px, 84%) / -2) !important;
+  height: auto !important;
+  min-height: 440px !important;
+}

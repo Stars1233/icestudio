@@ -1,0 +1,253 @@
+# Nightly build of the `develop` branch.
+#
+# Every night it builds all platforms and publishes a single GitHub
+# pre-release with a date+version tag and a changelog from the commits.
+#
+#   - Runs on a schedule (~03:00 Spain: 01:00 UTC = 03:00 CEST / 02:00 CET).
+#   - Only builds if there are new commits in the last 24h (manual runs always
+#     build). Skipped days produce no release.
+#   - macOS is ad-hoc signed (no Apple certificate). Downloaded builds need
+#     `xattr -dr com.apple.quarantine` on first launch.
+#   - Nightly releases older than 15 days are deleted automatically.
+#
+# This does NOT change the per-PR behaviour: the "Code standardizer hook for
+# PRs" (prettier/jshint) still validates PRs and never builds binaries. The
+# per-platform build workflows (main*.yml) are manual (workflow_dispatch) for
+# on-demand builds of any branch.
+
+name: Nightly Build (develop)
+
+on:
+  schedule:
+    - cron: '0 1 * * *' # 01:00 UTC ≈ 03:00 Spain (summer) / 02:00 (winter)
+  workflow_dispatch: # manual trigger (always builds)
+
+permissions:
+  contents: write # create/delete releases and tags
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Decide whether to build and compute the release metadata
+  # ---------------------------------------------------------------------------
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      should_build: ${{ steps.gate.outputs.should_build }}
+      version: ${{ steps.meta.outputs.version }}
+      date: ${{ steps.meta.outputs.date }}
+      tag: ${{ steps.meta.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: develop
+          fetch-depth: 0
+
+      - name: Decide whether to build (skip if no new commits)
+        id: gate
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "Manual run — building."
+            echo "should_build=true" >> "$GITHUB_OUTPUT"
+          elif [ -n "$(git log --since='24 hours ago' --oneline)" ]; then
+            echo "New commits in the last 24h — building."
+            echo "should_build=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No commits in the last 24h — skipping nightly."
+            echo "should_build=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Compute version / date / tag
+        id: meta
+        run: |
+          version=$(jq -r '.version' package.json)
+          date=$(date -u +%Y%m%d)
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "date=${date}" >> "$GITHUB_OUTPUT"
+          echo "tag=v${version}-${date}" >> "$GITHUB_OUTPUT"
+
+  # ---------------------------------------------------------------------------
+  # Linux x64 + Windows x64 — also creates the release (with the changelog)
+  # ---------------------------------------------------------------------------
+  build-linwin:
+    needs: check
+    if: needs.check.outputs.should_build == 'true'
+    runs-on: ubuntu-22.04
+    env:
+      VERSION: ${{ needs.check.outputs.version }}
+      DATE: ${{ needs.check.outputs.date }}
+      TAG: ${{ needs.check.outputs.tag }}
+      NW_FLAVOR: sdk
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: develop
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '23.3.0'
+
+      - name: Install npm dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Install NSIS + libfuse2
+        run: |
+          sudo add-apt-repository -y universe
+          sudo apt-get update
+          sudo apt-get install -y nsis libfuse2
+
+      - name: Build Windows
+        run: |
+          export DISPLAY=:0.0
+          npm run buildWindows
+
+      - name: Build Linux
+        run: |
+          export DISPLAY=:0.0
+          npm run buildLinux64
+
+      - name: Rename artifacts to nightly names
+        run: |
+          mv dist/icestudio-*-win64.exe "dist/icestudio-${VERSION}-${DATE}-win64.exe"
+          mv dist/icestudio-*-win64.zip "dist/icestudio-${VERSION}-${DATE}-win64.zip"
+          mv dist/icestudio-*-linux64.AppImage "dist/icestudio-${VERSION}-${DATE}-linux64.AppImage"
+          mv dist/icestudio-*-linux64.zip "dist/icestudio-${VERSION}-${DATE}-linux64.zip"
+
+      - name: Generate changelog
+        run: |
+          prev=$(git tag -l --sort=-creatordate 'v*-????????' | head -1)
+          if [ -n "$prev" ]; then range="$prev..HEAD"; else range="HEAD~30..HEAD"; fi
+          {
+            echo "Automated nightly build of \`develop\` (${DATE})."
+            echo ""
+            echo "macOS build is ad-hoc signed (not notarized): after downloading,"
+            echo "run \`xattr -dr com.apple.quarantine /Applications/icestudio.app\`."
+            echo ""
+            echo "### Changes${prev:+ since $prev}"
+            echo ""
+            git log $range --no-merges --pretty='- %s (%h)' 2>/dev/null || echo "- (no changelog available)"
+          } > changelog.md
+          cat changelog.md
+
+      - name: Create nightly release + upload Linux/Windows
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.TAG }}
+          name: Nightly ${{ env.VERSION }} — ${{ env.DATE }}
+          prerelease: true
+          target_commitish: develop
+          body_path: changelog.md
+          files: |
+            dist/icestudio-${{ env.VERSION }}-${{ env.DATE }}-win64.exe
+            dist/icestudio-${{ env.VERSION }}-${{ env.DATE }}-win64.zip
+            dist/icestudio-${{ env.VERSION }}-${{ env.DATE }}-linux64.AppImage
+            dist/icestudio-${{ env.VERSION }}-${{ env.DATE }}-linux64.zip
+
+  # ---------------------------------------------------------------------------
+  # macOS arm64 (ad-hoc signed)
+  # ---------------------------------------------------------------------------
+  build-macos:
+    needs: [check, build-linwin]
+    if: needs.check.outputs.should_build == 'true'
+    runs-on: macos-latest
+    env:
+      VERSION: ${{ needs.check.outputs.version }}
+      DATE: ${{ needs.check.outputs.date }}
+      TAG: ${{ needs.check.outputs.tag }}
+      NW_FLAVOR: sdk
+      CODESIGN_ID: '-'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: develop
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '23.3.0'
+
+      - name: Install npm dependencies
+        run: |
+          sed -i '' 's/darwinDependencies/dependencies/g' package.json
+          npm install --legacy-peer-deps
+
+      - name: Build macOS arm64 (ad-hoc signed)
+        run: |
+          npm run buildOSXARM64
+          ls dist/
+
+      - name: Rename artifact to nightly name
+        run: mv dist/icestudio-*-osxarm64.dmg "dist/icestudio-${VERSION}-${DATE}-osxarm64.dmg"
+
+      - name: Upload macOS to release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.TAG }}
+          prerelease: true
+          target_commitish: develop
+          files: dist/icestudio-${{ env.VERSION }}-${{ env.DATE }}-osxarm64.dmg
+
+  # ---------------------------------------------------------------------------
+  # Linux ARM (aarch64)
+  # ---------------------------------------------------------------------------
+  build-arm:
+    needs: [check, build-linwin]
+    if: needs.check.outputs.should_build == 'true'
+    runs-on: ubuntu-24.04
+    env:
+      VERSION: ${{ needs.check.outputs.version }}
+      DATE: ${{ needs.check.outputs.date }}
+      TAG: ${{ needs.check.outputs.tag }}
+      NW_FLAVOR: sdk
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: develop
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '23.3.0'
+
+      - name: Install npm dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Build Aarch64
+        run: |
+          export DISPLAY=:0.0
+          npm run buildAarch64
+
+      - name: Rename artifact to nightly name
+        run: mv dist/icestudio-*-aarch64.zip "dist/icestudio-${VERSION}-${DATE}-aarch64.zip"
+
+      - name: Upload Aarch64 to release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.TAG }}
+          prerelease: true
+          target_commitish: develop
+          files: dist/icestudio-${{ env.VERSION }}-${{ env.DATE }}-aarch64.zip
+
+  # ---------------------------------------------------------------------------
+  # Delete nightly releases (and their tags) older than 15 days
+  # ---------------------------------------------------------------------------
+  cleanup:
+    needs: [check, build-linwin, build-macos, build-arm]
+    if: always() && needs.check.outputs.should_build == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: develop
+      - name: Delete nightlies older than 15 days
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cutoff=$(date -u -d '15 days ago' +%Y%m%d)
+          echo "Deleting nightlies with date < ${cutoff}"
+          gh release list --limit 200 --json tagName --jq '.[].tagName' \
+            | grep -E '^v.*-[0-9]{8}$' | while read -r tag; do
+              d=$(echo "$tag" | grep -oE '[0-9]{8}$')
+              if [ "$d" -lt "$cutoff" ]; then
+                echo "Deleting old nightly: $tag"
+                gh release delete "$tag" --yes --cleanup-tag || true
+              fi
+            done

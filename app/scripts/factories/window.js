@@ -28,17 +28,18 @@ angular
   //--  package.json version property and the timestamp located
   //--  in the buildinfo.json file
   .factory('_package', function () {
-    //-- Acceso to the packgae.json file
-    let _package = require('./package.json');
+    //-- Access to the package.json file
+    const _package = require('./package.json');
 
-    //-- Access to the timetamp
+    //-- Access to the timestamp
     const _buildinfo = require('./buildinfo.json');
 
-    //-- Original version, without timestamp
-    _package.versionIni = `${_package.version}`;
-
-    //-- Version with timestamp
-    _package.versionTs = `${_package.versionIni}${_buildinfo.ts}`;
-
-    return _package;
+    //-- Build the final version (version + timestamp) on a COPY. Mutating the
+    //-- require()'d object would corrupt it: Node's module cache is shared
+    //-- across every window in the process, so each newly opened window would
+    //-- append the timestamp again ("0.13.4w" -> "0.13.4w<ts>" ->
+    //-- "0.13.4w<ts><ts>"...). The copy keeps the cached object untouched.
+    return Object.assign({}, _package, {
+      version: `${_package.version}${_buildinfo.ts}`,
+    });
   });

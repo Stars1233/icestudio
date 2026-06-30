@@ -1,0 +1,4 @@
+[
+  { "name": "sys_clk", "value": "52", "type": "inout" },
+  { "name": "led", "value": "10", "type": "inout" }
+]

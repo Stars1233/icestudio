@@ -8,25 +8,33 @@
     <script src="js/system.js" defer></script>
   </head>
   <body>
-    <h3>Icestudio version: <span id="disp_version"></span></h3>
-    <h3>Computer:</h3>
-    <ul>
-      <li>Architecture: <span id="disp_arch"></span></li>
-      <li>Platform: <span id="disp_platform"></span></li>
-    </ul>
+    <!-- Floating copy button (top-right) -->
+    <button id="si-copy" type="button" title="Copy to clipboard">
+      <svg
+        viewBox="0 0 24 24"
+        width="15"
+        height="15"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+        <path
+          d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
+        ></path>
+      </svg>
+      <span id="si-copy-label">Copy</span>
+    </button>
 
-    <h3>PATHs:</h3>
-    <ul>
-      <li>BASE_DIR: <span id="disp_base_dir"></span></li>
-      <li>ICESTUDIO_DIR: <span id="disp_icestudio_dir"></span></li>
-      <li>PROFILE_PATH: <span id="disp_profile_path"></span></li>
-      <li>APIO_HOME_DIR: <span id="disp_apio_home_dir"></span></li>
-      <li>ENV_DIR: <span id="disp_env_dir"></span></li>
-      <li>ENV_BIN_DIR: <span id="disp_env_bin_dir"></span></li>
-      <li>ENV_PIP: <span id="disp_env_pip"></span></li>
-      <li>APIO_CMD: <span id="disp_apio_cmd"></span></li>
-      <li>APP: <span id="disp_app"></span></li>
-      <li>APP_DIR: <span id="disp_app_dir"></span></li>
-    </ul>
+    <h1 id="si-title">System information</h1>
+    <main id="si-report"></main>
+
+    <p id="si-note">
+      Paths are anonymized — your username is shown as
+      <code>&lt;user&gt;</code>, so this is safe to share in a bug report.
+    </p>
   </body>
 </html>

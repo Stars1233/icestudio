@@ -1,0 +1,222 @@
+[
+  {
+    "name": "clk_in",
+    "value": "J3",
+    "type": "inout"
+  },
+  {
+    "name": "but[0]",
+    "value": "K11",
+    "type": "inout"
+  },
+  {
+    "name": "but[1]",
+    "value": "P13",
+    "type": "inout"
+  },
+  {
+    "name": "led[0]",
+    "value": "M12",
+    "type": "inout"
+  },
+  {
+    "name": "led[1]",
+    "value": "R16",
+    "type": "inout"
+  },
+  {
+    "name": "rx",
+    "value": "L11",
+    "type": "inout"
+  },
+  {
+    "name": "tx",
+    "value": "T16",
+    "type": "inout"
+  },
+  {
+    "name": "sram_addr[0]",
+    "value": "N6",
+    "type": "inout"
+  },
+  {
+    "name": "sram_addr[1]",
+    "value": "T1",
+    "type": "inout"
+  },
+  {
+    "name": "sram_addr[2]",
+    "value": "P4",
+    "type": "inout"
+  },
+  {
+    "name": "sram_addr[3]",
+    "value": "R2",
+    "type": "inout"
+  },
+  {
+    "name": "sram_addr[4]",
+    "value": "N5",
+    "type": "inout"
+  },
+  {
+    "name": "sram_addr[5]",
+    "value": "T2",
+    "type": "inout"
+  },
+  {
+    "name": "sram_addr[6]",
+    "value": "P5",
+    "type": "inout"
+  },
+  {
+    "name": "sram_addr[7]",
+    "value": "R3",
+    "type": "inout"
+  },
+  {
+    "name": "sram_addr[8]",
+    "value": "R5",
+    "type": "inout"
+  },
+  {
+    "name": "sram_addr[9]",
+    "value": "T3",
+    "type": "inout"
+  },
+  {
+    "name": "sram_addr[10]",
+    "value": "R4",
+    "type": "inout"
+  },
+  {
+    "name": "sram_addr[11]",
+    "value": "M7",
+    "type": "inout"
+  },
+  {
+    "name": "sram_addr[12]",
+    "value": "N7",
+    "type": "inout"
+  },
+  {
+    "name": "sram_addr[13]",
+    "value": "P6",
+    "type": "inout"
+  },
+  {
+    "name": "sram_addr[14]",
+    "value": "M8",
+    "type": "inout"
+  },
+  {
+    "name": "sram_addr[15]",
+    "value": "T5",
+    "type": "inout"
+  },
+  {
+    "name": "sram_addr[16]",
+    "value": "R6",
+    "type": "inout"
+  },
+  {
+    "name": "sram_addr[17]",
+    "value": "P8",
+    "type": "inout"
+  },
+  {
+    "name": "sram_cen",
+    "value": "T6",
+    "type": "inout"
+  },
+  {
+    "name": "sram_oen",
+    "value": "L9",
+    "type": "inout"
+  },
+  {
+    "name": "sram_wen",
+    "value": "T7",
+    "type": "inout"
+  },
+  {
+    "name": "sram_data[0]",
+    "value": "T8",
+    "type": "inout"
+  },
+  {
+    "name": "sram_data[1]",
+    "value": "P7",
+    "type": "inout"
+  },
+  {
+    "name": "sram_data[2]",
+    "value": "N9",
+    "type": "inout"
+  },
+  {
+    "name": "sram_data[3]",
+    "value": "T9",
+    "type": "inout"
+  },
+  {
+    "name": "sram_data[4]",
+    "value": "M9",
+    "type": "inout"
+  },
+  {
+    "name": "sram_data[5]",
+    "value": "R9",
+    "type": "inout"
+  },
+  {
+    "name": "sram_data[6]",
+    "value": "K9",
+    "type": "inout"
+  },
+  {
+    "name": "sram_data[7]",
+    "value": "P9",
+    "type": "inout"
+  },
+  {
+    "name": "sram_data[8]",
+    "value": "R10",
+    "type": "inout"
+  },
+  {
+    "name": "sram_data[9]",
+    "value": "L10",
+    "type": "inout"
+  },
+  {
+    "name": "sram_data[10]",
+    "value": "P10",
+    "type": "inout"
+  },
+  {
+    "name": "sram_data[11]",
+    "value": "N10",
+    "type": "inout"
+  },
+  {
+    "name": "sram_data[12]",
+    "value": "T10",
+    "type": "inout"
+  },
+  {
+    "name": "sram_data[13]",
+    "value": "T11",
+    "type": "inout"
+  },
+  {
+    "name": "sram_data[14]",
+    "value": "T15",
+    "type": "inout"
+  },
+  {
+    "name": "sram_data[15]",
+    "value": "T14",
+    "type": "inout"
+  }
+]

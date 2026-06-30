@@ -1,0 +1,459 @@
+================================================================================
+ICESTUDIO - REGISTRO DE CAMBIOS - PRERELEASE 1.0
+================================================================================
+
+TOOLCHAIN E INSTALACIÓN DE APIO
+--------------------------------------------------------------------------------
+- Actualización a Apio > 1.3 con una nueva instalación de la toolchain desde un
+  bundle autocontenido.
+- Eliminado el fijado de versión mín/máx: Apio e Icestudio se mantienen siempre
+  alineados y Apio informa de su propia versión.
+- Añadido selector de canal de toolchain (Stable / CI), persistente en el perfil
+  y por defecto Stable. Stable instala la última release estable; CI instala el
+  último build publicado (nightly/prerelease).
+- La actualización compara por la FECHA DE BUILD del bundle (robusto entre los
+  tags semver de stable y los tags por fecha de CI): si coincide indica "ya está
+  al día" y no reinstala; pasar de CI a Stable puede ser un downgrade.
+- La etiqueta de versión muestra la fecha de build y, si está disponible, la
+  versión entre paréntesis (p.ej. "2026-06-19 (1.5.0)").
+- La colección por defecto se descarga de la última release de GitHub de
+  collection-default (redirect web + tarball vía curl), en lugar de una descarga
+  wget fijada y frágil.
+- Normalización multi-SO del package.json.
+- Verify/Build/Upload comprueban ahora que la toolchain esté realmente instalada
+  con un chequeo físico en disco (el ejecutable de la CLI de Apio más los
+  paquetes descargados) antes de ejecutar nada. Si falta, muestran un modal Sí/No
+  "La toolchain no está instalada - ¿quieres instalarla?" que lanza el instalador
+  existente, en vez de ejecutar Apio y mostrar un escueto "Command failed" o, en
+  algunas máquinas Windows, dejar el spinner de carga colgado.
+
+
+APIO SHELL (TERMINAL INTEGRADA)
+--------------------------------------------------------------------------------
+- Nuevo plugin de terminal embebida "apioShell", evolucionado de v0.5 a v1.0 y
+  a v1.
+- xterm.js actualizado a v5.3.0 con el addon-fit oficial para redimensionado
+  dinámico; loaders UMD lo aíslan dentro del Shadow DOM sin conflictos entre
+  plugins.
+- Resize fluido mediante ResizeObserver con debounce vía requestAnimationFrame.
+- Parser de línea de comandos tipo shell: soporte para comillas (", ') y escape
+  con backslash en nombres con espacios; el autocompletado con Tab escapa
+  automáticamente los espacios en nombres de fichero.
+- Despacho de comandos en tres niveles (comandos @ controlados -> herramientas
+  OSS-CAD -> apio como fallback), gestión de Ctrl+C e historial de comandos.
+- Notificación visual (borde verde) cuando un comando termina con la ventana
+  minimizada.
+- Refactor de los comandos del shell y limpieza de carpeta en torno a un nuevo
+  concepto de proyecto.
+- Añadido un README completo de arquitectura/uso del plugin.
+
+
+MONITOR SERIE (serial-term)
+--------------------------------------------------------------------------------
+- Migrado el monitor serie de la API chrome.serial eliminada (retirada en
+  Chromium 148, que lo dejó inservible) a la Web Serial API.
+- Rediseño de UX alineado con el estilo de iceHub: selector de dispositivo Web
+  Serial, panel lateral de ayuda plegable, botón Copiar, volcado Guardar como del
+  buffer capturado, etiqueta de dispositivo descriptiva y manejo robusto de
+  conexión/desconexión; eliminados el título de cabecera y el banner de info
+  redundantes.
+
+
+GESTOR DE VENTANAS Y DIÁLOGOS
+--------------------------------------------------------------------------------
+- Gestor de ventanas (WafleWindowManager): barra de título con botones de cerrar
+  y minimizar, minimizado a miniatura 92x69 con preview real del contenido
+  (transform:scale), restaurar con un click en cualquier punto recuperando
+  posición/tamaño originales, y redimensionado con drag handle.
+- Nuevo diálogo Guardar como con selector de carpeta (reemplaza nwsaveas por
+  compatibilidad con AppImage), con confirmación de sobreescritura.
+- Selector de carpeta para guardar ejemplos, para evitar problemas con AppImages
+  y carpetas del sistema.
+- checkProjectSaved(): fuerza guardar el proyecto antes de verificar/build/upload.
+
+
+DRIVERS
+--------------------------------------------------------------------------------
+- Gestión de drivers delegada por completo en Apio según plataforma (Zadig en
+  Windows, udev en Linux, libusb/FTDI en macOS). Se eliminó el código legado de
+  drivers.js.
+- Eliminado el "kext dance" de pre/post-upload en macOS (ahora no-ops): Apio
+  reclama el dispositivo vía libusb durante el upload. Esto además corrige un
+  crash de sudo-prompt en Node actual (util.isObject eliminado en Node 23+).
+- Tools -> Toolchain -> Drivers (Enable/Disable) ejecuta ahora
+  "apio drivers install|uninstall <ftdi|serial>" según el interface de la placa.
+- En Linux la instalación/desinstalación de drivers se lanza dentro de un
+  emulador de terminal para que sudo pueda pedir la contraseña (autodetecta
+  x-terminal-emulator, gnome-terminal, konsole, etc.); si no encuentra ninguno,
+  muestra el comando para ejecutarlo a mano.
+
+
+SELECCIÓN DE PLACA Y EDITOR DE PLACAS
+--------------------------------------------------------------------------------
+- Eliminado el antiguo menú "Select". La placa se elige ahora desde un botón en
+  el footer que abre un modal: búsqueda en tiempo real (por label + id),
+  desplegable de familias ("All" + las detectadas), lista de placas con badge de
+  familia y check en la placa actual, y estado vacío. Un click selecciona, doble
+  click acepta; se conserva el flujo de selección existente (confirmación de
+  reset de I/O, clean project) como única fuente de verdad.
+- Integrado el plugin boardEditor.
+- Tarjetas locales del proyecto: al abrir un .ice cuya placa vive en la carpeta
+  boards/ del proyecto, se activa esa placa SOLO para ese diseño/ventana sin
+  sobrescribir la placa configurada. El diálogo de mismatch cubre tres casos:
+  distribución (Load/Convert), local del proyecto (Activar temporal / Convertir)
+  y no disponible (Convertir / Cancelar).
+
+
+GESTOR DE COLECCIONES E iceHub (GESTOR DE PAQUETES)
+--------------------------------------------------------------------------------
+- Rework del flujo de colecciones (collectionManager / collectionService /
+  localDatabase) centrado en rendimiento, mantenimiento y UX:
+  - Indexado incremental en IndexedDB: en cada arranque solo se reindexa lo que
+    cambió (firma mtime/size), en vez de reescribir todo siempre; finalizeIndex
+    poda los bloques que desaparecieron del disco.
+  - Estado de indexado en vivo (spinner + contador + ruta del fichero actual) y
+    un botón Reindexar.
+  - Filtro de bloques en tiempo real en la cabecera que conserva/despliega las
+    carpetas padre que coinciden y restaura el estado de plegado exacto previo al
+    limpiar el filtro.
+  - Carpeta de colecciones externas obligatoria con selector de directorio del
+    sistema, una carpeta por defecto por SO bajo Documentos, y una puerta previa
+    que fuerza su configuración antes de mostrar el listado. Al cambiar de
+    directorio se vacía la BD y se reindexa desde cero.
+  - Eliminado el submenú obsoleto Tools -> Collections.
+- Nuevo plugin embebido "iceHub": un gestor estilo app-store para descubrir,
+  instalar, actualizar y eliminar colecciones, y explorar/abrir ejemplos:
+  - UI tipo tienda con búsqueda en tiempo real, categorías Collections /
+    Examples, panel 2/3 (rejilla de tarjetas) + 1/3 (detalle), README renderizado
+    con marked.
+  - Un catalog.json de solo lectura unido con las colecciones instaladas
+    detectadas en disco; búsqueda rica indexando descripción + README +
+    keywords + nombre.
+  - Instalar / eliminar / actualizar: descarga HTTPS (con redirecciones) +
+    extracción zip (adm-zip) y tgz (tar) en la carpeta externa del usuario;
+    resolución de fuente github-release (último tag, zipball/asset), URL directa
+    zip/tgz y fichero local. Estado en su propia IndexedDB.
+  - Actualizaciones GitHub solo para colecciones del catálogo: Refresh, Update
+    all y badge de versión nueva, con confirmación de sobreescritura (reforzada
+    si es un clon git).
+  - Lock (candado): las colecciones que no están en el catálogo y no se
+    instalaron vía hub quedan bloqueadas por defecto (creadas/clonadas por el
+    usuario); una colección bloqueada no se chequea, no se sobreescribe y no se
+    puede borrar.
+  - Diálogo "Add" (fichero .tgz/.zip o URL/GitHub). Ejemplos: "Open" copia el
+    .ice a una carpeta elegida y lo abre en una ventana nueva (sin tocar el
+    original); "Copy examples" copia el examples/ de la colección.
+  - El reindex tras add/install/remove es incremental (~1s en vez de ~30s).
+- Catálogo ampliado de 5 a 48 colecciones (FPGAwars y relacionadas, incluidos
+  los test-benches), cada una con id canónico, descripción EN/ES, tags de
+  búsqueda, autor, homepage y source.
+- Catálogo homogeneizado con el modelo de iceTutorial (movido a
+  data/catalog.json, estructura i18n con campos base + i18n.en).
+- Robustez del indexado (core): un JSON.parse fallido en un .ice ya no deja el
+  indexado atascado para siempre (se salta el fichero inválido); se ignoran los
+  ficheros AppleDouble de macOS (._*).
+- El indexado reconoce también la extensión ".ICE" en mayúsculas, así las
+  colecciones que la usan (p.ej. Democritus) muestran sus bloques y ejemplos.
+- Eliminados los plugins en desuso: zconfigurator e icerok.
+
+
+iceTutorial (TUTORIALES, VÍDEOS Y FORO)
+--------------------------------------------------------------------------------
+- Nuevo plugin embebido en ventana (movible / redimensionable / minimizable) con
+  tres pestañas: Foro, Vídeos y Referencias.
+- Foro: un <webview> al grupo de Google "FPGA-Wars" (webview en lugar de iframe
+  porque Google Groups da 403 al incrustarse) con atrás/adelante/refrescar y
+  abrir en el navegador externo. Los adjuntos del foro se descargan dentro de
+  Icestudio, reutilizando la cookie/token de sesión del foro para ficheros
+  protegidos (con timeout de 20s y fallback al navegador del sistema); las XHR
+  internas de Google Groups se dejan intactas.
+- Vídeos: parrilla buscable leída de un catálogo, con miniaturas de YouTube,
+  badge de idioma y búsqueda multi-idioma. Los vídeos se reproducen embebidos
+  dentro de la ventana vía un servidor local http://127.0.0.1 (origen http real)
+  para evitar el error 153 del embed de YouTube; una barra "Volver" sobre el
+  reproductor y menos chrome de YouTube (fs=0, modestbranding, sin anotaciones).
+  Parrilla de dos niveles: las playlists se muestran como tarjetas con badge de
+  nº de vídeos y, al pulsarlas, se entra a sus vídeos; todo ordenado por fecha de
+  subida (más nuevo primero).
+- Los vídeos se almacenan en IndexedDB con un catálogo versionado (version +
+  updatedAt): la primera vez siembra desde catalog.json, una versión mayor
+  sincroniza (upsert + borrado), si no sirve directamente desde IndexedDB (con
+  fallback al catálogo por timeout). Catálogo rellenado con contenido real: 21
+  vídeos sueltos y 7 playlists (199 vídeos).
+- Pestaña Referencias: enlaces del catálogo (título, descripción, url, botón
+  "Ir") con búsqueda multi-idioma.
+- Tags de búsqueda bilingües (ES/EN) para los recursos, de modo que términos
+  comunes o de jerga coincidan en cualquier idioma.
+- Layout: barra de búsqueda fija con el aviso y la parrilla en una zona con
+  scroll, así las tarjetas mantienen su alto natural y el 16:9 a cualquier tamaño
+  de ventana.
+
+
+ASISTENTE DE PRIMER ARRANQUE (SETUP WIZARD)
+--------------------------------------------------------------------------------
+- Nuevo plugin setupWizard: un asistente de bienvenida de 6 pasos (bienvenida;
+  instalación de la toolchain con selección de canal; carpeta de colecciones;
+  selección de placa; conexión de la placa; y un test de build+upload sobre la
+  FPGA). Ventana moderna al estilo iceHub.
+- Se autolanza una sola vez en primera vez / falta de config (flag de perfil
+  setupWizardDone), no reaparece aunque se cancele, y es relanzable desde
+  Tools -> Wizard.
+- Eliminado el antiguo diálogo de selección de placa de primera vez y el toast
+  "Toolchain not installed" del arranque (sigue saliendo en el menú manual).
+- Test de placa robusto: el éxito exige el banner "[SUCCESS]" de Apio, no solo el
+  exit code 0; se muestra el dispositivo programado y el paso de conexión
+  contrasta el dispositivo detectado con la placa seleccionada.
+- Corregido un cuelgue intermitente de primer arranque reportado en Windows en el
+  que, tras elegir el idioma, el spinner de carga se quedaba colgado para siempre.
+  Un proyecto abierto en el primer arranque (p.ej. un .ice lanzado por asociación
+  de ficheros) desreferenciaba la placa aún sin seleccionar (common.selectedBoard
+  era null). Ahora siempre se selecciona una placa por defecto al arrancar para
+  que nunca sea null, la carga del proyecto es a prueba de excepciones para que no
+  pueda dejar el spinner colgado, y el wizard no se lanza hasta que el init de
+  fondo (placas, colecciones y la sonda de la toolchain) se ha asentado.
+
+
+EDICIÓN DE BLOQUES MULTINIVEL
+--------------------------------------------------------------------------------
+- Los bloques son ahora editables por defecto; el candado se muestra solo en los
+  bloques de colección (forkear para editar), derivado de la pertenencia a
+  colección y la profundidad.
+- Eliminado el límite de edición de 1 nivel: navegar, forkear y guardar a
+  cualquier profundidad. El read-only/candado aplica a los bloques de colección a
+  cualquier profundidad; el root y los bloques locales/fork son editables.
+- Guardado en cualquier punto: guardar dentro de un sub-diseño pliega el
+  sub-grafo vivo en su dependencia y escribe el proyecto RAÍZ sin reemplazar la
+  raíz con el sub-grafo; Ctrl+S funciona a cualquier nivel (eliminados los guards
+  antiguos).
+- Persistencia de ediciones: cada nivel se serializa al navegar hacia arriba o
+  hacia abajo, así no se pierden las ediciones intermedias.
+- forkCollectionBlock reescrito alineado con la semántica "Make Independent" de
+  los CAD: "Solo este bloque" clona toda la ruta de navegación hasta el root
+  (solo cambia esta instancia); "Todo el diseño" remapea la referencia del bloque
+  globalmente (cambian todas las instancias). Corrige un caso en que editar un
+  bloque de colección dentro de una de dos instancias del mismo padre propagaba
+  el cambio a la otra.
+- Detección de conflictos en appendDesign: cuando una dependencia entrante
+  comparte id con un bloque editado localmente de contenido distinto, el bloque
+  entrante (de la colección) conserva el id y la edición local se mueve a un id
+  nuevo, remapeando todas las referencias para no perder las ediciones.
+- El índice de colección incluye las sub-dependencias embebidas, así un sub-bloque
+  de un bloque de colección queda protegido a cualquier profundidad.
+
+
+RENDERIZADO DEL ESQUEMÁTICO Y ENRUTADO DE CABLES
+--------------------------------------------------------------------------------
+- Corregido que el clk/rst cableado se ignoraba al cargar (se ataba al
+  reloj/reset de la placa hasta un cortar+reconectar manual): el handler 'add'
+  del link marca ahora el puerto destino como conectado cuando el link nace con
+  target resuelto.
+- Corregido un puerto de entrada fantasma "importverilogcodefromfile" creado al
+  abrir la pestaña Tools de un code block y dar OK: LabelField.read() devuelve
+  ahora '' (un label es presentacional, como un botón).
+- Arreglos del router de cables: ya no hace pequeños bucles cuando los puertos
+  están muy cerca (se excluyen los extremos del propio wire como obstáculos), ni
+  un lazo cuadrado cuando una etiqueta queda sobre un puerto (los extremos
+  coincidentes se conectan directamente).
+- Cables siempre ortogonales: el connector inserta una esquina por el eje
+  dominante en lugar de dejar un pequeño segmento diagonal en la conexión al
+  puerto (más visible con bloques fuera de rejilla).
+- Corregidos los crashes al abrir los diálogos de los bloques Information /
+  Constant / Memory y al redimensionar un bloque (un valor de viewstate/zoom
+  ausente), además del puntero de ratón atascado que lo seguía.
+- Corregido el margen/sangría izquierda del bloque Information.
+- Corregido el render del toggle de pin de FPGA en los bloques de entrada/salida:
+  selectores rotos, un pin de bus mal colocado y contenido descentrado.
+- Más arreglos de render de clk/wire: el clk ya no se vuelve invisible al quitar o
+  conectar un cable ni al insertar un bloque, las marcas de bifurcación de cables
+  vuelven a verse, y se corrigieron varios errores de visualización de clock y de
+  bloques de I/O.
+
+
+RENDIMIENTO, RENDERIZADO Y EDITOR DE CÓDIGO
+--------------------------------------------------------------------------------
+- Motor gráfico reescrito: una cola de renderizado, sincronización de render más
+  ajustada, menos recálculos y mejores funciones de colocación CSS para una UI
+  mucho más rápida (muy por encima del 300% en diseños pesados) y tiempos de carga
+  de diseño más cortos.
+- Cableado más rápido y preciso: gestión de rutas largas, reducción del coste de
+  enrutado y un algoritmo de puntos de control ajustable por el usuario; los
+  puntos de control se ocultan bajo un bloque cuando una ruta pasa cerca de un
+  bloque de parámetros superior, de modo que ya no fuerza un giro de 90 grados.
+- El render del ancho de los cables se aceleró notablemente; corregido el z-order
+  de bloques/cables para que las etiquetas queden siempre sobre los cables;
+  selección y click sobre ítems a nivel de píxel; z-index de modales y un spinner
+  de carga más suave.
+- Editores de código y zoom más rápidos (una pasada en sandbox antes de que el
+  editor Ace renderice, zoom afinado para CPUs lentas), un icono sobre el bloque
+  de código para abrir su editor, y mejor posicionamiento de los tooltips de
+  info/aviso/error.
+
+
+I/O PARAMÉTRICA Y BUSES
+--------------------------------------------------------------------------------
+- Pines de I/O paramétricos y buses paramétricos, con ancho dinámico de
+  etiqueta/pin para legibilidad, más un formulario de I/O y parámetros reescrito.
+- El copiar/pegar en el nivel superior migra los pines de I/O de virtuales a
+  físicos.
+
+
+IMPORTADOR DE VERILOG
+--------------------------------------------------------------------------------
+- Importar un bloque de código desde un fichero Verilog, con un selector de módulo
+  en modal.
+- Soporta los estilos de puerto ANSI y 1995, comentarios de cabecera y varios
+  módulos por fichero, autocarga de inouts y parámetros, y acepta comentarios en
+  las definiciones de I/O.
+
+
+HERRAMIENTAS DE BUILD, PREFERENCIAS Y CONSOLA DE SALIDA
+--------------------------------------------------------------------------------
+- Nuevo panel Tools -> Preferencias con pestañas (Verify / Build / Upload).
+  Verify expone "Relajar la comprobación de conversión real a entero" (pasa
+  -Wno-REALCVT a Apio vía verilator-extra-options en apio.ini). Los ajustes son
+  por acción, persistentes y ampliables; apio.ini solo se reescribe si realmente
+  cambia (preserva la caché).
+- Las preferencias de Verify exponen además un toggle de waiver de compatibilidad
+  de primitivas de I/O (pasa -Wno-ASSIGNIN / -Wno-COMBDLY a Verilator a través de
+  Apio) junto a la opción de relajar la conversión real-a-entero (REALCVT);
+  corregido también un falso positivo de la pista REALCVT.
+- La verificación pasó a usar un linter de reglas basado en Verilator.
+- Nueva consola de salida embebida anclada abajo, que reemplaza la antigua
+  ventana "Command output": streaming en tiempo real (exec -> spawn),
+  auto-apertura en error, texto coloreado seleccionable/copiable, resaltado por
+  patrón y un motor de pistas (p.ej. una pista de REALCVT enlaza a
+  Preferencias -> Verify). Toasts reducidos a verde/rojo (éxito/fallo).
+- UX de la consola: anclada sobre la barra del footer para no tapar las
+  sugerencias, cabecera más fina, botón maximizar/restaurar y toda la salida
+  seleccionable/copiable.
+- Toolbox: nuevos botones "Clean project" (con confirmación que avisa de la
+  posible pérdida de un apio.ini o ficheros a medida) y "Output console"; el
+  icono de la consola refleja el último resultado (shell / rojo / verde).
+- El informe de recursos FPGA se saca del footer a una barra fina propia encima
+  de él, conmutable desde el toolbox; el build captura siempre el informe de
+  recursos (--verbose-pnr) para que el panel muestre la última síntesis aunque
+  estuviera oculta, con un botón de copiar (HTML + texto box-drawing). Corregido
+  el footer que mostraba "NaN%".
+
+
+PERFIL Y VERSIONADO
+--------------------------------------------------------------------------------
+- Perfil guardado por clave con sincronización entre ventanas:
+  utils.updateFileAtomic hace un read-modify-write atómico bajo el fsLock
+  existente; save() fusiona solo las claves cambiadas; un watcher fs.watch fusiona
+  en vivo los cambios de otras ventanas sin pisar las claves pendientes locales.
+  Corrige que ajustes como "no mostrar notas de versión" reaparecieran.
+- Corregida la corrupción de la cadena de versión: el timestamp ya no se concatena
+  sobre el objeto package.json cacheado (la caché de módulos compartida de Node
+  causaba concatenaciones repetidas entre ventanas); la versión se construye sobre
+  una copia.
+- Corregido el check de notas de versión.
+
+
+UI Y VARIOS
+--------------------------------------------------------------------------------
+- Visor de información del sistema rediseñado: estilo oscuro monoespaciado, info
+  de Node/Chromium/NW.js, botón flotante de copiar, rutas de usuario anonimizadas
+  (para no filtrar nombres de usuario en reportes), una nueva sección "Checks"
+  (rutas con espacios, no-ASCII, apio) y ventana redimensionable.
+- About: la sección HIGHLIGHTED CONTRIBUTORS se separa del bloque superior.
+- Los inputs del "Add" de iceHub usan ahora también la clase estándar .ajs-input
+  para heredar el color del tema activo en vez de quedar blancos sobre el diálogo
+  oscuro.
+- La búsqueda en los plugins (iceHub, vídeos/referencias de iceTutorial) pasa a
+  búsqueda por tokens con AND, así consultas de varias palabras como "icek ulx"
+  encuentran resultados correctamente.
+- Eliminada la feature rota de la tabla de I/O.
+- Captura de medios: grabación de vídeo de pantalla integrada y un capturador PNG
+  para tomar capturas rápidas.
+- Ficheros recientes: un menú de Ficheros recientes; los .ice abiertos con doble
+  click desde el gestor de ficheros se añaden a él; corregida la lista de
+  recientes en blanco al arrancar.
+- Apagado más seguro: corregido el diálogo de guardado seguro "guardar y salir" al
+  cerrar la ventana y mejorado el diálogo de Salir.
+- Escritorios Linux: registro del tipo MIME de Icestudio.
+- El número de versión de Icestudio es seleccionable y copiable.
+- Corregido un error de carga de locale en el instalador de colecciones.
+- Nueva pantalla de splash: una imagen de fondo a pantalla completa con una banda
+  azul de 100px abajo que lleva el logo de ICE STUDIO a la izquierda y el de
+  FPGAwars a la derecha, más un crédito pequeño al autor (imágenes libres) arriba
+  a la derecha. La imagen y el crédito son configurables desde
+  resources/images/splash/splash.json (imagen, autor, enlace, fuente) y se aplican
+  al cargar.
+- Sin parpadeo de contenido sin estilos en máquinas lentas: la UI se mantiene
+  oculta hasta que han cargado todas las hojas de estilo, así el splash es lo
+  primero que se pinta.
+- Rediseñada la ventana de Notas de la versión: cabecera tipo splash (la imagen
+  del splash de arranque + crédito al autor + banda azul con los logos ICE
+  STUDIO y FPGAwars), pestañas Castellano/English que por defecto siguen el
+  idioma de la app, y el changelog completo incrustado desde changelog.txt /
+  changelog.es.txt — así la ventana (imagen y changelog) se actualiza sola en
+  futuras versiones. Con tema claro/oscuro alineado con la interfaz.
+
+
+INTERNACIONALIZACIÓN (i18n)
+--------------------------------------------------------------------------------
+- Español/inglés mantenidos al día en toda la app. El pipeline de gettext
+  (template.pot + .po re-baselados, compilado) extrae ahora también los plugins
+  setupWizard, iceHub, iceTutorial y boardEditor.
+- Los plugins con Shadow DOM (que Angular no compila) traducen su HTML estático
+  en tiempo de ejecución y se re-traducen al cambiar de idioma.
+- Corregidas 16 cadenas fuzzy que msgmerge había mal traducido (algunas opuestas,
+  p.ej. "Installation failed" -> "Instalación completada"); es_ES queda con 0
+  fuzzy y 0 sin traducir.
+- Traducciones estandarizadas y reordenadas (p.ej. el orden de idiomas en el
+  menú), mantenidas estables con Prettier.
+
+
+RUNTIME Y DEPENDENCIAS
+--------------------------------------------------------------------------------
+- Actualización a Node.js 23.3.0 y NW.js 0.95.0 (más tarde a 0.111.3-sdk para la
+  release); los builds WIP embeben el flavor SDK.
+- Mejorada la integración del lanzador de NW.js en Windows.
+- Refactor de módulos y actualización de versiones de node_modules; eliminado el
+  paquete obsoleto emoji-node (recursos de terceros caídos).
+
+
+CI/CD Y EMPAQUETADO
+--------------------------------------------------------------------------------
+- Packager revisado.
+- Integrado Prettier para formateo automático en commit, con un hook de
+  pre-commit y auto-setup del entorno de desarrollo.
+- Corregido que el bundle no arrancaba con nwjs 0.111.3 (Chromium 148): un patch
+  de patch-package para nw-builder salta las helper apps que ya no existen, de
+  modo que el Info.plist/CFBundleExecutable se actualiza correctamente
+  (patch-package añadido como devDependency y al postinstall).
+- Corregida la instalación del bundle de Apio en Windows: el .zip usa backslashes
+  y una carpeta envoltorio que extract-zip rechazaba (dejando un apio-bundle
+  vacío); ahora se extrae con adm-zip normalizando "\" -> "/" y quitando el
+  envoltorio.
+- Iconos de macOS: regenerado icestudio-logo.icns como iconset completo (16 ->
+  1024 + @2x) con fondo azul FPGAwars (#305EAC) sólido; el fichero .dmg recibe el
+  icono de Icestudio (resource fork + HasCustomIcon) tras firmar; corregida la
+  ruta del repair-script del dmg de Intel.
+- Rework de CI:
+  - prettier-pr.yml valida PRs/pushes (prettier/jshint) sin construir.
+  - main*.yml pasan a builds on-demand puros por workflow_dispatch y por
+    plataforma; eliminados el frágil check RUN_BUILD y el encadenado workflow_run
+    con prettier; aarch64 pasa al flavor sdk.
+  - nightly.yml: build nocturno de develop (cron + manual) de las 4 plataformas
+    en flavor sdk, que publica un único prerelease con tag v{version}-{fecha} y
+    changelog de commits; se salta los días sin commits nuevos y borra los
+    nightlies de más de 15 días.
+  - release-stable.yml: release estable manual.
+  - Firma macOS ad-hoc (sin certificado/secrets de Apple); los repair scripts
+    firman el .app y el .dmg.
+  - Eliminado el wine/wine-mono vestigial de los builds de Windows; eliminado el
+    duplicado build-windows-manual.yml.
+
+
+ACTUALIZACIÓN REMOTA DEL CATÁLOGO
+--------------------------------------------------------------------------------
+- iceHub e iceTutorial bajan al arrancar un meta pequeño (sonda de versión) y,
+  solo si es mayor que el local, descargan el catálogo completo y lo aplican con
+  su propia lógica (iceHub: caché en localStorage; iceTutorial: reconcile de
+  IndexedDB). Offline/404 mantiene el catálogo local. El repo/rama es
+  configurable (IHUB_REMOTE / IT_REMOTE).
+- Ventana del plugin hecha redimensionable (resizable + width/height en el
+  manifest), eliminando la geometría forzada de host.css para que el layout
+  responsivo se reajuste al cambiar el tamaño.

@@ -1,0 +1,22 @@
+{
+  "manifest_ver": "1.0",
+  "id": "iceTutorial",
+  "name": "iceTutorial",
+  "icon": "img/icon.svg",
+  "version": "0.1",
+  "launchAtStartup": false,
+  "multipleInstances": false,
+  "gui": {
+    "type": "embedded",
+    "windowed": "true",
+    "title": true,
+    "resizable": true,
+    "width": "920px",
+    "height": "640px",
+    "layout": ["index.html"],
+    "style": ["css/style.css"],
+    "styleHost": ["css/host.css"],
+    "scripts": ["js/main.js"],
+    "views": []
+  }
+}

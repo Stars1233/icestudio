@@ -959,6 +959,46 @@
   background-color: #eee;
 }
 
+/* Board selector modal (light) */
+.board-modal-search,
+.board-modal-family {
+  background-color: #fff;
+  color: #333;
+  border: 1px solid #ccc;
+}
+
+.board-modal-list {
+  border: 1px solid #ddd;
+}
+
+.board-modal-list li.selected {
+  background-color: #d3e9f3;
+}
+
+.board-modal-list li.selected:hover {
+  background-color: #c2e0ef;
+}
+
+.board-modal-btn {
+  background-color: #f0f0f0;
+  color: #333;
+  border-color: #ccc;
+}
+
+.board-modal-btn:hover {
+  background-color: #e6e6e6;
+}
+
+.board-modal-btn--primary {
+  background-color: #5bc0de;
+  color: #fff;
+  border-color: #46b8da;
+}
+
+.board-modal-btn--primary:hover {
+  background-color: #46b8da;
+}
+
 .js-codeblock-io-edit {
   color: #777;
   background-color: #c0dfeb;

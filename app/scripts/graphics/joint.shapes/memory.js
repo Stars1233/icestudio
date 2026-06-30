@@ -264,7 +264,11 @@ joint.shapes.ice.MemoryView = joint.shapes.ice.ModelView.extend({
   updateBox: function () {
     var bbox = this.model.getBBox();
     var data = this.model.get('data');
-    var state = this.model.get('state');
+    //-- Use the shared global view state (pan/zoom). The cell's own 'state'
+    //-- attribute is NOT populated when the block is added from the menu
+    //-- (addDraggableCells -> graph.addCells bypasses updateCellAttributes),
+    //-- so reading it from the model returned undefined and crashed updateBox()
+    //-- at state.zoom right after pressing OK in the form.
 
     var pendingTasks = [];
     var editorUpdated = false;

@@ -121,7 +121,11 @@ joint.shapes.ice.ConstantView = joint.shapes.ice.ModelView.extend({
     this.contentSelector.width(size.width);
     this.inputSelector.width(Math.round(size.width * 0.8));
     let bbox = this.model.getBBox();
-    let state = this.model.get('state');
+    //-- Use the shared global view state (pan/zoom). The cell's own 'state'
+    //-- attribute is NOT populated when the block is added from the menu
+    //-- (addDraggableCells -> graph.addCells bypasses updateCellAttributes),
+    //-- so reading it from the model returned undefined and crashed place()
+    //-- at state.zoom right after pressing OK in the form.
     let pendingTasks = [];
     // Set wire width
     return this.place('.constant-content', bbox, state, pendingTasks);

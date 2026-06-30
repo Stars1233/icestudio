@@ -1,48 +1,23 @@
 name: 'Icestudio Windows'
 
-# Controls when the action will run.
+# On-demand Windows x64 build.
+#
+# Triggered manually from the Actions tab (workflow_dispatch): pick the branch
+# in the "Use workflow from" selector and it builds THAT branch, uploading the
+# installer (.exe) + zip as workflow artifacts (no release/tag is created).
+#
+# wine/wine-mono are not needed: nw-builder sets the .exe icon/version info via
+# resedit (pure JS) and makensis runs natively on Linux.
 on:
-  # Workflow run automatically when prettier hook finish succesfully
-  workflow_run:
-    workflows: ['Code standardizer hook for PRs']
-    types:
-      - completed
-
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
   build:
-    # Only runs if standardizer runs OK
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
-
-    # The type of runner that the job will run on
     runs-on: ubuntu-22.04
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checkout the develop branch
       - uses: actions/checkout@v4
 
-      # Check commit message for keyword RUN_BUILD
-      - name: Check commit message for RUN_BUILD
-        id: commit_message_check
-        run: |
-          COMMIT_MESSAGE=$(git log -1 --pretty=%B)
-          echo "Commit message: $COMMIT_MESSAGE"
-          if [[ "$COMMIT_MESSAGE" != *"RUN_BUILD"* ]]; then
-            echo "Commit message does not contain RUN_BUILD, skipping build."
-            echo "skip_build=true" >> $GITHUB_ENV
-          fi
-
-      - name: 🔍 Replace NW SDK version for normal before install npm packages
-        run: |
-          sed -i 's/\("nw": "[^"]*\)-sdk"/\1"/g' package.json
-
       - name: Setup Nodejs version
-        if: env.skip_build != 'true'
         uses: actions/setup-node@v4
         with:
           node-version: '23.3.0'
@@ -50,57 +25,41 @@ jobs:
       - name: Install npm dependencies
         run: npm install --legacy-peer-deps
 
-      # It is necesarry to install wine for building the package for
-      # windows. Also it is necesary to download the wine-mono windows
-      # installer and install it with wine
-      - name: Install dependencies
+      - name: Install NSIS
         run: |
-          sudo add-apt-repository universe
-          sudo dpkg --add-architecture i386
+          sudo add-apt-repository -y universe
           sudo apt-get update
-          sudo apt-get install wine nsis
-          wget https://dl.winehq.org/wine/wine-mono/5.0.0/wine-mono-5.0.0-x86.msi
-          export DISPLAY=:0.0
-          wine msiexec /i wine-mono-5.0.0-x86.msi
+          sudo apt-get install -y nsis
 
       - name: Build Microsoft Windows package
-        if: env.skip_build != 'true'
-        run: |
-          export DISPLAY=:0.0
-          npm run buildWindows
+        run: npm run buildWindows
 
-      # jq is bash command for reading properties from a json file
       - name: Install jq package
-        if: env.skip_build != 'true'
-        run: sudo apt install jq
+        run: sudo apt install -y jq
 
       # Read the icestudio version from package.json (version property)
       - id: icestudio_json
-        if: env.skip_build != 'true'
         run: |
           version=$(jq -r '.version' package.json)
           echo "icestudio_version=${version}" >> $GITHUB_OUTPUT
 
       # Timestamp for the build
       - id: build_date
-        if: env.skip_build != 'true'
         run: |
           timestamp=$(jq -r '.ts' app/buildinfo.json)
           echo "icestudio_timestamp=${timestamp}" >> $GITHUB_OUTPUT
 
-      - name: 'Upload MSI/win64'
-        if: env.skip_build != 'true'
+      - name: 'Upload installer/win64'
         env:
           ICESTUDIO_VERSION: '${{steps.icestudio_json.outputs.icestudio_version}}'
           TIMESTAMP: '${{steps.build_date.outputs.icestudio_timestamp}}'
         uses: 'actions/upload-artifact@v4'
         with:
-          name: 'win64_MSI_${{env.ICESTUDIO_VERSION}}${{env.TIMESTAMP}}'
+          name: 'win64_installer_${{env.ICESTUDIO_VERSION}}${{env.TIMESTAMP}}'
           path: 'dist/icestudio-${{env.ICESTUDIO_VERSION}}${{env.TIMESTAMP}}-win64.exe'
           if-no-files-found: error
 
       - name: 'Upload ZIP/win64'
-        if: env.skip_build != 'true'
         env:
           ICESTUDIO_VERSION: '${{steps.icestudio_json.outputs.icestudio_version}}'
           TIMESTAMP: '${{steps.build_date.outputs.icestudio_timestamp}}'

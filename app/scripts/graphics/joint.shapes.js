@@ -1,5 +1,5 @@
 //-- jshint rules
-/* global placementCssIOTasks, placementCssTasks */
+/* global placementCssIOTasks, placementCssTasks, state */
 
 'use strict';
 
@@ -284,17 +284,6 @@ joint.shapes.ice.ModelView = joint.dia.ElementView.extend({
   },
 
   place: function (selector, bbox, state, queue) {
-    //-- Bug: For unkown reasons, when creating a constant block
-    //-- the state parameter passed is undefined...
-    //-- If that is the case, create a new one...
-    //-- It is a temporary patch. At least the constant blocks can be placed...
-    if (state === undefined) {
-      state = {
-        zoom: 1,
-        pan: { x: 0, y: 0 },
-      };
-    }
-
     const bw = Math.round(bbox.width);
     const bh = Math.round(bbox.height);
     const bx = Math.round(bbox.x * state.zoom + state.pan.x);
@@ -447,7 +436,11 @@ joint.shapes.ice.ModelView = joint.dia.ElementView.extend({
 
     var type = self.model.get('type');
     var size = self.model.get('size');
-    var state = self.model.get('state');
+    //-- Use the shared global view state for the zoom factor. The cell's own
+    //-- 'state' attribute is not populated for blocks freshly added from the
+    //-- menu (addDraggableCells -> graph.addCells bypasses updateCellAttributes),
+    //-- so reading it from the model returned undefined and crashed snapToGrid()
+    //-- when resizing (same root cause as the Info block render crash).
     var gridstep = 8;
     var minSize = { width: 64, height: 32 };
     if (type === 'ice.Code' || type === 'ice.Memory') {

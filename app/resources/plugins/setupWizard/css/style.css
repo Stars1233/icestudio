@@ -1,0 +1,333 @@
+/* Setup Wizard — modern, elegant onboarding UI (scoped to the shadow DOM) */
+
+#wiz-root,
+#wiz-root * {
+  box-sizing: border-box;
+}
+
+#wiz-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background: var(--wiz-bg);
+  color: var(--wiz-fg);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
+    Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  overflow: hidden;
+}
+
+/* ---- Progress indicator ---- */
+.wiz-progress {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 18px 24px 6px;
+  flex: 0 0 auto;
+}
+.wiz-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--wiz-border);
+  transition: all 0.25s ease;
+}
+.wiz-dot.active {
+  background: var(--wiz-accent);
+  transform: scale(1.35);
+}
+.wiz-dot.done {
+  background: var(--wiz-accent);
+  opacity: 0.55;
+}
+
+/* ---- Body / step content ---- */
+.wiz-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 18px 36px 12px;
+  display: flex;
+  flex-direction: column;
+}
+.wiz-step {
+  margin: auto 0;
+  animation: wiz-fade 0.28s ease;
+}
+@keyframes wiz-fade {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.wiz-icon {
+  font-size: 40px;
+  line-height: 1;
+  margin-bottom: 14px;
+  text-align: center;
+}
+.wiz-title {
+  font-size: 23px;
+  font-weight: 650;
+  margin: 0 0 8px;
+  text-align: center;
+}
+.wiz-text {
+  color: var(--wiz-muted);
+  margin: 0 0 18px;
+  text-align: center;
+  max-width: 520px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.wiz-text b {
+  color: var(--wiz-fg);
+}
+
+/* ---- Radio cards (channel) ---- */
+.wiz-cards {
+  display: flex;
+  gap: 14px;
+  margin: 6px 0 4px;
+}
+.wiz-card {
+  flex: 1;
+  border: 1.5px solid var(--wiz-border);
+  border-radius: 12px;
+  padding: 16px 16px 14px;
+  cursor: pointer;
+  background: var(--wiz-card-bg);
+  transition: all 0.15s ease;
+  position: relative;
+}
+.wiz-card:hover {
+  background: var(--wiz-card-hover);
+}
+.wiz-card.selected {
+  border-color: var(--wiz-accent);
+  background: var(--wiz-accent-soft);
+}
+.wiz-card .wiz-card-radio {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--wiz-border);
+}
+.wiz-card.selected .wiz-card-radio {
+  border-color: var(--wiz-accent);
+  background: radial-gradient(circle, var(--wiz-accent) 0 4px, transparent 5px);
+}
+.wiz-card h4 {
+  margin: 0 0 6px;
+  font-size: 15px;
+}
+.wiz-card p {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--wiz-muted);
+}
+
+/* ---- Folder picker ---- */
+.wiz-folder {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1.5px solid var(--wiz-border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: var(--wiz-input-bg);
+  cursor: pointer;
+  max-width: 560px;
+  margin: 0 auto;
+}
+.wiz-folder:hover {
+  border-color: var(--wiz-accent);
+}
+.wiz-folder .wiz-folder-path {
+  flex: 1;
+  font-family: 'SFMono-Regular', Menlo, Consolas, monospace;
+  font-size: 12.5px;
+  word-break: break-all;
+  color: var(--wiz-fg);
+}
+.wiz-folder .wiz-folder-btn {
+  flex: 0 0 auto;
+  font-size: 12px;
+  color: var(--wiz-accent);
+  font-weight: 600;
+}
+
+/* ---- Search + board list ---- */
+.wiz-search {
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto 14px;
+  display: block;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1.5px solid var(--wiz-border);
+  background: var(--wiz-input-bg);
+  color: var(--wiz-fg);
+  font-size: 14px;
+  outline: none;
+}
+.wiz-search:focus {
+  border-color: var(--wiz-accent);
+}
+.wiz-list {
+  max-height: 280px;
+  overflow-y: auto;
+  border: 1px solid var(--wiz-border);
+  border-radius: 10px;
+  max-width: 560px;
+  margin: 0 auto;
+  width: 100%;
+}
+.wiz-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--wiz-border);
+}
+.wiz-item:last-child {
+  border-bottom: none;
+}
+.wiz-item:hover {
+  background: var(--wiz-card-hover);
+}
+.wiz-item.selected {
+  background: var(--wiz-accent-soft);
+}
+.wiz-item .wiz-item-label {
+  font-weight: 550;
+}
+.wiz-item .wiz-item-sub {
+  color: var(--wiz-muted);
+  font-size: 12px;
+}
+.wiz-empty {
+  text-align: center;
+  color: var(--wiz-muted);
+  padding: 24px;
+  font-size: 13px;
+}
+
+/* ---- Status / spinner ---- */
+.wiz-spinner {
+  width: 44px;
+  height: 44px;
+  border: 4px solid var(--wiz-border);
+  border-top-color: var(--wiz-accent);
+  border-radius: 50%;
+  margin: 6px auto 16px;
+  animation: wiz-spin 0.8s linear infinite;
+}
+@keyframes wiz-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.wiz-status-list {
+  max-width: 480px;
+  margin: 0 auto;
+  text-align: left;
+  font-size: 13px;
+}
+.wiz-status-line {
+  padding: 3px 0;
+  color: var(--wiz-muted);
+}
+.wiz-status-line.active {
+  color: var(--wiz-fg);
+  font-weight: 600;
+}
+/* Connect step: center the scan status in the window and enlarge it */
+.wiz-status-list.wiz-scan {
+  text-align: center;
+  font-size: 15px;
+  max-width: 560px;
+}
+.wiz-status-list.wiz-scan .wiz-status-line {
+  padding: 5px 0;
+}
+.wiz-status-line.ok::before {
+  content: '✓ ';
+  color: var(--wiz-ok);
+}
+.wiz-big-icon {
+  font-size: 56px;
+  text-align: center;
+  margin-bottom: 10px;
+}
+.wiz-big-icon.ok {
+  color: var(--wiz-ok);
+}
+.wiz-big-icon.err {
+  color: var(--wiz-err);
+}
+
+/* ---- Footer ---- */
+.wiz-footer {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 24px;
+  border-top: 1px solid var(--wiz-border);
+  background: var(--wiz-bg);
+}
+.wiz-footer-right {
+  display: flex;
+  gap: 10px;
+}
+.wiz-btn {
+  border: none;
+  border-radius: 9px;
+  padding: 9px 20px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+.wiz-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.wiz-btn--primary {
+  background: var(--wiz-accent);
+  color: var(--wiz-accent-fg);
+}
+.wiz-btn--primary:not(:disabled):hover {
+  filter: brightness(1.08);
+}
+.wiz-btn--ghost {
+  background: transparent;
+  color: var(--wiz-muted);
+}
+.wiz-btn--ghost:not(:disabled):hover {
+  background: var(--wiz-card-hover);
+  color: var(--wiz-fg);
+}
+/* Yellow "Scan again" button with black text */
+.wiz-btn--scan {
+  background: #f5c518;
+  color: #1a1a1a;
+}
+.wiz-btn--scan:not(:disabled):hover {
+  filter: brightness(1.06);
+}
+.wiz-hidden {
+  display: none !important;
+}

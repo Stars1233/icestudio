@@ -3,9 +3,6 @@
 angular
   .module('icestudio')
   .service('compiler', function (common, utils, blocks, _package) {
-    //-- Debug
-    console.log('---> scripts/services/compiler.js (RUN)');
-
     let currentLibrary = false;
     this.generate = function (target, project, opt) {
       var content = '';
@@ -38,14 +35,11 @@ angular
             content: content,
           });
           break;
-
-        //-- Generate a .xdc file
-        //-- Xilinx Design Constraint file
-        case 'xdc':
-          content += header('#', opt);
-          content += xdcCompiler(project, opt);
+        case 'cst':
+          content += header('//', opt);
+          content += cstCompiler(project, opt);
           files.push({
-            name: 'main.xdc',
+            name: 'main.cst',
             content: content,
           });
           break;
@@ -1010,6 +1004,92 @@ angular
 
     function lpfCompiler(project, opt) {
       var i,
+        block,
+        pin,
+        value,
+        code = '';
+      var blockArray = project.design.graph.blocks;
+      opt = opt || {};
+
+      code += '# -- Board: ';
+      code += common.selectedBoard.name;
+      code += '\n\n';
+
+      for (i in blockArray) {
+        block = blockArray[i];
+        if (
+          block.type === blocks.BASIC_INPUT ||
+          block.type === blocks.BASIC_OUTPUT
+        ) {
+          //-- Future improvement: Both cases: 1-pin or multiple pins in an array
+          //-- could be refactorized instead of repeating code
+          //-- (i usually name this as plural and singular cases)
+
+          if (block.data.pins.length > 1) {
+            for (var p in block.data.pins) {
+              pin = block.data.pins[p];
+              value = block.data.virtual ? '' : pin.value;
+              code += 'LOCATE COMP "';
+              code += utils.digestId(block.id); //-- Future improvement: use pin.name. It should also be changed in the main module
+              code += '[' + pin.index + ']" SITE "';
+              code += value;
+              code += '";\n';
+
+              code += 'IOBUF PORT "';
+              code += utils.digestId(block.id);
+              code += '[' + pin.index + ']" ';
+
+              //-- Get the pullmode property of the physical pin (its id is pin.value)
+              let pullmode = common.selectedBoard.pinout.find(
+                (x) => x.value === value
+              ).pullmode;
+              if (
+                pullmode === 'UP' ||
+                pullmode === 'DOWN' ||
+                pullmode === 'NONE'
+              ) {
+                code += 'PULLMODE=' + pullmode;
+              }
+              code += ' ;\n\n';
+            }
+          } else if (block.data.pins.length > 0) {
+            pin = block.data.pins[0];
+            value = block.data.virtual ? '' : pin.value;
+            code += 'LOCATE COMP "';
+            code += utils.digestId(block.id); //-- Future improvement: use pin.name. It should also be changed in the main module
+            code += '" SITE "';
+            code += value;
+            code += '";\n';
+
+            code += 'IOBUF PORT "';
+            code += utils.digestId(block.id);
+            code += '" ';
+
+            //-- Get the pullmode property of the physical pin (its id is pin.value)
+            let pullmode = common.selectedBoard.pinout.find(
+              (x) => x.value === value
+            ).pullmode;
+            if (
+              pullmode === 'UP' ||
+              pullmode === 'DOWN' ||
+              pullmode === 'NONE'
+            ) {
+              code += 'PULLMODE=' + pullmode;
+            }
+            code += ' ;\n\n';
+          }
+        }
+      }
+
+      return code;
+    }
+
+    //-- Generate a CST constraint file (Gowin architecture, e.g. Sipeed Tang).
+    //-- Format:
+    //--   IO_LOC  "name"  pin;
+    //--   IO_PORT "name"  PULL_MODE=UP;   (optional, when the pin has pullmode)
+    function cstCompiler(project, opt) {
+      var i,
         j,
         block,
         pin,
@@ -1017,6 +1097,24 @@ angular
         code = '';
       var blockArray = project.design.graph.blocks;
       opt = opt || {};
+
+      code += '// -- Board: ';
+      code += common.selectedBoard.name;
+      code += '\n\n';
+
+      //-- Emit an IO_LOC (and optional IO_PORT pull mode) for a signal
+      function emit(name, value) {
+        code += 'IO_LOC "' + name + '" ' + value + ';\n';
+        if (value !== '') {
+          var entry = common.selectedBoard.pinout.find(function (x) {
+            return x.value === value;
+          });
+          var pullmode = entry ? entry.pullmode : undefined;
+          if (pullmode === 'UP' || pullmode === 'DOWN' || pullmode === 'NONE') {
+            code += 'IO_PORT "' + name + '" PULL_MODE=' + pullmode + ';\n';
+          }
+        }
+      }
 
       for (i in blockArray) {
         block = blockArray[i];
@@ -1028,27 +1126,18 @@ angular
             for (var p in block.data.pins) {
               pin = block.data.pins[p];
               value = block.data.virtual ? '' : pin.value;
-              code += 'set_io ';
-              code += utils.digestId(block.id);
-              code += '[' + pin.index + '] ';
-              code += value;
-              code += '\n';
+              emit(utils.digestId(block.id) + '[' + pin.index + ']', value);
             }
           } else if (block.data.pins.length > 0) {
             pin = block.data.pins[0];
             value = block.data.virtual ? '' : pin.value;
-            code += 'set_io ';
-            code += utils.digestId(block.id);
-            code += ' ';
-            code += value;
-            code += '\n';
+            emit(utils.digestId(block.id), value);
           }
         }
       }
 
       if (opt.boardRules) {
         // Declare init input ports
-
         var used = [];
         var initPorts = opt.initPorts || getInitPorts(project);
         let pname = '';
@@ -1080,85 +1169,18 @@ angular
               ? initPorts[i].name.substr(1)
               : initPorts[i].name;
           if (!found) {
-            code += 'set_io v';
-            code += pname;
-            code += ' ';
-            code += initPorts[i].pin;
-            code += '\n';
+            emit('v' + pname, initPorts[i].pin);
           }
         }
 
         // Declare init output pins
-
         var initPins = opt.initPins || getInitPins(project);
         if (initPins.length > 1) {
           for (i in initPins) {
-            code += 'set_io vinit[' + i + '] ';
-            code += initPins[i].pin;
-            code += '\n';
+            emit('vinit[' + i + ']', initPins[i].pin);
           }
         } else if (initPins.length > 0) {
-          code += 'set_io vinit ';
-          code += initPins[0].pin;
-          code += '\n';
-        }
-      }
-
-      return code;
-    }
-
-    function xdcCompiler(project, opt) {
-      var i,
-        block,
-        pin,
-        value,
-        code = '';
-      var blockArray = project.design.graph.blocks;
-      opt = opt || {};
-
-      code += '# -- Board: ';
-      code += common.selectedBoard.name;
-      code += '\n\n';
-
-      for (i in blockArray) {
-        block = blockArray[i];
-        if (
-          block.type === blocks.BASIC_INPUT ||
-          block.type === blocks.BASIC_OUTPUT
-        ) {
-          //-- Future improvement: Both cases: 1-pin or multiple pins in an array
-          //-- could be refactorized instead of repeating code
-          //-- (i usually name this as plural and singular cases)
-
-          //-- CASE: The pin is a BUS
-          if (block.data.pins.length > 1) {
-            for (var p in block.data.pins) {
-              pin = block.data.pins[p];
-              value = block.data.virtual ? '' : pin.value;
-
-              code += 'set_property -dict { PACKAGE_PIN ';
-              code += value;
-              code += ' IOSTANDARD LVCMOS33 }';
-              code += '[get_ports {';
-              code += utils.digestId(block.id); //-- Future improvement: use pin.name. It should also be changed in the main module
-              code += '[' + pin.index + ']';
-              code += '}]';
-              code += '\n';
-            }
-
-            //-- CASE: Only 1 pin
-          } else if (block.data.pins.length > 0) {
-            pin = block.data.pins[0];
-            value = block.data.virtual ? '' : pin.value;
-
-            code += 'set_property -dict { PACKAGE_PIN ';
-            code += value;
-            code += ' IOSTANDARD LVCMOS33 }';
-            code += '[get_ports {';
-            code += utils.digestId(block.id); //-- Future improvement: use pin.name. It should also be changed in the main module
-            code += '}]';
-            code += '\n';
-          }
+          emit('vinit', initPins[0].pin);
         }
       }
 

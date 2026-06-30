@@ -1,0 +1,5 @@
+[
+  { "name": "sys_clk", "value": "45", "type": "inout" },
+  { "name": "sys_reset", "value": "15", "type": "inout" },
+  { "name": "led", "value": "10", "type": "inout" }
+]

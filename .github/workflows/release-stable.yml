@@ -58,18 +58,14 @@ jobs:
         run: |
           npm install --legacy-peer-deps
 
-      # It is necesarry to install wine for building the package for
-      # windows. Also it is necesary to download the wine-mono windows
-      # installer and install it with wine
-      - name: Install dependencies
+      # NSIS (makensis) builds the Windows installer. wine/wine-mono are no
+      # longer needed: nw-builder sets the .exe icon via resedit (pure JS) and
+      # makensis runs natively on Linux.
+      - name: Install NSIS
         run: |
-          sudo add-apt-repository universe
-          sudo dpkg --add-architecture i386
+          sudo add-apt-repository -y universe
           sudo apt-get update
-          sudo apt-get install wine nsis 
-          wget https://dl.winehq.org/wine/wine-mono/5.0.0/wine-mono-5.0.0-x86.msi
-          export DISPLAY=:0.0
-          wine msiexec /i wine-mono-5.0.0-x86.msi
+          sudo apt-get install -y nsis
 
       # -- Build For windows!!
       - name: Build Microsoft Windows package
@@ -144,19 +140,11 @@ jobs:
           sed -i '' 's/darwinDependencies/dependencies/g' package.json
           npm install --legacy-peer-deps
 
-      - name: Build OSX ARM64 packages
+      # Ad-hoc code signing (no Apple Developer certificate / secrets).
+      - name: Build OSX ARM64 packages (ad-hoc signed)
         env:
-          MACOS_CERTIFICATE: ${{ secrets.APPLE_CERT_DATA }}
-          MACOS_CERTIFICATE_PWD: ${{ secrets.APPLE_CERT_PASSWORD }}
-          CODESIGN_ID: ${{ secrets.APPLE_TEAM_ID }}
-          MACOS_KEYCHAIN_PASS: ${{ secrets.LOCAL_KEYCHAIN_PASS }}
+          CODESIGN_ID: '-'
         run: |
-          echo $MACOS_CERTIFICATE | base64 --decode > certificate.p12
-          security create-keychain -p $MACOS_KEYCHAIN_PASS build.keychain
-          security default-keychain -s build.keychain
-          security unlock-keychain -p $MACOS_KEYCHAIN_PASS build.keychain
-          security import certificate.p12 -k build.keychain -P $MACOS_CERTIFICATE_PWD -T /usr/bin/codesign
-          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k $MACOS_KEYCHAIN_PASS build.keychain
           npm run buildOSXARM64
           ls dist/
 
@@ -172,12 +160,8 @@ jobs:
           version=$(jq -r '.version' package.json)
           echo "icestudio_version=${version}" >> $GITHUB_OUTPUT
 
-      - name: Sign DMG
-        env:
-          ICESTUDIO_VERSION: '${{fromJson(steps.icestudio_json.outputs.packageJson).version}}'
-          MACOS_APPLE_UID: ${{ secrets.APPLE_TEAM_ID }}
-        run: |
-          codesign --force --deep --sign ${MACOS_APPLE_UID} dist/icestudio-${ICESTUDIO_VERSION}-osxarm64.dmg -v
+      # NOTE: no separate "Sign DMG" step — the build already ad-hoc signs the
+      # .dmg (repairOSXarm64dmg.sh, CODESIGN_ID=-) and sets its Finder icon.
 
       # ---------------------------------------
       # -- Upload Mac binaries to the release
@@ -202,7 +186,7 @@ jobs:
     needs: build-LinWin
 
     # The type of runner that the job will run on
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -211,22 +195,20 @@ jobs:
         with:
           ref: master
 
-      #-- PATCH! For ARM use NWjs 0.60
-      - name: Setup por arm64
-        run: ./scripts/preInstallArm64.sh
-
       - name: Setup Nodejs version
         uses: actions/setup-node@v4
         with:
-          node-version: '19.3.0'
+          node-version: '23.3.0'
 
       - name: Install npm dependencies
         run: npm install --legacy-peer-deps
 
       - name: Build ARM
+        env:
+          NW_FLAVOR: normal
         run: |
           sudo apt install -y libfuse2
-          export DISPLAY=:0.0 
+          export DISPLAY=:0.0
           npm run buildAarch64
           echo "====> DEBUG: Contents of the dist folder..."
           ls -l dist

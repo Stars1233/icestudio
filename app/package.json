@@ -1,7 +1,7 @@
 {
   "name": "icestudio",
   "flavour": "develop",
-  "version": "0.13.4w",
+  "version": "1.0.0.PRw",
   "description": "Visual editor for open FPGA boards",
   "contributors": [
     {
@@ -26,8 +26,8 @@
   },
   "window": {
     "title": "iceStudio",
-    "width": 900,
-    "height": 620,
+    "width": 1200,
+    "height": 800,
     "min_width": 800,
     "min_height": 300,
     "resizable": true,
@@ -37,20 +37,10 @@
     "show": true
   },
   "apio": {
-    "min": "1.5.0",
-    "max": "1.5.1",
-    "extras": [
-      "blackiceprog",
-      "tinyfpgab",
-      "tinyprog",
-      "icefunprog"
-    ],
-    "external": "",
-    "branch": ""
+    "external": ""
   },
-  "collection": "0.4.1",
   "engines": {},
-  "node": ">= 23.3.0",
+  "node": ">= 24.0.0",
   "dependencies": {
     "ace-builds": "~1.37.5",
     "adm-zip": "0.4.16",
@@ -64,9 +54,7 @@
     "fs-extra": "~1.0.0",
     "getos": "~3.0.1",
     "glob": "~11.0.1",
-    "jspreadsheet-ce": "^4.15.0",
     "jquery": "~3.7.1",
-    "jsuites": "^4.15.0",
     "lodash.debounce": "~3.1.1",
     "marked": "~0.3.19",
     "mustache": "^4.2.0",
@@ -83,6 +71,7 @@
     "sudo-prompt": "~8.2.0",
     "svgo": "~0.7.2",
     "sweetalert2": "^11.15.10",
+    "tar": "^6.2.1",
     "tmp": "0.0.33"
   },
   "readme": "../README.md",

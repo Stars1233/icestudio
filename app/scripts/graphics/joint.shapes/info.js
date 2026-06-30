@@ -1,5 +1,5 @@
 //-- jshint rules
-/* global sha1, aceFontSize, openurl,marked */
+/* global sha1, aceFontSize, openurl, marked, state */
 
 'use strict';
 
@@ -307,13 +307,13 @@ joint.shapes.ice.InfoView = joint.shapes.ice.ModelView.extend({
 
   updateBox: function () {
     var bbox = this.model.getBBox();
-    var state = this.model.get('state');
+    //-- Use the shared global view state (pan/zoom), the same source the Code
+    //-- block uses. The cell's own 'state' attribute is NOT populated when the
+    //-- block is created from the menu (addDraggableCells -> graph.addCells),
+    //-- so reading it from the model returned undefined and crashed updateBox()
+    //-- during initialize(), breaking the block render and leaving the pointer
+    //-- interaction stuck.
     var data = this.model.get('data');
-
-    let temporalBypass = true;
-    if (!temporalBypass) {
-      return;
-    }
 
     var pendingTasks = [];
 

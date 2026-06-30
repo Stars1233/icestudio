@@ -1,0 +1,6 @@
+/* Host styles for apioShell plugin - applied to the main document */
+
+/* Prevent the window body from scrolling; let xterm handle its own scroll */
+.ics-wm-window--body:has(#apioShell) {
+  overflow: hidden !important;
+}

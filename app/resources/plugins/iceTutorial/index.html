@@ -1,0 +1,108 @@
+<!-- iceTutorial — embedded-windowed plugin layout (content only; the CSS and
+     JS are injected by the plugin manager via the manifest gui.style/scripts). -->
+<div id="it-root">
+  <!-- Tab bar -->
+  <div id="it-tabs">
+    <button class="it-tab is-active" data-tab="forum">Forum</button>
+    <button class="it-tab" data-tab="videos">Vídeos</button>
+    <button class="it-tab" data-tab="references">Recursos</button>
+  </div>
+
+  <div id="it-panels">
+    <!-- FORUM ----------------------------------------------------------->
+    <section class="it-panel is-active" data-panel="forum">
+      <div class="it-forum-bar">
+        <div class="it-forum-nav">
+          <button id="it-forum-back" type="button" title="Atrás">
+            &#8592;
+          </button>
+          <button id="it-forum-fwd" type="button" title="Adelante">
+            &#8594;
+          </button>
+          <button id="it-forum-reload" type="button" title="Refrescar">
+            &#8635;
+          </button>
+        </div>
+        <span class="it-forum-label"
+          >Comunidad · FPGA-Wars: explorando el lado libre</span
+        >
+        <a id="it-forum-open" href="#">Abrir en el navegador &#x2197;</a>
+      </div>
+      <!-- A <webview> browses as a real top-level page (own session), so it is
+           not subject to the iframe-embedding block (HTTP 403) that Google
+           Groups returns. -->
+      <webview id="it-forum-frame"></webview>
+    </section>
+
+    <!-- VIDEOS ---------------------------------------------------------->
+    <section class="it-panel" data-panel="videos">
+      <!-- Search stays fixed; the note + grid scroll below it. -->
+      <div class="it-videos-head">
+        <!-- Playlist drill-down bar (level 2); hidden on the main grid -->
+        <div id="it-videos-back" class="it-videos-back hidden">
+          <button
+            id="it-videos-back-btn"
+            type="button"
+            class="it-videos-back-btn"
+          >
+            ← Volver
+          </button>
+          <span id="it-videos-back-title"></span>
+        </div>
+        <input
+          id="it-search"
+          type="text"
+          placeholder="Buscar vídeos por título, descripción o etiquetas…"
+        />
+      </div>
+      <div class="it-videos-scroll">
+        <p class="it-note">
+          &#9888; Algunos vídeos pueden estar desfasados o referirse a versiones
+          antiguas de Icestudio, pero los conceptos siguen siendo aplicables.
+        </p>
+        <div id="it-grid"></div>
+        <div id="it-empty" class="it-empty hidden">
+          No hay vídeos que coincidan con la búsqueda.
+        </div>
+      </div>
+    </section>
+
+    <!-- REFERENCES ------------------------------------------------------>
+    <section class="it-panel" data-panel="references">
+      <div class="it-videos-head">
+        <input
+          id="it-ref-search"
+          type="text"
+          placeholder="Buscar recursos por título o descripción…"
+        />
+      </div>
+      <div class="it-videos-scroll">
+        <div id="it-ref-list"></div>
+        <div id="it-ref-empty" class="it-empty hidden">
+          No hay recursos que coincidan con la búsqueda.
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- In-window video player. The top bar ("Volver" + room for future actions)
+     keeps our controls off the YouTube player chrome. -->
+<div id="it-player" class="hidden">
+  <div id="it-player-bar">
+    <button id="it-player-back" type="button">&#8592; Volver</button>
+  </div>
+  <div id="it-player-frame"></div>
+</div>
+
+<!-- Bottom status bar: download progress + result (with "open folder"). -->
+<div id="it-status" class="hidden">
+  <div id="it-status-progress"><span id="it-status-progress-fill"></span></div>
+  <div id="it-status-row">
+    <span id="it-status-text"></span>
+    <a id="it-status-action" href="#" class="hidden"></a>
+    <button id="it-status-close" type="button" class="hidden" title="Cerrar">
+      &#10005;
+    </button>
+  </div>
+</div>

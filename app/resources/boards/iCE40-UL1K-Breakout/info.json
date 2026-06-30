@@ -1,0 +1,7 @@
+{
+  "label": "iCE40-UL1K UltraLite Breakout",
+  "SysClkMhz": 0,
+  "datasheet": "https://www.latticesemi.com/products/developmentboardsandkits/ice40ultralitebreakoutboard",
+  "interface": "FTDI",
+  "FPGAResources": {}
+}

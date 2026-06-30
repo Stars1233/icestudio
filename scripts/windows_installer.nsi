@@ -8,10 +8,6 @@
 !define DIST     "..\dist"
 !define CACHE    "..\cache"
 !define APP      "${DIST}\icestudio\${ARCH}"
-!ifndef PYTHON
-  !define PYTHON     "python-3.12.1-amd64.exe"
-!endif
-!define PYPATH   "${CACHE}\python\${PYTHON}"
 !define ICON     "${APP}\resources\images\icestudio-logo.ico"
 
 # define name of installer
@@ -105,41 +101,6 @@ Function ".onInit"
     ExecWait '$R0 /S'
 
   done:
-
-FunctionEnd
-
-
-Section "Install Python"
-
-  Call ValidatePythonVersion
-  Pop $R0
-
-  ${If} $R0 != "0"
-    MessageBox MB_YESNO \
-    "Python 3.12.1 will be installed. Do you want to continue?" \
-    IDYES continue
-    Quit
-
-    continue:
-      # define output path
-      SetOutPath "$INSTDIR\python"
-
-      # copy Python msi
-      File ${PYPATH}
-
-      # execute Python msi
-      # now there isn't MSI      ExecWait '"msiexec" /i "$INSTDIR\python\${PYTHON}" /passive /norestart ADDLOCAL=ALL'
-      # https://docs.python.org/3/using/windows.html#customization-via-ini-files
-      ExecWait '"$INSTDIR\python\${PYTHON}" /passive /norestart PrependPath=1'
-
-  ${EndIf}
-
-SectionEnd
-
-
-Function "ValidatePythonVersion"
-
-  nsExec::ExecToStack '"python" "-c" "import sys; ver=sys.version_info[:2]; exit({True:0,False:1}[ver==(3,8)])"'
 
 FunctionEnd
 
@@ -256,7 +217,7 @@ Section /o "un.Remove toolchain"
     RMDir /r "$0\.build"
     RMDir /r "$0\.cache"
     RMDir /r "$0\apio"
-    RMDir /r "$0\venv"
+    RMDir /r "$0\apio-bundle"
     RMDir "$0"
   ${EndIf}
 

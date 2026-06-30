@@ -1,0 +1,7 @@
+{
+  "label": "ARiCE v1",
+  "SysClkMhz": 0,
+  "datasheet": "",
+  "interface": "FTDI",
+  "FPGAResources": {}
+}

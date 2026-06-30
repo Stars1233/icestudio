@@ -388,14 +388,11 @@ joint.shapes.ice.IOView = joint.shapes.ice.ModelView.extend({
   },
   pendingRender: false,
   updateBox: function () {
-    // console.log('updateBox');
     const size = this.model.get('size');
     this.virtualContentSelector.width(size.width);
     var pendingTasks = [];
     var bbox = this.model.getBBox();
     var data = this.model.get('data');
-    // var state = this.model.get('state');
-    console.log('STATE', state);
     return this.placeIO(data, bbox, state, pendingTasks);
   },
   removeBox: function () {

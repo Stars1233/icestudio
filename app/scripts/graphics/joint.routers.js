@@ -13,7 +13,11 @@ joint.routers.ice = (function (g, _, joint) {
     perpendicular: true,
 
     // should be source or target not to be consider as an obstacle
-    excludeEnds: [], // 'source', 'target'
+    //-- Exclude the connected blocks themselves: a wire must never route
+    //-- around the very blocks it connects. With them as obstacles, two ports
+    //-- placed close together (e.g. a label next to a block) force the router
+    //-- to detour around their padding boxes, producing a small loop.
+    excludeEnds: ['source', 'target'],
 
     // should be any element with a certain type not to be consider as an obstacle
     excludeTypes: ['ice.Info'],
@@ -524,6 +528,18 @@ joint.routers.ice = (function (g, _, joint) {
     this.targetBBox.y += this.targetBBox.height / 2;
     this.targetBBox.width = 0;
     this.targetBBox.height = 0;
+
+    // Coincident / near-coincident endpoints (e.g. a label dropped almost on
+    // top of a port). With no vertices to route through, the A* pathfinder
+    // wanders a couple of steps in the start/end directions and returns a tiny
+    // square loop. Connect such endpoints directly instead.
+    if (
+      vertices.length === 0 &&
+      Math.abs(this.sourceBBox.x - this.targetBBox.x) <= 2 * opt.step &&
+      Math.abs(this.sourceBBox.y - this.targetBBox.y) <= 2 * opt.step
+    ) {
+      return [];
+    }
 
     // expand boxes by specific padding
     var sourceBBox = g.rect(this.sourceBBox);

@@ -1,0 +1,4 @@
+/* iceHub — host styles (injected into the host document, not scoped).
+   The window is resizable + movable: its initial size comes from the manifest
+   (width/height) and the window manager owns its geometry, so we no longer pin
+   it to the sandbox here. All the plugin UI is styled in css/style.css. */

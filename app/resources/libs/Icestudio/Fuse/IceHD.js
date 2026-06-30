@@ -74,7 +74,10 @@ class IceHD {
   getFilesRecursive(folder, level) {
     let _this = this;
     let fileTree = [];
-    const validator = /.*\.(ice|json|md)$/;
+    //-- Case-insensitive: collections may ship files with an uppercase
+    //-- extension (e.g. a block saved as ".ICE"); otherwise they get silently
+    //-- dropped from the disk scan and never reach the collection tree.
+    const validator = /.*\.(ice|json|md)$/i;
 
     try {
       let content = this.fs.readdirSync(folder);
@@ -89,11 +92,25 @@ class IceHD {
             isDir: true,
             children: level >= 0 ? _this.getFilesRecursive(path, level) : [],
           });
-        } else if (validator.test(name)) {
+        } else if (validator.test(name) && name.indexOf('._') !== 0) {
+          //-- Capture a lightweight signature (mtime + size) so consumers
+          //-- (e.g. the collection indexer) can detect changes without
+          //-- having to read the whole file. It travels with the env tree.
+          let mtimeMs = 0;
+          let size = 0;
+          try {
+            let st = _this.fs.statSync(path);
+            mtimeMs = st.mtimeMs;
+            size = st.size;
+          } catch (e) {
+            // Broken symlink or race: leave signature as 0 (forces reindex)
+          }
           fileTree.push({
             name: _this.basename(name),
             isDir: false,
             path: path,
+            mtimeMs: mtimeMs,
+            size: size,
           });
         }
       });

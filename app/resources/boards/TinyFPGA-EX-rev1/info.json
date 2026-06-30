@@ -1,0 +1,8 @@
+{
+  "label": "TinyFPGA EX rev 1",
+  "SysClkMhz": 0,
+  "datasheet": "https://www.crowdsupply.com/tinyfpga/tinyfpga-ex",
+  "interface": "USB",
+  "arch": "ecp5",
+  "FPGAResources": {}
+}

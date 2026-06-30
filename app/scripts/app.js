@@ -8,8 +8,6 @@
 //---------------------------------------------------------------------------
 'use strict';
 
-console.log('---> scripts/app.js (LOAD)');
-
 //-- Global Icestudio
 //-- This is the core system with services, api and communications.
 //-- Group inside different object for efficiency model by V8 engine.
@@ -40,7 +38,7 @@ angular.module('icestudio', ['ui.bootstrap', 'ngRoute', 'gettext']).run(
     gettextCatalog
   ) {
     /* jshint +W098 */
-    console.log('---> scripts/app.js (RUN)');
+    console.log('->DEBUG: app.js');
 
     /* If in package.json appears development:{mode:true}*/
     /* activate development tools */
@@ -121,7 +119,7 @@ angular.module('icestudio', ['ui.bootstrap', 'ngRoute', 'gettext']).run(
         `=======================================================================================`
       );
       iceConsole.log(` Icestudio session ${now.toString()}`);
-      iceConsole.log(` Version: ${common.ICESTUDIO_VERSION_TS}`);
+      iceConsole.log(` Version: ${common.ICESTUDIO_VERSION}`);
       iceConsole.log(
         `=======================================================================================`
       );
@@ -158,16 +156,10 @@ angular.module('icestudio', ['ui.bootstrap', 'ngRoute', 'gettext']).run(
         'common.INTERNAL_COLLECTIONS_DIR: Internal collections: ' +
           common.INTERNAL_COLLECTIONS_DIR
       );
+      iceConsole.log('common.APIO_HOME: APIO folder: ' + common.APIO_HOME);
       iceConsole.log(
-        'common.APIO_HOME_DIR: APIO folder: ' + common.APIO_HOME_DIR
+        'common.APIO_BUNDLE_DIR: Apio bundle: ' + common.APIO_BUNDLE_DIR
       );
-      iceConsole.log(
-        'common.ENV_DIR: Python virtual environment: ' + common.ENV_DIR
-      );
-      iceConsole.log(
-        'common.ENV_BIN_DIR: Executable files: ' + common.ENV_BIN_DIR
-      );
-      iceConsole.log('common.ENV_PIP: PIP executable:  ' + common.ENV_PIP);
       iceConsole.log('common.APIO_CMD: APIO command: ' + common.APIO_CMD);
       iceConsole.log('Common.APP: Icestudio APP folder: ' + common.APP);
       iceConsole.log(
@@ -178,51 +170,90 @@ angular.module('icestudio', ['ui.bootstrap', 'ngRoute', 'gettext']).run(
       collections.loadAllCollections();
 
       utils.loadLanguage(profile, function () {
-        //-- No board specified
-        if (profile.get('board') === '') {
-          tools.selectBoardPrompt(function (selectedBoard) {
-            var newBoard = boards.selectBoard(selectedBoard);
-            profile.set('board', newBoard.name);
-
-            //-- Display a Dialog with the board selected
-            alertify.success(
-              //-- Message to show board name in Bold
-              gettextCatalog.getString('Board {{name}} selected', {
-                name: utils.bold(newBoard.info.label),
-              })
-            );
-
-            tools.checkToolchain(
-              () => {}, //-- No callback
-              false //-- No error notifications
-            );
-          });
-
-          //-- There is a board in the profile
-        } else {
+        //-- If a board was already selected in a previous session, activate
+        //-- it. On first run we no longer pop up the old board-selection
+        //-- dialog: the Setup Wizard (setupWizard plugin) guides the user
+        //-- through board selection, toolchain install and a test upload.
+        if (profile.get('board') !== '') {
           profile.set('board', boards.selectBoard(profile.get('board')).name);
-          tools.checkToolchain(
-            () => {}, //-- No callback
-            false //-- No error notifications
-          );
+        } else {
+          //-- First run / no board configured yet: still select a default board
+          //-- so common.selectedBoard is NEVER null. A .ice opened on first run
+          //-- (e.g. double-clicking a file passes it via nw.App.argv ->
+          //-- project.open) loads before the Setup Wizard lets the user pick a
+          //-- board, and project.load() dereferences common.selectedBoard.name
+          //-- (project.js) — which threw and left the loading spinner hung.
+          //-- Do NOT persist it to the profile: the wizard still owns board
+          //-- selection and the profile stays "unconfigured".
+          boards.selectBoard('');
         }
 
-        //-- Set the interface language
-        $('html').attr('lang', profile.get('language'));
+        //-- Check the toolchain silently. No notifications: neither the
+        //-- executeCommand error toast (2nd arg) nor the "Toolchain not
+        //-- installed, click here to install" warning (3rd arg). The wizard
+        //-- handles installation; the Tools menu remains for manual install.
+        //-- The check spawns apio via child_process (slow/variable on Windows);
+        //-- record when it finishes so the Setup Wizard is not launched — and
+        //-- the language change it can trigger is not run — until the
+        //-- background init has settled (avoids the first-run spinner race).
+        var toolchainChecked = false;
+        tools.checkToolchain(
+          () => {
+            toolchainChecked = true;
+          },
+          false, //-- No executeCommand error toast
+          false //-- No "toolchain not installed" warning
+        );
 
+        $('html').attr('lang', profile.get('language'));
         collections.sort();
         profile.set(
           'collection',
           collections.selectCollection(profile.get('collection'))
         );
-
-        //-- Update the Icestudio window with the current project file
-        //-- Initially there is no file: 'untitled'
         project.updateTitle(gettextCatalog.getString('Untitled'));
+
+        //-- First-run / missing configuration: auto-launch the Setup Wizard
+        //-- once. Plugins load asynchronously, so poll until the plugin is
+        //-- registered, then launch it. The wizard marks setupWizardDone on
+        //-- open, so it never auto-reappears (it can be relaunched from
+        //-- Tools -> Wizard).
+        if (!profile.get('setupWizardDone')) {
+          var wizTries = 0;
+          var wizPoll = setInterval(function () {
+            wizTries++;
+            var pm =
+              typeof iceStudio !== 'undefined' ? iceStudio.pluginManager : null;
+            var pluginReady = !!(pm && pm.plugins && pm.plugins['setupWizard']);
+            //-- Wait until the background init has settled too: boards load
+            //-- synchronously, but collections and the apio toolchain probe may
+            //-- still be in flight. Launching the wizard before that lets the
+            //-- user reach the language step and trigger a project reload
+            //-- against half-initialized state — the first-run spinner hang
+            //-- reported on slow Windows machines.
+            var initReady =
+              toolchainChecked &&
+              typeof common.internalCollections !== 'undefined';
+            //-- ~20s safety: if the apio subprocess is unusually slow, launch
+            //-- anyway rather than block the user forever.
+            var initTimedOut = wizTries > 40;
+
+            if (pluginReady && (initReady || initTimedOut)) {
+              clearInterval(wizPoll);
+              iceStudio.bus.events.publish(
+                'pluginManager.launch',
+                'setupWizard'
+              );
+            } else if (wizTries > 60) {
+              //-- ~30s hard cap: give up silently (plugin never registered)
+              clearInterval(wizPoll);
+            }
+          }, 500);
+        }
       });
     });
 
-    console.log('---> scripts/app.js: Profile Loaded');
+    console.log('->DEBUG: app.js: END');
   }
 );
 
@@ -234,30 +265,18 @@ async function initAfterLoad() {
   await iceSleepMs(1000); //-- this custom 1s wait smooth the loading screen
 
   angular.element(document).ready(function () {
-    //-- DOM is ready!!
-    //-- Create an observer: Wait for changes in the DOM's body
     const observer = new MutationObserver(() => {
-      //-- Changes in the splash screen
       requestAnimationFrame(() => {
-        //-- Start the fading of the splash screen
         $('#main-icestudio-load-wrapper').addClass('fade-loaded');
-
-        //-- It is finished in half a second
         setTimeout(function () {
-          //-- Remove completely the splash screen
           $('#main-icestudio-load-wrapper').addClass('loaded');
         }, 500);
-
-        //-- No splash screen screen. The user is ready to use the GUI
         iceStudioReady = true;
 
-        //-- Stop the observer. It is done
-        observer.disconnect();
-        console.log('🟢 scripts/app.js: Icestudio is READY!');
+        observer.disconnect(); // Detener el observador después de ocultar el splash
       });
     });
 
-    //-- Activate the observer
     observer.observe(document.body, { childList: true, subtree: true });
   });
 }

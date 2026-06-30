@@ -841,18 +841,9 @@ angular.module('icestudio').service(
               );
             }
           } else if (common.allDependencies[pointerdblclickCellType]) {
-            if (
-              typeof common.isEditingSubmodule !== 'undefined' &&
-              common.isEditingSubmodule === true
-            ) {
-              alertify.warning(
-                gettextCatalog.getString(
-                  'To enter \"edit mode\" in a deeper block, you need to finish the current level by locking the padlock.'
-                )
-              );
-              return;
-            }
-            // Navigate inside generic blocks
+            //-- Navigate inside generic blocks (multi-level: editing a level
+            //-- before going deeper is persisted by the navigateProject
+            //-- handler, so there is no need to lock the padlock first).
             z.index = 1;
             isDblClick = true;
 
@@ -1244,6 +1235,17 @@ angular.module('icestudio').service(
 */
       graph.on('add', function (cell) {
         if (cell.isLink()) {
+          //-- A link restored on load (or paste) is created with its target
+          //-- already resolved, so the 'change:target' handler below never
+          //-- fires for it. Mark the target input port as connected here too;
+          //-- otherwise a wired clk/rst loaded from a .ice keeps its
+          //-- board-clock default (port.default.apply) and the compiler ties
+          //-- it to the system clock until a manual disconnect+reconnect.
+          let target = cell.get('target');
+          if (target && target.id) {
+            cell.attributes.lastTarget = target;
+            updatePortDefault(target, false);
+          }
           setTimeout(() => cell.toBack(), 10);
         }
       });
@@ -1402,20 +1404,28 @@ angular.module('icestudio').service(
           }
         }
 
+        //-- Keep the navigation banner (back button) visible while inside a
+        //-- block even in edit mode; hide it only at the root level.
+        var insideBlockEnabled =
+          common.submoduleHeap && common.submoduleHeap.length > 0;
         ael = document.getElementsByClassName('banner');
-
+        if (typeof ael !== 'undefined' && ael.length > 0) {
+          for (i = 0; i < ael.length; i++) {
+            if (insideBlockEnabled) {
+              ael[i].classList.remove('hidden');
+            } else {
+              ael[i].classList.add('hidden');
+            }
+          }
+        }
+        //-- Editable view: no "read only" notice and no padlock (it is never a
+        //-- shielded collection block).
+        angular.element('.read-only').addClass('hidden');
+        angular.element('.banner-submodule').addClass('hidden');
+        ael = document.getElementsByClassName('banner-submodule');
         if (typeof ael !== 'undefined' && ael.length > 0) {
           for (i = 0; i < ael.length; i++) {
             ael[i].classList.add('hidden');
-          }
-        }
-        if (!common.isEditingSubmodule) {
-          angular.element('.banner-submodule').addClass('hidden');
-          ael = document.getElementsByClassName('banner-submodule');
-          if (typeof ael !== 'undefined' && ael.length > 0) {
-            for (i = 0; i < ael.length; i++) {
-              ael[i].classList.add('hidden');
-            }
           }
         }
       } else {
@@ -1423,7 +1433,16 @@ angular.module('icestudio').service(
         angular.element('.paper').addClass('looks-disabled');
         angular.element('.board-container').addClass('looks-disabled');
         angular.element('.banner').removeClass('hidden');
-        angular.element('.banner-submodule').removeClass('hidden');
+        //-- Read-only view: show the padlock and the "read only" notice only
+        //-- while the block stays shielded as part of a collection (not for
+        //-- other disabled states).
+        if (common.currentBlockIsCollection) {
+          angular.element('.banner-submodule').removeClass('hidden');
+          angular.element('.read-only').removeClass('hidden');
+        } else {
+          angular.element('.banner-submodule').addClass('hidden');
+          angular.element('.read-only').addClass('hidden');
+        }
 
         ael = document.getElementById('menu');
 
@@ -1457,7 +1476,11 @@ angular.module('icestudio').service(
 
         if (typeof ael !== 'undefined' && ael.length > 0) {
           for (i = 0; i < ael.length; i++) {
-            ael[i].classList.remove('hidden');
+            if (common.currentBlockIsCollection) {
+              ael[i].classList.remove('hidden');
+            } else {
+              ael[i].classList.add('hidden');
+            }
           }
         }
       }
@@ -1936,37 +1959,47 @@ angular.module('icestudio').service(
         opt = opt || { disabled: false, reset: true };
 
         utils.beginBlockingTask();
-        // self.disableAutoRouting();
-        commandManager.stopListening();
+        //-- The blocking spinner MUST always be balanced by endBlockingTask().
+        //-- Wrap the work in try/catch/finally so that an exception thrown by
+        //-- any step below (e.g. on first run, when boards/collections are not
+        //-- fully initialized yet — a race seen mostly on slow Windows boxes)
+        //-- never leaves the spinner hung over the whole UI.
+        try {
+          // self.disableAutoRouting();
+          commandManager.stopListening();
 
-        self.clearAll();
+          self.clearAll();
 
-        let [cells, cellsw] = graphToCells(design.graph, opt);
+          let [cells, cellsw] = graphToCells(design.graph, opt);
 
-        //graph.trigger('batch:start');
-        graph.startBatch('loadDesign');
-        graph.addCells(cells);
-        graph.stopBatch('loadDesign');
-        graph.startBatch('loadDesignW');
-        graph.addCells(cellsw);
-        graph.stopBatch('loadDesignW');
-        //addCells(cells);   --> This is an overlapping function with more functionality but heaviest
-        // graph.trigger('batch:stop');
-        self.setState(design.state);
-        self.appEnable(!opt.disabled);
-        if (!opt.disabled) {
-          commandManager.listen();
-        }
-        self.fitContent();
-        //-- maintain autorouting disabled for the moment because there is overlapped routings
-        // self.route();
-        if (callback) {
-          callback();
-          //self.enableAutoRouting();
-          //
+          //graph.trigger('batch:start');
+          graph.startBatch('loadDesign');
+          graph.addCells(cells);
+          graph.stopBatch('loadDesign');
+          graph.startBatch('loadDesignW');
+          graph.addCells(cellsw);
+          graph.stopBatch('loadDesignW');
+          //addCells(cells);   --> This is an overlapping function with more functionality but heaviest
+          // graph.trigger('batch:stop');
+          self.setState(design.state);
+          self.appEnable(!opt.disabled);
+          if (!opt.disabled) {
+            commandManager.listen();
+          }
+          self.fitContent();
+          //-- maintain autorouting disabled for the moment because there is overlapped routings
+          // self.route();
+          if (callback) {
+            callback();
+            //self.enableAutoRouting();
+          }
+          return true;
+        } catch (e) {
+          console.warn('loadDesign failed', e);
+          return false;
+        } finally {
           utils.endBlockingTask();
         }
-        return true;
       }
 
       return false;
@@ -2200,6 +2233,57 @@ angular.module('icestudio').service(
       return design;
     };
 
+    //-- Resolve a dependency-id conflict on append/paste: a block is arriving
+    //-- with an id that already EXISTS but holds DIFFERENT content (typically a
+    //-- collection block dragged in after its block had been edited in-place
+    //-- under the same id while its collection was not installed). Keep the
+    //-- INCOMING (collection) block as the canonical owner of the id, and move
+    //-- the EXISTING (local, edited) block to a fresh id, remapping every
+    //-- reference to it so the user's edits are not lost. Returns the new id,
+    //-- or false if it could not sanitize.
+    function sanitizeConflictingDependency(oldId) {
+      var existing = common.allDependencies[oldId];
+      if (!existing || !existing.package) {
+        return false;
+      }
+      var clone = utils.clone(existing);
+      var seq = new Date().getTime();
+      var baseVersion = String(clone.package.version || '').replace(
+        /(.*)(-c\d*)/,
+        '$1'
+      );
+      clone.package.version = baseVersion + '-c' + seq;
+      var newId = utils.dependencyID(clone);
+      if (!newId || newId === oldId || common.allDependencies[newId]) {
+        return false;
+      }
+      common.allDependencies[newId] = clone;
+      //-- Remap oldId -> newId inside every dependency's graph.
+      for (var depId in common.allDependencies) {
+        var dep = common.allDependencies[depId];
+        var blks =
+          dep && dep.design && dep.design.graph && dep.design.graph.blocks;
+        if (blks) {
+          for (var i = 0; i < blks.length; i++) {
+            if (blks[i].type === oldId) {
+              blks[i].type = newId;
+            }
+          }
+        }
+      }
+      //-- Remap oldId -> newId in the live graph cells.
+      _.each(graph.getCells(), function (cell) {
+        if (cell.get && cell.get('blockType') === oldId) {
+          cell.set('blockType', newId);
+          var view = paper.findViewByModel(cell.id);
+          if (view && view.updateBox) {
+            view.updateBox();
+          }
+        }
+      });
+      return newId;
+    }
+
     this.appendDesign = function (design, dependencies) {
       if (
         design &&
@@ -2209,10 +2293,27 @@ angular.module('icestudio').service(
         design.graph.wires
       ) {
         selectionView.cancelSelection();
-        // Merge dependencies
+        // Merge dependencies (sanitizing id conflicts so an incoming
+        // collection block never silently inherits a locally edited block)
         for (let type in dependencies) {
           if (!(type in common.allDependencies)) {
             common.allDependencies[type] = dependencies[type];
+          } else if (
+            JSON.stringify(common.allDependencies[type]) !==
+            JSON.stringify(dependencies[type])
+          ) {
+            //-- Same id, different content: keep the incoming block as the
+            //-- canonical owner of the id and move the existing (edited) one
+            //-- to a fresh id so the user's edits are not lost.
+            if (sanitizeConflictingDependency(type)) {
+              common.allDependencies[type] = dependencies[type];
+              alertify.warning(
+                gettextCatalog.getString(
+                  'A different version of this block already existed in the ' +
+                    'design; your copy was kept as a separate clone.'
+                )
+              );
+            }
           }
         }
 

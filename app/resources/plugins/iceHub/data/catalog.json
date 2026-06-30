@@ -1,0 +1,1355 @@
+{
+  "schema": 1,
+  "version": 1,
+  "collections": [
+    {
+      "id": "icek",
+      "name": "iceK",
+      "language": "es",
+      "description": "Proporciona bloques de valores constantes para Icestudio, permitiendo inyectar constantes numéricas y de bits fijas de distintos anchos en tus diseños digitales.",
+      "tags": [
+        "constants",
+        "numbers",
+        "values",
+        "constantes",
+        "numeros",
+        "fixed",
+        "literals"
+      ],
+      "author": "FPGAwars",
+      "homepage": "https://github.com/FPGAwars/iceK",
+      "icon": "icons/collection.svg",
+      "source": {
+        "type": "github-release",
+        "repo": "FPGAwars/iceK",
+        "asset": "*.tgz"
+      },
+      "i18n": {
+        "en": {
+          "description": "Provides constant-value blocks for Icestudio, letting you inject fixed numeric and bit constants of various widths into your digital designs."
+        }
+      }
+    },
+    {
+      "id": "icewires",
+      "name": "iceWires",
+      "language": "es",
+      "description": "Bloques para trabajar con cables y buses en Icestudio, incluyendo separación y unión de bits y extensión de signo para enrutar y dar forma a las señales del diseño.",
+      "tags": [
+        "wires",
+        "buses",
+        "cables",
+        "split",
+        "join",
+        "signals",
+        "senales",
+        "bits"
+      ],
+      "author": "FPGAwars",
+      "homepage": "https://github.com/FPGAwars/iceWires",
+      "icon": "icons/collection.svg",
+      "source": {
+        "type": "github-release",
+        "repo": "FPGAwars/iceWires",
+        "asset": "*.tgz"
+      },
+      "i18n": {
+        "en": {
+          "description": "Blocks for working with wires and buses in Icestudio, including bit splitting, joining and sign extension to route and reshape signals across your design."
+        }
+      }
+    },
+    {
+      "id": "iceio",
+      "name": "iceIO",
+      "language": "es",
+      "description": "Bloques para gestionar los pines de entrada/salida de la FPGA en Icestudio, conectando tu diseño a pines físicos como botones, LEDs y otros periféricos de la placa.",
+      "tags": [
+        "io",
+        "pins",
+        "input",
+        "output",
+        "pines",
+        "entrada",
+        "salida",
+        "fpga"
+      ],
+      "author": "FPGAwars",
+      "homepage": "https://github.com/FPGAwars/iceIO",
+      "icon": "icons/collection.svg",
+      "source": {
+        "type": "github-release",
+        "repo": "FPGAwars/iceIO",
+        "asset": "*.tgz"
+      },
+      "i18n": {
+        "en": {
+          "description": "Blocks for managing FPGA input/output pins in Icestudio, connecting your design to physical pins such as buttons, LEDs and other board peripherals."
+        }
+      }
+    },
+    {
+      "id": "icegates",
+      "name": "iceGates",
+      "language": "es",
+      "description": "Bloques de puertas lógicas combinacionales para Icestudio, que ofrecen las primitivas básicas AND, OR, NOT, XOR, NAND y NOR para construir circuitos digitales.",
+      "tags": [
+        "gates",
+        "logic",
+        "and",
+        "or",
+        "not",
+        "xor",
+        "puertas",
+        "logica"
+      ],
+      "author": "FPGAwars",
+      "homepage": "https://github.com/FPGAwars/iceGates",
+      "icon": "icons/collection.svg",
+      "source": {
+        "type": "github-release",
+        "repo": "FPGAwars/iceGates",
+        "asset": "*.tgz"
+      },
+      "i18n": {
+        "en": {
+          "description": "Combinational logic gate blocks for Icestudio, providing the basic AND, OR, NOT, XOR, NAND and NOR primitives to build digital circuits."
+        }
+      }
+    },
+    {
+      "id": "icemux",
+      "name": "iceMux",
+      "language": "es",
+      "description": "Bloques de multiplexores y demultiplexores para Icestudio, que permiten seleccionar y enrutar una de varias entradas de datos o distribuir una señal a varias salidas.",
+      "tags": [
+        "mux",
+        "demux",
+        "multiplexer",
+        "demultiplexer",
+        "select",
+        "multiplexor",
+        "selector",
+        "routing"
+      ],
+      "author": "FPGAwars",
+      "homepage": "https://github.com/FPGAwars/iceMux",
+      "icon": "icons/collection.svg",
+      "source": {
+        "type": "github-release",
+        "repo": "FPGAwars/iceMux",
+        "asset": "*.tgz"
+      },
+      "i18n": {
+        "en": {
+          "description": "Multiplexer and demultiplexer blocks for Icestudio, letting you select and route one of several data inputs or distribute a signal to multiple outputs."
+        }
+      }
+    },
+    {
+      "id": "icecoders",
+      "name": "iceCoders",
+      "language": "es",
+      "description": "Bloques de codificadores y decodificadores para Icestudio, que convierten entre códigos binarios y representaciones one-hot o de líneas en diseños digitales combinacionales.",
+      "tags": [
+        "encoder",
+        "decoder",
+        "binary",
+        "codificador",
+        "decodificador",
+        "binario",
+        "code",
+        "combinational"
+      ],
+      "author": "FPGAwars",
+      "homepage": "https://github.com/FPGAwars/iceCoders",
+      "icon": "icons/collection.svg",
+      "source": {
+        "type": "github-release",
+        "repo": "FPGAwars/iceCoders",
+        "asset": "*.tgz"
+      },
+      "i18n": {
+        "en": {
+          "description": "Encoder and decoder blocks for Icestudio, converting between binary codes and one-hot or line representations for combinational digital designs."
+        }
+      }
+    },
+    {
+      "id": "iceff",
+      "name": "iceFF",
+      "language": "es",
+      "description": "Bloques de biestables para Icestudio, que ofrecen los elementos básicos de almacenamiento secuencial como biestables D, T, JK y SR para construir lógica con estado.",
+      "tags": [
+        "flip-flop",
+        "flipflop",
+        "sequential",
+        "biestable",
+        "register",
+        "memory",
+        "secuencial",
+        "storage"
+      ],
+      "author": "FPGAwars",
+      "homepage": "https://github.com/FPGAwars/iceFF",
+      "icon": "icons/collection.svg",
+      "source": {
+        "type": "github-release",
+        "repo": "FPGAwars/iceFF",
+        "asset": "*.tgz"
+      },
+      "i18n": {
+        "en": {
+          "description": "Flip-flop blocks for Icestudio, providing the basic sequential storage elements such as D, T, JK and SR flip-flops for building stateful logic."
+        }
+      }
+    },
+    {
+      "id": "iceregs",
+      "name": "iceRegs",
+      "language": "es",
+      "description": "Bloques de registros para Icestudio, construidos a partir de biestables para almacenar y desplazar palabras de datos de varios bits en diseños secuenciales y de ruta de datos.",
+      "tags": [
+        "registers",
+        "shift",
+        "flip-flops",
+        "registros",
+        "sequential",
+        "storage",
+        "data",
+        "secuencial"
+      ],
+      "author": "FPGAwars",
+      "homepage": "https://github.com/FPGAwars/iceRegs",
+      "icon": "icons/collection.svg",
+      "source": {
+        "type": "github-release",
+        "repo": "FPGAwars/iceRegs",
+        "asset": "*.tgz"
+      },
+      "i18n": {
+        "en": {
+          "description": "Register blocks for Icestudio, built from flip-flops to store and shift multi-bit data words for sequential and data-path digital designs."
+        }
+      }
+    },
+    {
+      "id": "icesregs",
+      "name": "iceSRegs",
+      "language": "es",
+      "description": "Proporciona bloques de registros de desplazamiento en varios anchos de bits para el manejo de datos serie-paralelo y paralelo-serie en diseños de Icestudio.",
+      "tags": [
+        "registers",
+        "shift",
+        "registros",
+        "desplazamiento",
+        "serial",
+        "parallel",
+        "bits"
+      ],
+      "author": "FPGAwars",
+      "homepage": "https://github.com/FPGAwars/iceSRegs",
+      "icon": "icons/collection.svg",
+      "source": {
+        "type": "github-release",
+        "repo": "FPGAwars/iceSRegs",
+        "asset": "*.tgz"
+      },
+      "i18n": {
+        "en": {
+          "description": "Provides shift register blocks in several bit widths for serial-to-parallel and parallel-to-serial data handling in Icestudio designs."
+        }
+      }
+    },
+    {
+      "id": "iceboards",
+      "name": "iceBoards",
+      "language": "es",
+      "description": "Colección de bloques y diseños de ejemplo adaptados a las distintas placas FPGA soportadas, que ayudan a empezar rápidamente con el hardware concreto.",
+      "tags": [
+        "boards",
+        "placas",
+        "examples",
+        "ejemplos",
+        "fpga",
+        "tests",
+        "hardware"
+      ],
+      "author": "FPGAwars",
+      "homepage": "https://github.com/FPGAwars/iceBoards",
+      "icon": "icons/collection.svg",
+      "source": {
+        "type": "github-release",
+        "repo": "FPGAwars/iceBoards",
+        "asset": "*.tgz"
+      },
+      "i18n": {
+        "en": {
+          "description": "Collection of blocks and example designs tailored to the different supported FPGA boards, helping users get started quickly on their specific hardware."
+        }
+      }
+    },
+    {
+      "id": "icecomp",
+      "name": "iceComp",
+      "language": "es",
+      "description": "Colección de Icestudio con bloques comparadores para comparar valores digitales, generando resultados de igualdad y magnitud en diseños FPGA.",
+      "tags": [
+        "comparators",
+        "comparadores",
+        "compare",
+        "equality",
+        "magnitude",
+        "logic"
+      ],
+      "author": "FPGAwars",
+      "homepage": "https://github.com/FPGAwars/iceComp",
+      "icon": "icons/collection.svg",
+      "source": {
+        "type": "github-release",
+        "repo": "FPGAwars/iceComp",
+        "asset": "*.tgz"
+      },
+      "i18n": {
+        "en": {
+          "description": "Icestudio collection of comparator blocks for comparing digital values, producing equality and magnitude results in FPGA designs."
+        }
+      }
+    },
+    {
+      "id": "icearith",
+      "name": "iceArith",
+      "language": "es",
+      "description": "Bloques de aritmética entera, como sumadores, para construir lógica de cálculo y operaciones de ruta de datos en diseños FPGA de Icestudio.",
+      "tags": [
+        "arithmetic",
+        "aritmetica",
+        "adders",
+        "sumadores",
+        "integer",
+        "math",
+        "datapath"
+      ],
+      "author": "FPGAwars",
+      "homepage": "https://github.com/FPGAwars/iceArith",
+      "icon": "icons/collection.svg",
+      "source": {
+        "type": "github-release",
+        "repo": "FPGAwars/iceArith",
+        "asset": "*.tgz"
+      },
+      "i18n": {
+        "en": {
+          "description": "Integer arithmetic blocks such as adders for building computational logic and data-path operations in Icestudio FPGA designs."
+        }
+      }
+    },
+    {
+      "id": "icecounter",
+      "name": "iceCounter",
+      "language": "es",
+      "description": "Colección de bloques contadores en múltiples anchos de bits, con variantes ascendente, ascendente/descendente, módulo y reset para lógica secuencial en Icestudio.",
+      "tags": [
+        "counters",
+        "contadores",
+        "count",
+        "updown",
+        "modulo",
+        "sequential",
+        "bits"
+      ],
+      "author": "FPGAwars",
+      "homepage": "https://github.com/FPGAwars/iceCounter",
+      "icon": "icons/collection.svg",
+      "source": {
+        "type": "github-release",
+        "repo": "FPGAwars/iceCounter",
+        "asset": "*.tgz"
+      },
+      "i18n": {
+        "en": {
+          "description": "Collection of counter blocks in multiple bit widths, including up, up/down, modulo and reset variants for sequential logic in Icestudio."
+        }
+      }
+    },
+    {
+      "id": "icesignals",
+      "name": "iceSignals",
+      "language": "es",
+      "description": "Bloques para la gestión y generación de señales de 1 bit, incluyendo tics y pulsos, para lógica de temporización y control en diseños de Icestudio.",
+      "tags": [
+        "signals",
+        "senales",
+        "pulses",
+        "pulsos",
+        "tics",
+        "timing",
+        "1-bit"
+      ],
+      "author": "FPGAwars",
+      "homepage": "https://github.com/FPGAwars/iceSignals",
+      "icon": "icons/collection.svg",
+      "source": {
+        "type": "github-release",
+        "repo": "FPGAwars/iceSignals",
+        "asset": "*.tgz"
+      },
+      "i18n": {
+        "en": {
+          "description": "Blocks for the management and generation of 1-bit signals, including tics and pulses, for timing and control logic in Icestudio designs."
+        }
+      }
+    },
+    {
+      "id": "icepll",
+      "name": "icePLL",
+      "language": "es",
+      "description": "Bloques para trabajar con PLLs (bucles de enganche de fase) para sintetizar y ajustar frecuencias de reloj en diseños FPGA de Icestudio.",
+      "tags": [
+        "pll",
+        "frequency",
+        "frecuencia",
+        "clock",
+        "reloj",
+        "phase",
+        "fase"
+      ],
+      "author": "FPGAwars",
+      "homepage": "https://github.com/FPGAwars/icePLL",
+      "icon": "icons/collection.svg",
+      "source": {
+        "type": "github-release",
+        "repo": "FPGAwars/icePLL",
+        "asset": "*.tgz"
+      },
+      "i18n": {
+        "en": {
+          "description": "Blocks for working with PLLs (phase-locked loops) to synthesize and adjust clock frequencies in Icestudio FPGA designs."
+        }
+      }
+    },
+    {
+      "id": "ice-ledoscopek",
+      "name": "iceLedoscope",
+      "language": "es",
+      "description": "Un analizador lógico que visualiza señales digitales directamente en los LEDs de la placa, permitiendo observar y medir la actividad de las señales sin instrumentos externos.",
+      "tags": [
+        "ledoscope",
+        "logic-analyzer",
+        "analizador",
+        "leds",
+        "signals",
+        "senales",
+        "measure",
+        "debug"
+      ],
+      "author": "FPGAwars",
+      "homepage": "https://github.com/FPGAwars/iceLedoscope",
+      "icon": "icons/collection.svg",
+      "source": {
+        "type": "github-release",
+        "repo": "FPGAwars/iceLedoscope",
+        "asset": "*.tgz"
+      },
+      "i18n": {
+        "en": {
+          "description": "A logic analyzer that visualizes digital signals directly on the board's LEDs, letting you observe and measure signal activity without external instruments."
+        }
+      }
+    },
+    {
+      "id": "iceleds",
+      "name": "iceLeds",
+      "language": "es",
+      "description": "Bloques para controlar y mostrar información en LEDs, con componentes listos para encender LEDs individuales y matrices de LEDs en tus diseños FPGA de Icestudio.",
+      "tags": [
+        "leds",
+        "display",
+        "salida",
+        "output",
+        "lighting",
+        "led",
+        "visual"
+      ],
+      "author": "FPGAwars",
+      "homepage": "https://github.com/FPGAwars/iceLeds",
+      "icon": "icons/collection.svg",
+      "source": {
+        "type": "github-release",
+        "repo": "FPGAwars/iceLeds",
+        "asset": "*.tgz"
+      },
+      "i18n": {
+        "en": {
+          "description": "Blocks for driving and displaying information on LEDs, providing ready-to-use components for lighting up single LEDs and LED arrays in your Icestudio FPGA designs."
+        }
+      }
+    },
+    {
+      "id": "iceheart",
+      "name": "iceHeart",
+      "language": "es",
+      "description": "Generadores de señales de temporización (corazones) que producen pulsos periódicos y latidos de reloj, útiles para activar lógica secuencial y marcar el ritmo de eventos en tus circuitos FPGA.",
+      "tags": [
+        "timing",
+        "hearts",
+        "generators",
+        "temporizacion",
+        "clock",
+        "pulse",
+        "reloj"
+      ],
+      "author": "FPGAwars",
+      "homepage": "https://github.com/FPGAwars/iceHeart",
+      "icon": "icons/collection.svg",
+      "source": {
+        "type": "github-release",
+        "repo": "FPGAwars/iceHeart",
+        "asset": "*.tgz"
+      },
+      "i18n": {
+        "en": {
+          "description": "Timing signal generators (hearts) that produce periodic pulses and clock beats, useful for driving sequential logic and pacing events in your FPGA circuits."
+        }
+      }
+    },
+    {
+      "id": "iceinput",
+      "name": "iceInputs",
+      "language": "es",
+      "description": "Bloques de entrada de 1 bit que incluyen pulsadores e interruptores, con componentes listos para llevar entradas físicas del usuario a tus diseños FPGA de Icestudio.",
+      "tags": [
+        "input",
+        "pushbutton",
+        "switch",
+        "entrada",
+        "pulsador",
+        "interruptor",
+        "buttons"
+      ],
+      "author": "FPGAwars",
+      "homepage": "https://github.com/FPGAwars/iceInputs",
+      "icon": "icons/collection.svg",
+      "source": {
+        "type": "github-release",
+        "repo": "FPGAwars/iceInputs",
+        "asset": "*.tgz"
+      },
+      "i18n": {
+        "en": {
+          "description": "1-bit input blocks including pushbuttons and switches, giving ready-made components to bring physical user inputs into your Icestudio FPGA designs."
+        }
+      }
+    },
+    {
+      "id": "icerok",
+      "name": "iceRok",
+      "language": "es",
+      "description": "Bloques de sonda de analizador lógico que permiten depurar señales dentro de tu diseño FPGA sin hardware externo, integrándose con sigrok y la interfaz PulseView para capturar y disparar sobre señales de bus.",
+      "tags": [
+        "debug",
+        "logic analyzer",
+        "sigrok",
+        "pulseview",
+        "probe",
+        "trigger",
+        "sonda",
+        "depuracion"
+      ],
+      "author": "FPGAwars",
+      "homepage": "https://github.com/FPGAwars/iceRok",
+      "icon": "icons/collection.svg",
+      "source": {
+        "type": "github-release",
+        "repo": "FPGAwars/iceRok",
+        "asset": "*.tgz"
+      },
+      "i18n": {
+        "en": {
+          "description": "Logic-analyzer probe blocks that let you debug signals inside your FPGA design without external hardware, integrating with sigrok and the PulseView GUI to capture and trigger on bus signals."
+        }
+      }
+    },
+    {
+      "id": "icemachines",
+      "name": "iceMachines",
+      "language": "es",
+      "description": "Bloques de máquinas de estados simples con una interfaz estándar, que aportan componentes secuenciales reutilizables para diseñar lógica de control y comportamiento basado en estados en Icestudio.",
+      "tags": [
+        "machines",
+        "sequential",
+        "state",
+        "fsm",
+        "estados",
+        "control",
+        "maquinas"
+      ],
+      "author": "FPGAwars",
+      "homepage": "https://github.com/FPGAwars/iceMachines",
+      "icon": "icons/collection.svg",
+      "source": {
+        "type": "github-release",
+        "repo": "FPGAwars/iceMachines",
+        "asset": "*.tgz"
+      },
+      "i18n": {
+        "en": {
+          "description": "Simple state machine blocks with a standard interface, providing reusable sequential building blocks for designing control logic and state-driven behavior in Icestudio."
+        }
+      }
+    },
+    {
+      "id": "iceserial",
+      "name": "iceSerial",
+      "language": "es",
+      "description": "Bloques para comunicaciones serie asíncronas (UART), que permiten transmitir y recibir datos serie entre tu diseño FPGA y dispositivos externos.",
+      "tags": [
+        "uart",
+        "serial",
+        "asynchronous",
+        "comunicaciones",
+        "rx",
+        "tx",
+        "serie"
+      ],
+      "author": "FPGAwars",
+      "homepage": "https://github.com/FPGAwars/iceSerial",
+      "icon": "icons/collection.svg",
+      "source": {
+        "type": "github-release",
+        "repo": "FPGAwars/iceSerial",
+        "asset": "*.tgz"
+      },
+      "i18n": {
+        "en": {
+          "description": "Blocks for asynchronous serial communication (UART), enabling transmit and receive of serial data between your FPGA design and external devices."
+        }
+      }
+    },
+    {
+      "id": "icemem",
+      "name": "iceMem",
+      "language": "es",
+      "description": "Una biblioteca de bloques de memoria para trabajar con memorias en tus diseños FPGA, con componentes listos para almacenar y recuperar datos.",
+      "tags": [
+        "memory",
+        "memories",
+        "rom",
+        "ram",
+        "storage",
+        "memoria",
+        "almacenamiento"
+      ],
+      "author": "FPGAwars",
+      "homepage": "https://github.com/FPGAwars/iceMem",
+      "icon": "icons/collection.svg",
+      "source": {
+        "type": "github-release",
+        "repo": "FPGAwars/iceMem",
+        "asset": "*.tgz"
+      },
+      "i18n": {
+        "en": {
+          "description": "A library of memory blocks for working with memories in your FPGA designs, providing ready-to-use components for storing and retrieving data."
+        }
+      }
+    },
+    {
+      "id": "iceMeasure",
+      "name": "iceMeasure",
+      "language": "es",
+      "description": "Bloques para medir fácilmente ciclos y tiempo en tus circuitos, que permiten contar ciclos de reloj y tiempo transcurrido para caracterizar y verificar tus diseños FPGA.",
+      "tags": [
+        "measure",
+        "cycles",
+        "time",
+        "counter",
+        "medir",
+        "tiempo",
+        "ciclos",
+        "timing"
+      ],
+      "author": "FPGAwars",
+      "homepage": "https://github.com/FPGAwars/iceMeasure",
+      "icon": "icons/collection.svg",
+      "source": {
+        "type": "github-release",
+        "repo": "FPGAwars/iceMeasure",
+        "asset": "*.tgz"
+      },
+      "i18n": {
+        "en": {
+          "description": "Blocks for easily measuring cycles and time in your circuits, letting you count clock cycles and elapsed time to characterize and verify your FPGA designs."
+        }
+      }
+    },
+    {
+      "id": "icestack",
+      "name": "iceStack",
+      "language": "es",
+      "description": "Bloques de Icestudio para construir y trabajar con pilas hardware, ofreciendo estructuras de almacenamiento LIFO de tipo push/pop que puedes integrar en tus diseños FPGA.",
+      "tags": [
+        "stack",
+        "pila",
+        "lifo",
+        "memory",
+        "storage",
+        "push",
+        "pop"
+      ],
+      "author": "FPGAwars",
+      "homepage": "https://github.com/FPGAwars/iceStack",
+      "icon": "icons/collection.svg",
+      "source": {
+        "type": "github-release",
+        "repo": "FPGAwars/iceStack",
+        "asset": "*.tgz"
+      },
+      "i18n": {
+        "en": {
+          "description": "Icestudio blocks for building and working with hardware stacks, providing push/pop LIFO storage structures you can wire into your FPGA designs."
+        }
+      }
+    },
+    {
+      "id": "iceflash",
+      "name": "iceFlash",
+      "language": "es",
+      "description": "Bloques para leer de memorias flash serie SPI, con controladores de lectura de 8/16/32 bits, una interfaz de bus SPI y utilidades de escritura de bytes para diseños FPGA.",
+      "tags": [
+        "flash",
+        "memory",
+        "spi",
+        "memoria",
+        "serial",
+        "read",
+        "storage"
+      ],
+      "author": "FPGAwars",
+      "homepage": "https://github.com/FPGAwars/iceFlash",
+      "icon": "icons/collection.svg",
+      "source": {
+        "type": "github-release",
+        "repo": "FPGAwars/iceFlash",
+        "asset": "*.tgz"
+      },
+      "i18n": {
+        "en": {
+          "description": "Blocks to read from SPI serial flash memories, including 8/16/32-bit flash-read controllers, an SPI bus interface, and byte-write helpers for FPGA designs."
+        }
+      }
+    },
+    {
+      "id": "icebus",
+      "name": "iceBus",
+      "language": "es",
+      "description": "Bloques para acceder y compartir buses sencillos, con componentes de acceso unidireccional y bidireccional para un amplio rango de anchos de bus (de 1 a 32 bits).",
+      "tags": [
+        "bus",
+        "buses",
+        "shared",
+        "access",
+        "compartido",
+        "interconnect",
+        "unibus"
+      ],
+      "author": "FPGAwars",
+      "homepage": "https://github.com/FPGAwars/iceBus",
+      "icon": "icons/collection.svg",
+      "source": {
+        "type": "github-release",
+        "repo": "FPGAwars/iceBus",
+        "asset": "*.tgz"
+      },
+      "i18n": {
+        "en": {
+          "description": "Blocks for accessing and sharing simple buses, with unidirectional and bidirectional bus access components across a wide range of bit widths (1 to 32 bits)."
+        }
+      }
+    },
+    {
+      "id": "icelcd",
+      "name": "iceLCD",
+      "language": "es",
+      "description": "Componentes y controladores para LCDs de caracteres, con controladores de 4 y 8 bits, piezas de unión/separación de bus y ciclos de temporización para gobernar pantallas tipo HD44780.",
+      "tags": [
+        "lcd",
+        "display",
+        "pantalla",
+        "controller",
+        "hd44780",
+        "character",
+        "screen"
+      ],
+      "author": "FPGAwars",
+      "homepage": "https://github.com/FPGAwars/iceLCD",
+      "icon": "icons/collection.svg",
+      "source": {
+        "type": "github-release",
+        "repo": "FPGAwars/iceLCD",
+        "asset": "*.tgz"
+      },
+      "i18n": {
+        "en": {
+          "description": "Components and controllers for character LCDs, providing 4-bit and 8-bit controllers, bus join/split parts, and timing cycles to drive HD44780-style displays."
+        }
+      }
+    },
+    {
+      "id": "iceCrystal",
+      "name": "iceCrystal",
+      "language": "es",
+      "description": "Colección de bloques para gobernar pantallas gráficas desde FPGAs de código abierto, con controladores LCD HD44780/KS0068B, drivers, compositores, streamers y traductores de número a ASCII/vúmetro.",
+      "tags": [
+        "lcd",
+        "display",
+        "pantalla",
+        "graphic",
+        "driver",
+        "hd44780",
+        "vumeter",
+        "screen"
+      ],
+      "author": "cavearr",
+      "homepage": "https://github.com/cavearr/icecrystal",
+      "icon": "icons/collection.svg",
+      "source": {
+        "type": "github-release",
+        "repo": "cavearr/icecrystal",
+        "asset": "*.tgz"
+      },
+      "i18n": {
+        "en": {
+          "description": "Block collection to drive graphic displays from open-source FPGAs, with HD44780/KS0068B LCD controllers, drivers, compositors, streamers, and number-to-ASCII/vumeter translators."
+        }
+      }
+    },
+    {
+      "id": "ice-chips-verilog",
+      "name": "ice-chips-verilog",
+      "language": "es",
+      "description": "Biblioteca de todos los dispositivos de lógica discreta comunes en Verilog, que recrea los chips TTL de la serie 7400 (74LS/74HC/74HCT): puertas, multiplexores, contadores, registros, sumadores y multiplicadores, validados con banco de pruebas.",
+      "tags": [
+        "7400",
+        "ttl",
+        "logic",
+        "verilog",
+        "discrete",
+        "gates",
+        "logica",
+        "chips"
+      ],
+      "author": "TimRudy",
+      "homepage": "https://github.com/TimRudy/ice-chips-verilog",
+      "icon": "icons/collection.svg",
+      "source": {
+        "type": "github-release",
+        "repo": "TimRudy/ice-chips-verilog",
+        "asset": "*.tgz"
+      },
+      "i18n": {
+        "en": {
+          "description": "A library of all common discrete logic devices in Verilog, recreating the 74LS/74HC/74HCT 7400-series TTL chips: gates, multiplexers, counters, registers, adders and multipliers, fully test-bench validated."
+        }
+      }
+    },
+    {
+      "id": "arithmetic",
+      "name": "ArithmeticBlocks",
+      "language": "es",
+      "description": "Bloques aritméticos de enteros con y sin signo para FPGA (8/16/24/32/48 bits): suma, resta, multiplicación, división, raíz cuadrada, valor absoluto, negación, mínimo, máximo, comparación y selección.",
+      "tags": [
+        "arithmetic",
+        "aritmetica",
+        "integer",
+        "signed",
+        "multiply",
+        "divide",
+        "sqrt",
+        "math"
+      ],
+      "author": "FPGAwars",
+      "homepage": "https://github.com/FPGAwars/Icestudio-ArithmeticBlocks",
+      "icon": "icons/collection.svg",
+      "source": {
+        "type": "github-release",
+        "repo": "FPGAwars/Icestudio-ArithmeticBlocks",
+        "asset": "*.tgz"
+      },
+      "i18n": {
+        "en": {
+          "description": "FPGA signed and unsigned integer arithmetic blocks (8/16/24/32/48-bit): add, subtract, multiply, divide, square root, absolute value, negate, min, max, compare and select."
+        }
+      }
+    },
+    {
+      "id": "IceSynth",
+      "name": "iceSynth",
+      "language": "es",
+      "description": "Bloques para síntesis de audio en FPGAs, con DACs PDM, generadores de tono (pulso, sierra, triángulo, ruido) y utilidades de canal/reloj para generar sonido.",
+      "tags": [
+        "audio",
+        "synth",
+        "sound",
+        "sonido",
+        "tone",
+        "dac",
+        "generator",
+        "sintesis"
+      ],
+      "author": "FPGAwars",
+      "homepage": "https://github.com/FPGAwars/iceSynth-collection",
+      "icon": "icons/collection.svg",
+      "source": {
+        "type": "github-release",
+        "repo": "FPGAwars/iceSynth-collection",
+        "asset": "*.tgz"
+      },
+      "i18n": {
+        "en": {
+          "description": "Blocks for audio synthesis on FPGAs, including PDM DACs, tone generators (pulse, saw, triangle, noise) and channel/clock utilities for making sound."
+        }
+      }
+    },
+    {
+      "id": "Icebreaker-examples",
+      "name": "icebreaker",
+      "language": "es",
+      "description": "Bloques listos para usar y ejemplos prácticos para la placa FPGA abierta iCEBreaker, que facilitan empezar con sus periféricos y su asignación de pines en Icestudio.",
+      "tags": [
+        "examples",
+        "ejemplos",
+        "board",
+        "placa",
+        "tutorial",
+        "peripherals",
+        "ice40"
+      ],
+      "author": "FPGAwars",
+      "homepage": "https://github.com/FPGAwars/icebreaker-collection",
+      "icon": "icons/collection.svg",
+      "source": {
+        "type": "github-release",
+        "repo": "FPGAwars/icebreaker-collection",
+        "asset": "*.tgz"
+      },
+      "i18n": {
+        "en": {
+          "description": "Ready-to-use blocks and worked examples for the iCEBreaker open FPGA board, helping you get started with its peripherals and pinout in Icestudio."
+        }
+      }
+    },
+    {
+      "id": "jedi",
+      "name": "Jedi",
+      "language": "es",
+      "description": "Colección de bloques didácticos creados en la academia de hardware FPGA Jedi, útiles para aprender diseño digital paso a paso en Icestudio.",
+      "tags": [
+        "academy",
+        "academia",
+        "tutorial",
+        "learning",
+        "aprendizaje",
+        "digital",
+        "blocks"
+      ],
+      "author": "FPGAwars",
+      "homepage": "https://github.com/FPGAwars/Collection-Jedi",
+      "icon": "icons/collection.svg",
+      "source": {
+        "type": "github-release",
+        "repo": "FPGAwars/Collection-Jedi",
+        "asset": "*.tgz"
+      },
+      "i18n": {
+        "en": {
+          "description": "Collection of teaching blocks created at the FPGA Jedi hardware academy, useful for learning digital design step by step in Icestudio."
+        }
+      }
+    },
+    {
+      "id": "LOVE-FPGA",
+      "name": "LOVE-FPGA",
+      "language": "es",
+      "description": "Biblioteca de componentes hardware virtuales y ejemplos para el proyecto LOVE-FPGA, que conecta electrónica simulada con FPGAs dentro de Icestudio.",
+      "tags": [
+        "virtual",
+        "virtuales",
+        "components",
+        "componentes",
+        "library",
+        "biblioteca",
+        "simulation",
+        "electronics"
+      ],
+      "author": "FPGAwars",
+      "homepage": "https://github.com/FPGAwars/LOVE-FPGA-Collection",
+      "icon": "icons/collection.svg",
+      "source": {
+        "type": "github-release",
+        "repo": "FPGAwars/LOVE-FPGA-Collection",
+        "asset": "*.tgz"
+      },
+      "i18n": {
+        "en": {
+          "description": "Library of virtual hardware components and examples for the LOVE-FPGA project, linking simulated electronics to FPGAs within Icestudio."
+        }
+      }
+    },
+    {
+      "id": "Stdio",
+      "name": "Stdio",
+      "language": "es",
+      "description": "Bloques de entrada-salida estándar para comunicarse con distintos dispositivos, incluida la comunicación serie, en diseños de Icestudio.",
+      "tags": [
+        "serial",
+        "io",
+        "input",
+        "output",
+        "entrada",
+        "salida",
+        "communication"
+      ],
+      "author": "FPGAwars",
+      "homepage": "https://github.com/FPGAwars/Collection-stdio",
+      "icon": "icons/collection.svg",
+      "source": {
+        "type": "github-release",
+        "repo": "FPGAwars/Collection-stdio",
+        "asset": "*.tgz"
+      },
+      "i18n": {
+        "en": {
+          "description": "Standard input-output blocks for interfacing with different devices, including serial communication, in Icestudio designs."
+        }
+      }
+    },
+    {
+      "id": "ct11",
+      "name": "CT11",
+      "language": "es",
+      "description": "Ejemplos del cuaderno técnico 11 sobre señales del sistema y medición con el LEDoscopio, un recurso práctico de aprendizaje de FPGA para Icestudio.",
+      "tags": [
+        "ledoscope",
+        "ledoscopio",
+        "signals",
+        "señales",
+        "measurement",
+        "tutorial",
+        "basic"
+      ],
+      "author": "FPGAwars",
+      "homepage": "https://github.com/FPGAwars/CT11-collection",
+      "icon": "icons/collection.svg",
+      "source": {
+        "type": "github-release",
+        "repo": "FPGAwars/CT11-collection",
+        "asset": "*.tgz"
+      },
+      "i18n": {
+        "en": {
+          "description": "Examples from technical notebook 11 covering system signals and measurement with the LEDoscope, a hands-on FPGA learning resource for Icestudio."
+        }
+      }
+    },
+    {
+      "id": "Generic",
+      "name": "Generic",
+      "language": "es",
+      "description": "Colección genérica de bloques de propósito general para Icestudio, que aporta elementos de construcción comunes no ligados a una placa o dispositivo concreto.",
+      "tags": [
+        "general",
+        "blocks",
+        "bloques",
+        "common",
+        "comunes",
+        "utilities",
+        "basic"
+      ],
+      "author": "FPGAwars",
+      "homepage": "https://github.com/FPGAwars/collection-generic",
+      "icon": "icons/collection.svg",
+      "source": {
+        "type": "github-release",
+        "repo": "FPGAwars/collection-generic",
+        "asset": "*.tgz"
+      },
+      "i18n": {
+        "en": {
+          "description": "Generic collection of general-purpose blocks for Icestudio, providing common building elements not tied to a specific board or device."
+        }
+      }
+    },
+    {
+      "id": "Logic",
+      "name": "Logic",
+      "language": "es",
+      "description": "Puertas lógicas junto con bloques combinacionales y secuenciales para diseñar circuitos digitales en Icestudio.",
+      "tags": [
+        "gates",
+        "puertas",
+        "combinational",
+        "sequential",
+        "secuencial",
+        "digital",
+        "circuits"
+      ],
+      "author": "FPGAwars",
+      "homepage": "https://github.com/FPGAwars/collection-logic",
+      "icon": "icons/collection.svg",
+      "source": {
+        "type": "github-release",
+        "repo": "FPGAwars/collection-logic",
+        "asset": "*.tgz"
+      },
+      "i18n": {
+        "en": {
+          "description": "Logic gates plus combinational and sequential building blocks for designing digital circuits in Icestudio."
+        }
+      }
+    },
+    {
+      "id": "icek-tb",
+      "name": "iceK-TB",
+      "language": "es",
+      "description": "Colección de tests que verifica los bloques de iceK.",
+      "tags": [
+        "testbench",
+        "tests",
+        "verification",
+        "simulation",
+        "icek",
+        "pruebas"
+      ],
+      "author": "FPGAwars",
+      "homepage": "https://github.com/FPGAwars/iceK-TB",
+      "icon": "icons/collection.svg",
+      "source": {
+        "type": "github-release",
+        "repo": "FPGAwars/iceK-TB",
+        "asset": "*.tgz"
+      },
+      "i18n": {
+        "en": {
+          "description": "Test bench collection that verifies the blocks of iceK."
+        }
+      }
+    },
+    {
+      "id": "icewires-tb",
+      "name": "iceWires-TB",
+      "language": "es",
+      "description": "Colección de tests que verifica los bloques de iceWires.",
+      "tags": [
+        "testbench",
+        "tests",
+        "verification",
+        "simulation",
+        "icewires",
+        "pruebas"
+      ],
+      "author": "FPGAwars",
+      "homepage": "https://github.com/FPGAwars/icewires-TB",
+      "icon": "icons/collection.svg",
+      "source": {
+        "type": "github-release",
+        "repo": "FPGAwars/icewires-TB",
+        "asset": "*.tgz"
+      },
+      "i18n": {
+        "en": {
+          "description": "Test bench collection that verifies the blocks of iceWires."
+        }
+      }
+    },
+    {
+      "id": "iceio-tb",
+      "name": "iceIO-TB",
+      "language": "es",
+      "description": "Colección de tests que verifica los bloques de iceIO.",
+      "tags": [
+        "testbench",
+        "tests",
+        "verification",
+        "simulation",
+        "iceio",
+        "pruebas"
+      ],
+      "author": "FPGAwars",
+      "homepage": "https://github.com/FPGAwars/iceIO-TB",
+      "icon": "icons/collection.svg",
+      "source": {
+        "type": "github-release",
+        "repo": "FPGAwars/iceIO-TB",
+        "asset": "*.tgz"
+      },
+      "i18n": {
+        "en": {
+          "description": "Test bench collection that verifies the blocks of iceIO."
+        }
+      }
+    },
+    {
+      "id": "icegates-tb",
+      "name": "iceGates-TB",
+      "language": "es",
+      "description": "Colección de tests que verifica los bloques de iceGates.",
+      "tags": [
+        "testbench",
+        "tests",
+        "verification",
+        "simulation",
+        "icegates",
+        "pruebas"
+      ],
+      "author": "FPGAwars",
+      "homepage": "https://github.com/FPGAwars/iceGates-TB",
+      "icon": "icons/collection.svg",
+      "source": {
+        "type": "github-release",
+        "repo": "FPGAwars/iceGates-TB",
+        "asset": "*.tgz"
+      },
+      "i18n": {
+        "en": {
+          "description": "Test bench collection that verifies the blocks of iceGates."
+        }
+      }
+    },
+    {
+      "id": "icoders-tb",
+      "name": "iceCoders-TB",
+      "language": "es",
+      "description": "Colección de tests que verifica los bloques de iceCoders.",
+      "tags": [
+        "testbench",
+        "tests",
+        "verification",
+        "simulation",
+        "icecoders",
+        "pruebas"
+      ],
+      "author": "FPGAwars",
+      "homepage": "https://github.com/FPGAwars/iceCoders-TB",
+      "icon": "icons/collection.svg",
+      "source": {
+        "type": "github-release",
+        "repo": "FPGAwars/iceCoders-TB",
+        "asset": "*.tgz"
+      },
+      "i18n": {
+        "en": {
+          "description": "Test bench collection that verifies the blocks of iceCoders."
+        }
+      }
+    },
+    {
+      "id": "iceFF-TB",
+      "name": "iceFF-TB",
+      "language": "es",
+      "description": "Colección de tests que verifica los bloques de iceFF.",
+      "tags": [
+        "testbench",
+        "tests",
+        "verification",
+        "simulation",
+        "iceff",
+        "pruebas"
+      ],
+      "author": "FPGAwars",
+      "homepage": "https://github.com/FPGAwars/iceFF-TB",
+      "icon": "icons/collection.svg",
+      "source": {
+        "type": "github-release",
+        "repo": "FPGAwars/iceFF-TB",
+        "asset": "*.tgz"
+      },
+      "i18n": {
+        "en": {
+          "description": "Test bench collection that verifies the blocks of iceFF."
+        }
+      }
+    },
+    {
+      "id": "iceregs-tb",
+      "name": "iceRegs-TB",
+      "language": "es",
+      "description": "Colección de tests que verifica los bloques de iceRegs.",
+      "tags": [
+        "testbench",
+        "tests",
+        "verification",
+        "simulation",
+        "iceregs",
+        "pruebas"
+      ],
+      "author": "FPGAwars",
+      "homepage": "https://github.com/FPGAwars/iceRegs-TB",
+      "icon": "icons/collection.svg",
+      "source": {
+        "type": "github-release",
+        "repo": "FPGAwars/iceRegs-TB",
+        "asset": "*.tgz"
+      },
+      "i18n": {
+        "en": {
+          "description": "Test bench collection that verifies the blocks of iceRegs."
+        }
+      }
+    },
+    {
+      "id": "icesregs-tb",
+      "name": "iceSRegs-TB",
+      "language": "es",
+      "description": "Colección de tests que verifica los bloques de iceSRegs.",
+      "tags": [
+        "testbench",
+        "tests",
+        "verification",
+        "simulation",
+        "icesregs",
+        "pruebas"
+      ],
+      "author": "FPGAwars",
+      "homepage": "https://github.com/FPGAwars/iceSRegs-TB",
+      "icon": "icons/collection.svg",
+      "source": {
+        "type": "github-release",
+        "repo": "FPGAwars/iceSRegs-TB",
+        "asset": "*.tgz"
+      },
+      "i18n": {
+        "en": {
+          "description": "Test bench collection that verifies the blocks of iceSRegs."
+        }
+      }
+    },
+    {
+      "id": "Jedi-Test",
+      "name": "Jedi-Test",
+      "language": "es",
+      "description": "Colección de tests que verifica los bloques de la colección Jedi.",
+      "tags": [
+        "testbench",
+        "tests",
+        "verification",
+        "simulation",
+        "jedi",
+        "pruebas"
+      ],
+      "author": "FPGAwars",
+      "homepage": "https://github.com/FPGAwars/Collection-Jedi-Test",
+      "icon": "icons/collection.svg",
+      "source": {
+        "type": "github-release",
+        "repo": "FPGAwars/Collection-Jedi-Test",
+        "asset": "*.tgz"
+      },
+      "i18n": {
+        "en": {
+          "description": "Test bench collection that verifies the blocks of the Jedi collection."
+        }
+      }
+    }
+  ]
+}

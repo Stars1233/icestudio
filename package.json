@@ -1,6 +1,6 @@
 {
   "name": "icestudio",
-  "version": "0.13.4w",
+  "version": "1.0.0.PRw",
   "description": "Visual editor for open FPGA boards",
   "contributors": [
     {
@@ -32,7 +32,7 @@
     "clean": "grunt clean",
     "getcollection": "grunt getcollection",
     "debugInfo": "grunt debugInfo",
-    "postinstall": "sh scripts/postInstall.sh && grunt getcollection && npmpd && cd app && npm install"
+    "postinstall": "sh scripts/postInstall.sh && grunt getcollection && npmpd && patch-package && cd app && npm install"
   },
   "devDependencies": {
     "grunt": "^1.4.1",
@@ -51,8 +51,9 @@
     "grunt-zip": "^0.18.2",
     "json": "^11.0.0",
     "npm-platform-dependencies": "^0.1.0",
-    "nw": "0.101.2-sdk",
+    "nw": "0.111.3-sdk",
     "nw-builder": "4.13.16",
+    "patch-package": "^8.0.1",
     "prettier": "^3.4.2"
   },
   "darwinDependencies": {

@@ -1,0 +1,11 @@
+#be-root {
+  --be-fg: #222;
+  --be-border: #d0d4d9;
+  --be-btn-bg: #f4f5f7;
+  --be-btn-hover: #e6e8eb;
+  --be-input-bg: #fff;
+  --be-accent: #1a8cff;
+  --be-danger: #d9362b;
+  background: #fff;
+  color: var(--be-fg);
+}

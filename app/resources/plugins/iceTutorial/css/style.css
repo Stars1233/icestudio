@@ -1,0 +1,501 @@
+/* iceTutorial plugin — embedded window styles */
+
+:host {
+  display: block;
+  position: relative;
+  height: 100%;
+  width: 100%;
+}
+
+#it-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #2b2b2b;
+  color: #e0e0e0;
+  font-family: -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-size: 13px;
+  overflow: hidden;
+}
+
+/* --- Tabs --- */
+#it-tabs {
+  flex: 0 0 auto;
+  display: flex;
+  background: #232323;
+  border-bottom: 1px solid #444;
+}
+.it-tab {
+  background: transparent;
+  border: none;
+  color: #b8b8b8;
+  padding: 9px 18px;
+  cursor: pointer;
+  font-size: 13px;
+  border-bottom: 2px solid transparent;
+}
+.it-tab:hover {
+  color: #fff;
+}
+.it-tab.is-active {
+  color: #fff;
+  border-bottom-color: #4a9eff;
+}
+
+/* --- Panels --- */
+#it-panels {
+  flex: 1 1 auto;
+  position: relative;
+  overflow: hidden;
+}
+.it-panel {
+  display: none;
+  position: absolute;
+  inset: 0;
+  flex-direction: column;
+}
+.it-panel.is-active {
+  display: flex;
+}
+
+/* --- Forum --- */
+.it-forum-bar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 12px;
+  background: #262626;
+  border-bottom: 1px solid #3a3a3a;
+  font-size: 12px;
+  color: #9a9a9a;
+}
+.it-forum-bar a {
+  color: #4a9eff;
+  text-decoration: none;
+  white-space: nowrap;
+  margin-left: 12px;
+}
+.it-forum-bar a:hover {
+  text-decoration: underline;
+}
+
+/* Webview navigation controls (back / forward / reload) */
+.it-forum-nav {
+  display: flex;
+  gap: 1px;
+  flex: 0 0 auto;
+}
+.it-forum-nav button {
+  background: transparent;
+  border: none;
+  color: #b8b8b8;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+.it-forum-nav button:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+}
+.it-forum-nav button:disabled {
+  color: #555;
+  cursor: default;
+  background: transparent;
+}
+.it-forum-label {
+  flex: 1 1 auto;
+  margin-left: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#it-forum-frame {
+  flex: 1 1 auto;
+  width: 100%;
+  border: 0;
+  background: #fff;
+}
+
+/* --- Videos --- */
+.it-videos-head {
+  flex: 0 0 auto;
+  padding: 10px 12px;
+  border-bottom: 1px solid #3a3a3a;
+}
+.it-note {
+  margin: 0;
+  padding: 10px 12px 0;
+  font-size: 12px;
+  color: #d6b14a;
+  line-height: 1.4;
+}
+#it-search,
+#it-ref-search {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 7px 10px;
+  background: #1d1d1d;
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: #eee;
+  font-size: 13px;
+  outline: none;
+}
+#it-search:focus,
+#it-ref-search:focus {
+  border-color: #4a9eff;
+}
+
+/* Note + grid scroll together below the fixed search. min-height:0 lets this
+   flex child shrink so its own overflow scrolls (instead of clipping). */
+.it-videos-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+#it-grid {
+  display: grid;
+  padding: 12px;
+  /* Cards keep a min width but shrink below it (to one column) when the
+     window is narrower, so they never overflow / collapse. */
+  grid-template-columns: repeat(auto-fill, minmax(min(180px, 100%), 1fr));
+  gap: 12px;
+  align-content: start;
+}
+.it-card {
+  min-width: 0;
+  background: #333;
+  border: 1px solid #3f3f3f;
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: pointer;
+  transition:
+    transform 0.08s ease,
+    border-color 0.08s ease;
+}
+.it-card:hover {
+  transform: translateY(-2px);
+  border-color: #4a9eff;
+}
+.it-card-thumb {
+  position: relative;
+  width: 100%;
+  padding-top: 56.25%;
+  background: #000;
+}
+.it-card-thumb img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.it-card-play {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30px;
+  color: rgba(255, 255, 255, 0.9);
+  opacity: 0;
+  transition: opacity 0.1s ease;
+  text-shadow: 0 0 8px rgba(0, 0, 0, 0.85);
+}
+.it-card:hover .it-card-play {
+  opacity: 1;
+}
+.it-card-title {
+  padding: 8px 10px;
+  font-size: 12px;
+  line-height: 1.3;
+  color: #ddd;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.it-card-lang {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0 5px;
+  border-radius: 3px;
+  background: #444;
+  color: #aaa;
+  font-size: 10px;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
+/* Playlist badge (▤ + video count) on the thumbnail */
+.it-card-badge {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.82);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.it-card-badge .it-folder-ico {
+  width: 12px;
+  height: 12px;
+}
+.it-card-play .it-folder-ico {
+  width: 30px;
+  height: 30px;
+}
+
+/* Playlist drill-down "back" bar (level 2) */
+.it-videos-back {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.it-videos-back.hidden {
+  display: none;
+}
+.it-videos-back-btn {
+  flex: 0 0 auto;
+  background: #333;
+  border: 1px solid #444;
+  color: #ddd;
+  border-radius: 4px;
+  padding: 4px 12px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.it-videos-back-btn:hover {
+  background: #4a4a4a;
+  color: #fff;
+}
+#it-videos-back-title {
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #eee;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.it-empty,
+.it-error {
+  padding: 24px;
+  text-align: center;
+  color: #888;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* --- References --- */
+#it-ref-list {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.it-ref {
+  background: #333;
+  border: 1px solid #3f3f3f;
+  border-radius: 6px;
+  padding: 10px 12px;
+}
+.it-ref-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #eee;
+  margin-bottom: 4px;
+}
+.it-ref-desc {
+  font-size: 12px;
+  color: #bbb;
+  line-height: 1.4;
+  margin-bottom: 6px;
+}
+.it-ref-author {
+  font-size: 11px;
+  color: #9a9a9a;
+  margin-bottom: 8px;
+}
+.it-ref-author-label {
+  color: #777;
+}
+.it-ref-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.it-ref-url {
+  font-size: 11px;
+  color: #4a9eff;
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.it-ref-url:hover {
+  text-decoration: underline;
+}
+.it-ref-go {
+  flex: 0 0 auto;
+  border: none;
+  border-radius: 4px;
+  background: #4a9eff;
+  color: #fff;
+  font-size: 12px;
+  padding: 4px 12px;
+  cursor: pointer;
+}
+.it-ref-go:hover {
+  background: #2d7fe0;
+}
+
+/* --- Player overlay (in-window) --- */
+#it-player {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+}
+#it-player.hidden {
+  display: none;
+}
+/* Top bar with the "Volver" action (and room for future controls) */
+#it-player-bar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  height: 34px;
+  background: #1c1c1c;
+  border-bottom: 1px solid #333;
+}
+#it-player-back {
+  background: transparent;
+  border: none;
+  color: #ddd;
+  cursor: pointer;
+  font-size: 13px;
+  height: 100%;
+  padding: 0 14px;
+}
+#it-player-back:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+}
+#it-player-frame {
+  flex: 1 1 auto;
+  position: relative;
+  min-height: 0;
+}
+#it-player-frame iframe,
+#it-player-frame webview {
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+/* --- Bottom status bar (downloads) --- */
+#it-status {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 60;
+  background: #1c1c1c;
+  border-top: 1px solid #333;
+  font-size: 12px;
+  color: #ddd;
+}
+#it-status.hidden {
+  display: none;
+}
+#it-status-progress {
+  height: 3px;
+  background: #333;
+  overflow: hidden;
+}
+#it-status-progress-fill {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: #4a9eff;
+  transition: width 0.15s ease;
+}
+#it-status-progress.indeterminate #it-status-progress-fill {
+  width: 35%;
+  transition: none;
+  animation: it-indeterminate 1s linear infinite;
+}
+@keyframes it-indeterminate {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
+}
+#it-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+}
+#it-status-text {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#it-status-action {
+  color: #4a9eff;
+  text-decoration: none;
+  white-space: nowrap;
+  margin-left: 12px;
+  cursor: pointer;
+}
+#it-status-action:hover {
+  text-decoration: underline;
+}
+#it-status-action.hidden {
+  display: none;
+}
+/* Clear/dismiss the download line (X in a blue circle) */
+#it-status-close {
+  flex: 0 0 auto;
+  margin-left: 10px;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: #4a9eff;
+  color: #fff;
+  font-size: 10px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#it-status-close:hover {
+  background: #2d7fe0;
+}

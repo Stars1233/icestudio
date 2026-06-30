@@ -1,0 +1,68 @@
+.ihub-wrapper {
+  background: #3a3a3a;
+  color: #ddd;
+}
+.ihub-search--input {
+  background: #2c2c2c;
+  border: 1px solid #555;
+  color: #eee;
+}
+.ihub-search--input::placeholder {
+  color: #888;
+}
+.ihub-cat {
+  color: #bbb;
+}
+.ihub-cat:hover {
+  background: #4a4a4a;
+}
+.ihub-cat.active {
+  background: #29486a;
+  color: #79b8ff;
+  font-weight: 600;
+}
+.ihub-btn {
+  background: #333;
+  border: 1px solid #555;
+  color: #ddd;
+}
+.ihub-btn:hover {
+  background: #4a4a4a;
+}
+.ihub-btn--primary {
+  background: #2f6db0;
+  border-color: #2f6db0;
+  color: #fff;
+}
+.ihub-btn--primary:hover {
+  background: #3a7fc6;
+}
+.ihub-detail {
+  border-left: 1px solid #555;
+  background: #333;
+}
+.ihub-detail--footer {
+  border-top: 1px solid #555;
+}
+.ihub-card:hover {
+  background: #474747;
+}
+.ihub-card.is-selected {
+  background: #29486a;
+}
+.ihub-card--check {
+  color: #57e07e;
+}
+.ihub-card--badge {
+  background: #e08a00;
+}
+.ihub-card--icon {
+  color: #bbb;
+}
+.ihub-md code,
+.ihub-md pre {
+  background: #2a2a2a;
+}
+.ihub-md a {
+  color: #79b8ff;
+}

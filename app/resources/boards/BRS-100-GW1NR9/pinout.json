@@ -1,0 +1,9 @@
+[
+  { "name": "sys_clk", "value": "52", "type": "inout" },
+  { "name": "leds[0]", "value": "16", "type": "inout" },
+  { "name": "leds[1]", "value": "15", "type": "inout" },
+  { "name": "leds[2]", "value": "14", "type": "inout" },
+  { "name": "leds[3]", "value": "13", "type": "inout" },
+  { "name": "leds[4]", "value": "11", "type": "inout" },
+  { "name": "leds[5]", "value": "10", "type": "inout" }
+]

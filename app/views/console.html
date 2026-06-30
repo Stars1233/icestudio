@@ -1,0 +1,35 @@
+<!-- Output console: a bottom-docked, terminal-style panel that shows the
+     real-time output of the toolchain commands (Verify/Build/Upload).
+     Initially hidden; opened from View > Output console or automatically
+     when a command fails. Behaviour is wired by the outputConsole service. -->
+<div id="output-console" class="output-console hidden">
+  <div class="output-console--header">
+    <span class="output-console--title">
+      {{ 'Output console' | translate }}
+    </span>
+    <span class="output-console--actions">
+      <button
+        id="output-console-maximize"
+        class="output-console--btn"
+        title="{{ 'Maximize' | translate }}"
+      >
+        &#x25B2;
+      </button>
+      <button
+        id="output-console-clear"
+        class="output-console--btn"
+        title="{{ 'Clear' | translate }}"
+      >
+        &#x2327;
+      </button>
+      <button
+        id="output-console-close"
+        class="output-console--btn"
+        title="{{ 'Close' | translate }}"
+      >
+        &#x2715;
+      </button>
+    </span>
+  </div>
+  <pre id="output-console-body" class="output-console--body"></pre>
+</div>

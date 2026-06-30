@@ -29,6 +29,7 @@ angular.module('icestudio').controller(
     common,
     shortcuts,
     gettextCatalog,
+    outputConsole,
 
     //-- Accessing _package object
     //-- Defined in module app/scripts/factories/window.js
@@ -42,8 +43,6 @@ angular.module('icestudio').controller(
     //-- The new window receives the parameters through the URL
     //-- Ex.
     //-------------------------------------------------------------------------
-
-    console.log('---> scripts/controllers/menu.js (RUN)');
 
     //-- Initialize scope
 
@@ -60,7 +59,6 @@ angular.module('icestudio').controller(
 
     let zeroProject = true; // New project without changes
     let resultAlert = null;
-    let winCommandOutput = null;
 
     let buildUndoStack = [];
     let changedUndoStack = [];
@@ -202,8 +200,37 @@ angular.module('icestudio').controller(
     //-- Set the working directory for the current design
     updateWorkingdir(project.path);
 
+    //-- Compare two versions by their numeric base (major.minor.patch),
+    //-- ignoring any WIP/build suffix such as the "wYYYYMMDDhhmm" appended to
+    //-- development builds (e.g. "0.13.4w202606211206" → 0.13.4). Without this,
+    //-- every WIP rebuild looked like a "new version" and re-opened the
+    //-- version-notes window on each launch, overriding "Don't display".
+    //-- DISABLED together with the auto-launch block below (kept for
+    //-- re-activation). Re-enable both to restore the version-notes startup.
+    /*
+    function baseVersionParts(v) {
+      let m = String(v || '').match(/(\d+)\.(\d+)\.(\d+)/);
+      return m ? [Number(m[1]), Number(m[2]), Number(m[3])] : [0, 0, 0];
+    }
+    function isNewerBaseVersion(current, previous) {
+      let a = baseVersionParts(current);
+      let b = baseVersionParts(previous);
+      for (let i = 0; i < 3; i++) {
+        if (a[i] !== b[i]) {
+          return a[i] > b[i];
+        }
+      }
+      return false;
+    }
+    */
+
     //-- Show the version notes after some time, if the corresponding option
-    //-- was set in the profile
+    //-- was set in the profile.
+    //-- DISABLED on purpose: the release-notes window no longer auto-opens on
+    //-- startup. It can still be opened from the menu (Help -> Version notes,
+    //-- which calls openVersionInfoWindow). Re-enable this block to restore the
+    //-- automatic launch.
+    /*
     setTimeout(function () {
       //-- Get the current state of the version info
       let versionW = $scope.profile.get('displayVersionInfoWindow');
@@ -211,10 +238,12 @@ angular.module('icestudio').controller(
       //-- Get the latest version used
       let lastversionReview = $scope.profile.get('lastVersionReview');
 
-      //-- Check if the current version is newer than the one used
-      //-- before
+      //-- Check if the current version is newer than the one reviewed before.
+      //-- Only the numeric base (major.minor.patch) is compared, so WIP
+      //-- rebuilds of the same release are NOT treated as a new version.
       let hasNewVersion =
-        lastversionReview === false || lastversionReview < _package.version;
+        lastversionReview === false ||
+        isNewerBaseVersion(_package.version, lastversionReview);
 
       //-- Display the version notes, if the option is enabled or
       //-- if this is a newer version
@@ -222,6 +251,7 @@ angular.module('icestudio').controller(
         $scope.openVersionInfoWindow();
       }
     }, 500);
+    */
 
     utils.loadProfile(profile, function () {
       $scope.recentProjects = $scope.profile.get('recentProjects');
@@ -246,7 +276,57 @@ angular.module('icestudio').controller(
 
       //-- Set the state of the "don't display" checkbox
       $('#version-info-tab--no-display').prop('checked', noShowVersion);
+
+      //-- Default language tab = current app language (Spanish -> Castellano,
+      //-- otherwise English).
+      let lang = String($scope.profile.get('language') || '').toLowerCase();
+      $scope.releaseNotesLang = lang.indexOf('es') === 0 ? 'es' : 'en';
+
+      //-- Pull the splash image + author credit from the SAME source as the boot
+      //-- splash, and the changelogs from disk, so this window updates by itself
+      //-- on future versions (nothing about them is hardcoded here).
+      loadVersionSplash();
+      loadVersionChangelog('changelog/changelog.es.txt', 'changelogEs');
+      loadVersionChangelog('changelog/changelog.txt', 'changelogEn');
     };
+
+    //-- Load the boot-splash metadata (image + author credit) for the version
+    //-- notes header, from resources/images/splash/splash.json.
+    function loadVersionSplash() {
+      fetch('resources/images/splash/splash.json')
+        .then(function (response) {
+          return response.json();
+        })
+        .then(function (meta) {
+          $scope.$applyAsync(function () {
+            if (meta && meta.image) {
+              $scope.splashBg =
+                "url('resources/images/splash/" + meta.image + "')";
+            }
+            if (meta && meta.author) {
+              $scope.splashCredit =
+                meta.author + (meta.source ? ' · ' + meta.source : '');
+              $scope.splashLink = meta.link || '';
+            }
+          });
+        })
+        .catch(function () {});
+    }
+
+    //-- Load a changelog text file into the given scope key (rendered in a <pre>
+    //-- by the version notes template).
+    function loadVersionChangelog(path, scopeKey) {
+      fetch(path)
+        .then(function (response) {
+          return response.text();
+        })
+        .then(function (text) {
+          $scope.$applyAsync(function () {
+            $scope[scopeKey] = text;
+          });
+        })
+        .catch(function () {});
+    }
 
     //-------------------------------------------------------------------------
     //-- Callback function of the CLOSE button from the version notes window
@@ -346,6 +426,36 @@ angular.module('icestudio').controller(
     //--   * filepath (String): Icestudio file to open
     //--------------------------------------------------------------------------
     $scope.openProject = function (filepath) {
+      // System examples (inside app bundle) must be copied before opening
+      if (filepath.startsWith(common.DEFAULT_COLLECTION_DIR)) {
+        alertify.confirm(
+          gettextCatalog.getString('Open example'),
+          gettextCatalog.getString(
+            'This is a system example. You need to select a destination folder where the design will be saved.'
+          ),
+          function () {
+            utils.directoryDialog(
+              '#input-choose-save-dir',
+              function (targetDir) {
+                var filename = path.basename(filepath);
+                var targetPath = path.join(targetDir, filename);
+                utils.copySync(filepath, targetPath);
+
+                if (zeroProject) {
+                  updateWorkingdir(targetPath);
+                  project.open(targetPath);
+                } else {
+                  utils.newWindow(targetPath);
+                }
+                addRecentProject(targetPath);
+              }
+            );
+          },
+          function () {}
+        );
+        return;
+      }
+
       if (zeroProject) {
         // If this is the first action, open
         // the project in the same window
@@ -363,24 +473,9 @@ angular.module('icestudio').controller(
     };
 
     $scope.saveProject = function (afterSaveProjectAction) {
-      if (
-        (typeof common.isEditingSubmodule !== 'undefined' &&
-          common.isEditingSubmodule === true) ||
-        graph.breadcrumbs.length > 1
-      ) {
-        alertify.alert(
-          gettextCatalog.getString('Save submodule'),
-          gettextCatalog.getString(
-            'To save your design you need to lock the padlock and \
-              go to the top-level design.<br><br>If you want to export \
-              this submodule to a file, use the \"Save as\" command.'
-          ),
-          function () {}
-        );
-
-        return;
-      }
-
+      //-- Continuous editing: saving works at any navigation level. project.save
+      //-- folds the current sub-design into its dependency and writes the root
+      //-- .ice without changing the current view (no need to lock/go to top).
       var filepath = project.path;
       if (filepath) {
         project.save(filepath, () => {
@@ -391,12 +486,12 @@ angular.module('icestudio').controller(
           }
         });
       } else {
-        $scope.saveProjectAs();
+        $scope.saveProjectAs(afterSaveProjectAction);
       }
     };
 
     $scope.doSaveProjectAs = function (localCallback) {
-      utils.saveDialog('#input-save-project', '.ice', function (filepath) {
+      utils.saveDialog(project.name + '.ice', '.ice', function (filepath) {
         updateWorkingdir(filepath);
 
         project.save(filepath, function () {
@@ -508,28 +603,39 @@ angular.module('icestudio').controller(
       exportFromBuilder('bin', 'Bitstream', '.bin');
     };
 
+    function getSuggestedExportName(id, ext) {
+      if (id === 'testbench' || id === 'gtkwave') {
+        return project.name + '_tb' + ext;
+      }
+      return project.name + ext;
+    }
+
     function exportFromCompiler(id, name, ext) {
       checkGraph()
         .then(function () {
           // TODO: export list files
-          utils.saveDialog('#input-export-' + id, ext, function (filepath) {
-            // Save the compiler result
-            var data = project.compile(id)[0].content;
-            utils
-              .saveFile(filepath, data)
-              .then(function () {
-                alertify.success(
-                  gettextCatalog.getString('{{name}} exported', {
-                    name: name,
-                  })
-                );
-              })
-              .catch(function (error) {
-                alertify.error(error, 30);
-              });
-            // Update the working directory
-            updateWorkingdir(filepath);
-          });
+          utils.saveDialog(
+            getSuggestedExportName(id, ext),
+            ext,
+            function (filepath) {
+              // Save the compiler result
+              var data = project.compile(id)[0].content;
+              utils
+                .saveFile(filepath, data)
+                .then(function () {
+                  alertify.success(
+                    gettextCatalog.getString('{{name}} exported', {
+                      name: name,
+                    })
+                  );
+                })
+                .catch(function (error) {
+                  alertify.error(error, 30);
+                });
+              // Update the working directory
+              updateWorkingdir(filepath);
+            }
+          );
         })
         .catch(function () {});
     }
@@ -543,23 +649,27 @@ angular.module('icestudio').controller(
           resetBuildStack();
         })
         .then(function () {
-          utils.saveDialog('#input-export-' + id, ext, function (filepath) {
-            // Copy the built file
-            if (
-              utils.copySync(
-                path.join(common.BUILD_DIR, 'hardware' + ext),
-                filepath
-              )
-            ) {
-              alertify.success(
-                gettextCatalog.getString('{{name}} exported', {
-                  name: name,
-                })
-              );
+          utils.saveDialog(
+            getSuggestedExportName(id, ext),
+            ext,
+            function (filepath) {
+              // Copy the built file
+              if (
+                utils.copySync(
+                  path.join(common.BUILD_DIR, 'hardware' + ext),
+                  filepath
+                )
+              ) {
+                alertify.success(
+                  gettextCatalog.getString('{{name}} exported', {
+                    name: name,
+                  })
+                );
+              }
+              // Update the working directory
+              updateWorkingdir(filepath);
             }
-            // Update the working directory
-            updateWorkingdir(filepath);
-          });
+          );
         })
         .catch(function () {});
     }
@@ -637,6 +747,122 @@ angular.module('icestudio').controller(
         },
       };
     });
+
+    //-------------------------------------------------------------------------
+    //-- Tools > Preferences dialog
+    //-- A tabbed panel (Verify/Build/Upload) for per-action tool options.
+    //-- Verify currently exposes the "relax real->integer check" toggle, which
+    //-- maps to apio's verilator-extra-options (-Wno-REALCVT). New toggles for
+    //-- similar lint relaxations can be added the same way.
+    //-------------------------------------------------------------------------
+    alertify.dialog('preferencesDialog', function factory() {
+      return {
+        main: function (content) {
+          this.setContent(content);
+        },
+        setup: function () {
+          return {
+            buttons: [
+              { text: gettextCatalog.getString('Save'), className: 'ajs-ok' },
+              {
+                text: gettextCatalog.getString('Cancel'),
+                className: 'ajs-cancel',
+                key: 27,
+              },
+            ],
+            focus: { element: 0 },
+            options: {
+              movable: false,
+              maximizable: false,
+              resizable: false,
+            },
+          };
+        },
+        callback: function (closeEvent) {
+          if (closeEvent.index === 0) {
+            savePreferences();
+          }
+        },
+      };
+    });
+
+    //-- Persist the Preferences panel state into the profile.
+    function savePreferences() {
+      var prefs = profile.get('toolPreferences') || {};
+      prefs.verify = prefs.verify || {};
+      prefs.verify.relaxRealToInt = $('#pref-relax-realcvt').is(':checked');
+      prefs.verify.relaxIoPrimitives = $('#pref-relax-io').is(':checked');
+      profile.set('toolPreferences', prefs);
+    }
+
+    //-- Open the Tools > Preferences panel.
+    $scope.openPreferences = function () {
+      var prefs = profile.get('toolPreferences') || {};
+      var verify = prefs.verify || {};
+      var noOpts = gettextCatalog.getString('No configuration options');
+
+      //-- Same tab markup/classes as the code-block editor (forms.js):
+      //-- ul.tabs > li.tab-item + div.tab-content, visibility driven by the
+      //-- "active" class (styled in styles/design.css + the uiThemes).
+      var content =
+        '<div class="preferences-dialog">' +
+        '<ul class="tabs">' +
+        '<li class="tab-item active" data-tab="verify">' +
+        gettextCatalog.getString('Verify') +
+        '</li>' +
+        '<li class="tab-item" data-tab="build">' +
+        gettextCatalog.getString('Build') +
+        '</li>' +
+        '<li class="tab-item" data-tab="upload">' +
+        gettextCatalog.getString('Upload') +
+        '</li>' +
+        '</ul>' +
+        '<div class="tab-content active" data-content="verify">' +
+        '<div class="checkbox"><label>' +
+        '<input type="checkbox" id="pref-relax-realcvt"' +
+        (verify.relaxRealToInt ? ' checked' : '') +
+        '> ' +
+        gettextCatalog.getString(
+          'Relax the real-to-integer conversion check (-Wno-REALCVT)'
+        ) +
+        '</label></div>' +
+        '<div class="checkbox"><label>' +
+        '<input type="checkbox" id="pref-relax-io"' +
+        (verify.relaxIoPrimitives ? ' checked' : '') +
+        '> ' +
+        gettextCatalog.getString(
+          'Relax the FPGA I/O primitive checks (SB_IO: ASSIGNIN / COMBDLY)'
+        ) +
+        '</label></div>' +
+        '</div>' +
+        '<div class="tab-content" data-content="build">' +
+        noOpts +
+        '</div>' +
+        '<div class="tab-content" data-content="upload">' +
+        noOpts +
+        '</div>' +
+        '</div>';
+
+      alertify
+        .preferencesDialog(content)
+        .set('title', gettextCatalog.getString('Preferences'));
+
+      //-- Wire tab switching (same behavior as the code-block editor tabs),
+      //-- scoped to this dialog so it does not depend on / collide with the
+      //-- editor's global handler.
+      setTimeout(function () {
+        var $d = $('.preferences-dialog');
+        $d.find('.tabs .tab-item').on('click', function () {
+          var selectedTab = $(this).attr('data-tab');
+          $d.find('.tabs .tab-item').removeClass('active');
+          $(this).addClass('active');
+          $d.find('.tab-content').removeClass('active');
+          $d.find('.tab-content[data-content="' + selectedTab + '"]').addClass(
+            'active'
+          );
+        });
+      }, 50);
+    };
 
     function exit() {
       if (project.changed) {
@@ -730,6 +956,16 @@ angular.module('icestudio').controller(
 
     $scope.showCollectionManager = function () {
       showCollectionManager();
+    };
+
+    //-- Launch the iceHub package manager plugin
+    $scope.showIceHub = function () {
+      iceStudio.bus.events.publish('pluginManager.launch', 'iceHub');
+    };
+
+    //-- Launch the first-run Setup Wizard plugin (relaunchable anytime)
+    $scope.showSetupWizard = function () {
+      iceStudio.bus.events.publish('pluginManager.launch', 'setupWizard');
     };
 
     /* redundant: patched via $scope - @mgesteiro
@@ -932,64 +1168,104 @@ angular.module('icestudio').controller(
     };
 
     //---------------------------------------------------------------------
-    //-- Display a form for asking the user to introduce the
-    //-- external collections path
+    //-- Is there a valid (existing) external collections folder configured?
     //---------------------------------------------------------------------
-    $scope.setExternalCollections = function () {
-      //-- Get the current external collection path
-      let externalCollections = profile.get('externalCollections') || '';
+    function externalCollectionsValid() {
+      let p = profile.get('externalCollections') || '';
+      try {
+        return p !== '' && fs.existsSync(p) && fs.statSync(p).isDirectory();
+      } catch (e) {
+        return false;
+      }
+    }
+
+    //---------------------------------------------------------------------
+    //-- Display a form asking the user to choose the external collections
+    //-- directory. The directory is mandatory and must exist (it is created
+    //-- if it does not). An optional onDone callback is invoked once a valid
+    //-- directory has been set (used to gate the Collection Manager).
+    //---------------------------------------------------------------------
+    $scope.setExternalCollections = function (onDone) {
+      //-- Current path (may be empty/invalid the first time)
+      let current = profile.get('externalCollections') || '';
+
+      //-- Propose a sensible default (OS Documents folder) when not set yet
+      let prefill = current || common.DEFAULT_EXTERNAL_COLLECTIONS_DIR;
 
       //-- Create the form
-      let form = new forms.FormExternalCollections(externalCollections);
+      let form = new forms.FormExternalCollections(prefill);
 
       //-- Display the form
       form.display((evt) => {
-        //-- The callback is executed when the user has pressed the
-        //-- OK button
-
-        //-- Process the information in the form
+        //-- The callback is executed when the user has pressed the OK button
         form.process(evt);
 
-        //-- Read the new path
-        let newExternalCollections = form.values[0];
+        //-- Read the chosen path
+        let newPath = (form.values[0] || '').trim();
 
-        //-- If there where no changes ... return
-        if (newExternalCollections === externalCollections) {
+        //-- Mandatory: a directory must be provided
+        if (newPath === '') {
+          evt.cancel = true;
+          alertify.error(
+            gettextCatalog.getString(
+              'Please select a directory for the external collections'
+            )
+          );
           return;
         }
 
-        //-- If the file is valid...
-        if (
-          newExternalCollections === '' ||
-          fs.existsSync(newExternalCollections)
-        ) {
-          //-- The file is valid...
-          //-- Set it in the profile
-          profile.set('externalCollections', newExternalCollections);
+        //-- Ensure the directory exists (create it, e.g. the proposed default)
+        try {
+          if (!fs.existsSync(newPath)) {
+            fs.mkdirSync(newPath, { recursive: true });
+          }
+        } catch (e) {
+          // Reported by the validity check below
+        }
 
-          //-- Load the collections
+        //-- It must be an existing directory
+        let isDir = false;
+        try {
+          isDir = fs.existsSync(newPath) && fs.statSync(newPath).isDirectory();
+        } catch (e) {
+          isDir = false;
+        }
+
+        if (!isDir) {
+          evt.cancel = true;
+          alertify.error(
+            gettextCatalog.getString('Path {{path}} is not a valid directory', {
+              path: newPath,
+            })
+          );
+          return;
+        }
+
+        //-- Persist + reload only when it actually changed
+        if (newPath !== current) {
+          profile.set('externalCollections', newPath);
+
+          //-- Update the Angular-side collections
           collections.loadExternalCollections();
           collections.selectCollection(); // default
           utils.rootScopeSafeApply();
+
+          //-- The collections directory changed: ask the always-on collection
+          //-- service to wipe the database and reindex from scratch using the
+          //-- new external collections folder (no stale blocks left behind).
+          iceStudio.bus.events.publish('collectionService.reindex', {
+            clear: true,
+          });
 
           //-- Notify the user
           alertify.success(
             gettextCatalog.getString('External collections updated')
           );
         }
-        //-- The file is not valid
-        else {
-          //-- Notify the user
-          evt.cancel = true;
-          resultAlert = alertify.error(
-            gettextCatalog.getString(
-              'Path {{path}} does not exist',
-              {
-                path: newExternalCollections,
-              },
-              5
-            )
-          );
+
+        //-- Continue any pending action (e.g. open the Collection Manager)
+        if (typeof onDone === 'function') {
+          onDone();
         }
       });
     };
@@ -1236,10 +1512,8 @@ angular.module('icestudio').controller(
       iceConsole.log('BASE_DIR: ' + common.BASE_DIR + '---');
       iceConsole.log('ICESTUDIO_DIR: ' + common.ICESTUDIO_DIR + '---');
       iceConsole.log('PROFILE_PATH: ' + common.PROFILE_PATH + '---');
-      iceConsole.log('APIO_HOME_DIR: ' + common.APIO_HOME_DIR + '---');
-      iceConsole.log('ENV_DIR: ' + common.ENV_DIR + '---');
-      iceConsole.log('ENV_BIN_DIR: ' + common.ENV_BIN_DIR + '---');
-      iceConsole.log('ENV_PIP: ' + common.ENV_PIP + '---');
+      iceConsole.log('APIO_HOME_DIR: ' + common.APIO_HOME + '---');
+      iceConsole.log('APIO_BUNDLE_DIR: ' + common.APIO_BUNDLE_DIR + '---');
       iceConsole.log('APIO_CMD: ' + common.APIO_CMD + '---');
       iceConsole.log('APP: ' + common.APP + '---');
       iceConsole.log('APP_DIR: ' + common.APP_DIR + '---');
@@ -1249,14 +1523,12 @@ angular.module('icestudio').controller(
       //-- The encodeURIComponent() function the characters so that the spaces and
       //-- other special characters can be place on the original URL
       let URL =
-        `resources/viewers/system/system.html?version=${common.ICESTUDIO_VERSION_TS}` +
+        `resources/viewers/system/system.html?version=${common.ICESTUDIO_VERSION}` +
         `&base_dir=${encodeURIComponent(common.BASE_DIR)}---` +
         `&icestudio_dir=${encodeURIComponent(common.ICESTUDIO_DIR)}---` +
         `&profile_path=${encodeURIComponent(common.PROFILE_PATH)}---` +
-        `&apio_home_dir=${encodeURIComponent(common.APIO_HOME_DIR)}---` +
-        `&env_dir=${encodeURIComponent(common.ENV_DIR)}---` +
-        `&env_bin_dir=${encodeURIComponent(common.ENV_BIN_DIR)}---` +
-        `&env_pip=${encodeURIComponent(common.ENV_PIP)}---` +
+        `&apio_home_dir=${encodeURIComponent(common.APIO_HOME)}---` +
+        `&apio_bundle_dir=${encodeURIComponent(common.APIO_BUNDLE_DIR)}---` +
         `&apio_cmd=${encodeURIComponent(common.APIO_CMD)}---` +
         `&app=${encodeURIComponent(common.APP)}---` +
         `&app_dir=${encodeURIComponent(common.APP_DIR)}---`;
@@ -1265,15 +1537,185 @@ angular.module('icestudio').controller(
       nw.Window.open(URL, {
         title: 'System Info',
         focus: true,
-        resizable: false,
-        width: 700,
-        height: 500,
+        resizable: true,
+        width: 720,
+        height: 560,
         icon: 'resources/images/icestudio-logo.png',
       });
     };
 
     $scope.toggleFPGAResources = function () {
       profile.set('showFPGAResources', !profile.get('showFPGAResources'));
+      //-- Apply the model change now (the toolbox/X handler runs outside a
+      //-- digest) so the bar's ng-hide is updated, then re-anchor the output
+      //-- console above/below it on the next tick.
+      utils.rootScopeSafeApply();
+      $timeout(function () {
+        outputConsole.refreshOffset();
+      });
+    };
+
+    //-- Build a Unicode (box-drawing) table with the FPGA resources and the
+    //-- synthesis metrics of the last build. Returns null when there is no
+    //-- valid data (no build yet, or the design changed since the build).
+    function buildFPGAResourcesTable() {
+      var npnr =
+        common.FPGAResources && common.FPGAResources.nextpnr
+          ? common.FPGAResources.nextpnr
+          : null;
+      if (!npnr || common.hasChangesSinceBuild) {
+        return null;
+      }
+      var headers = ['Resource', 'Used', 'Total', '%'];
+      var rows = [];
+      [
+        'Field0',
+        'Field1',
+        'Field2',
+        'Field3',
+        'Field10',
+        'Field11',
+        'Field12',
+        'Field13',
+      ].forEach(function (k) {
+        var f = npnr[k];
+        if (f && f.used !== '-' && f.name !== '-') {
+          //-- Use the computed percentage (decimal), matching the bar.
+          var pct = common.pct(f.used, f.total) + '%';
+          rows.push([f.name, String(f.used), String(f.total), pct]);
+        }
+      });
+      if (!rows.length) {
+        return null;
+      }
+      var widths = headers.map(function (h, i) {
+        var w = h.length;
+        rows.forEach(function (r) {
+          if (r[i].length > w) {
+            w = r[i].length;
+          }
+        });
+        return w;
+      });
+      function pad(s, w, right) {
+        while (s.length < w) {
+          s = right ? ' ' + s : s + ' ';
+        }
+        return s;
+      }
+      function border(l, m, r) {
+        return (
+          l +
+          widths
+            .map(function (w) {
+              return '─'.repeat(w + 2);
+            })
+            .join(m) +
+          r
+        );
+      }
+      function rowStr(cells) {
+        return (
+          '│ ' +
+          cells
+            .map(function (c, i) {
+              return pad(c, widths[i], i > 0);
+            })
+            .join(' │ ') +
+          ' │'
+        );
+      }
+      //-- Plain-text (box-drawing) table — for monospace / plain-text targets.
+      var out = [border('┌', '┬', '┐'), rowStr(headers), border('├', '┼', '┤')];
+      rows.forEach(function (r) {
+        out.push(rowStr(r));
+      });
+      out.push(border('└', '┴', '┘'));
+
+      //-- Metric lines, shared by both formats.
+      var metrics = [];
+      if (npnr.MF && npnr.MF.value) {
+        metrics.push('Max. frequency: ' + npnr.MF.value + ' MHz');
+      }
+      if (npnr.BUILDT && npnr.BUILDT.value) {
+        metrics.push(
+          'Build time: ' + npnr.BUILDT.value + ' ' + (npnr.BUILDT.unit || '')
+        );
+      }
+
+      //-- HTML table — for rich-text targets (docs, email, chat) where the
+      //-- box-drawing table would misalign with a proportional font.
+      function esc(s) {
+        return String(s)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;');
+      }
+      var html =
+        '<table style="border-collapse:collapse;font-family:Consolas,monospace;font-size:13px">';
+      html +=
+        '<tr>' +
+        headers
+          .map(function (h) {
+            return (
+              '<th style="border:1px solid #999;padding:3px 10px;' +
+              'text-align:left;background:#eee">' +
+              esc(h) +
+              '</th>'
+            );
+          })
+          .join('') +
+        '</tr>';
+      rows.forEach(function (r) {
+        html +=
+          '<tr>' +
+          r
+            .map(function (c, i) {
+              return (
+                '<td style="border:1px solid #999;padding:3px 10px;text-align:' +
+                (i > 0 ? 'right' : 'left') +
+                '">' +
+                esc(c) +
+                '</td>'
+              );
+            })
+            .join('') +
+          '</tr>';
+      });
+      html += '</table>';
+      if (metrics.length) {
+        html +=
+          '<p style="font-family:Consolas,monospace;font-size:13px;' +
+          'margin:6px 0 0">' +
+          metrics.map(esc).join('<br>') +
+          '</p>';
+      }
+
+      return { text: out.concat(metrics).join('\n'), html: html };
+    }
+
+    //-- Copy the FPGA resources to the clipboard as both an HTML table (rich
+    //-- targets) and a plain-text box table (monospace targets).
+    $scope.copyFPGAResources = function () {
+      var data = buildFPGAResourcesTable();
+      if (!data) {
+        alertify.warning(
+          gettextCatalog.getString('No synthesis data to copy'),
+          4
+        );
+        return;
+      }
+      try {
+        nw.Clipboard.get().set([
+          { type: 'text', data: data.text },
+          { type: 'html', data: data.html },
+        ]);
+      } catch (e) {
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(data.text);
+        }
+      }
+      alertify.success(gettextCatalog.getString('Copied to clipboard'));
     };
 
     $scope.toggleLoggingEnabled = function () {
@@ -1316,31 +1758,17 @@ angular.module('icestudio').controller(
       }
     };
 
-    $scope.showCommandOutput = function () {
-      winCommandOutput = nw.Window.open(
-        'resources/viewers/plain/output.html?content=' +
-          encodeURIComponent(common.commandOutput),
-        {
-          title: gettextCatalog.getString('Command output'),
-          focus: true,
-          resizable: true,
-          width: 700,
-          height: 400,
-          icon: 'resources/images/icestudio-logo.png',
-        }
-      );
+    //-- View > Output console: toggle the bottom-docked output panel.
+    $scope.toggleOutputConsole = function () {
+      outputConsole.toggle();
     };
 
-    $(document).on('commandOutputChanged', function (evt, commandOutput) {
-      if (winCommandOutput) {
-        try {
-          winCommandOutput.window.location.href =
-            'resources/viewers/plain/output.html?content=' +
-            encodeURIComponent(commandOutput);
-        } catch (e) {
-          winCommandOutput = null;
-        }
-      }
+    //-- A hint link in the output console (e.g. the REALCVT suggestion) asks
+    //-- to open the Preferences panel.
+    iceStudio.bus.events.subscribe('preferences.open', function () {
+      $scope.$evalAsync(function () {
+        $scope.openPreferences();
+      });
     });
 
     $scope.selectCollection = function (collection) {
@@ -1368,7 +1796,11 @@ angular.module('icestudio').controller(
     $(document).on('boardChanged', function (evt, board) {
       if (common.selectedBoard.name !== board.name) {
         var newBoard = graph.selectBoard(board);
-        profile.set('board', newBoard.name);
+        //-- Persist only distribution boards. A project-local board is
+        //-- temporary for the current design/window (see project.js load).
+        if (newBoard && newBoard.origin !== 'project') {
+          profile.set('board', newBoard.name);
+        }
       }
     });
 
@@ -1394,14 +1826,31 @@ angular.module('icestudio').controller(
       function _boardSelected() {
         var reset = true;
         var newBoard = graph.selectBoard(board, reset);
-        profile.set('board', newBoard.name);
+        //-- Persist only distribution boards (project-local boards are
+        //-- temporary for the current design/window).
+        if (newBoard && newBoard.origin !== 'project') {
+          profile.set('board', newBoard.name);
+        }
         alertify.success(
           gettextCatalog.getString('Board {{name}} selected', {
             name: utils.bold(newBoard.info.label),
           })
         );
+        $scope.cleanProject();
       }
     };
+
+    //-------------------------------------------------------------------------
+    //-- Board selection from the footer board button (views/design.html).
+    //-- The selector modal lives in DesignCtrl; it delegates the actual board
+    //-- change here so the existing flow (confirm + graph.selectBoard +
+    //-- cleanProject) stays the single source of truth.
+    //-------------------------------------------------------------------------
+    $rootScope.$on('icestudio:selectBoard', function (event, board) {
+      if (board) {
+        $scope.selectBoard(board);
+      }
+    });
     $scope.takeSnapshotPNG = function () {
       tools.takeSnapshotPNG();
     };
@@ -1410,11 +1859,15 @@ angular.module('icestudio').controller(
     };
 
     $scope.verifyCode = function () {
-      var startMessage = gettextCatalog.getString('Start verification');
-      var endMessage = gettextCatalog.getString('Verification done');
-      checkGraph()
+      checkProjectSaved()
         .then(function () {
-          return tools.verifyCode(startMessage, endMessage);
+          var startMessage = gettextCatalog.getString('Start verification');
+          var endMessage = gettextCatalog.getString('Verification done');
+          checkGraph()
+            .then(function () {
+              return tools.verifyCode(startMessage, endMessage);
+            })
+            .catch(function () {});
         })
         .catch(function () {});
     };
@@ -1431,14 +1884,18 @@ angular.module('icestudio').controller(
         return;
       }
 
-      var startMessage = gettextCatalog.getString('Start build');
-      var endMessage = gettextCatalog.getString('Build done');
-      checkGraph()
+      checkProjectSaved()
         .then(function () {
-          return tools.buildCode(startMessage, endMessage);
-        })
-        .then(function () {
-          resetBuildStack();
+          var startMessage = gettextCatalog.getString('Start build');
+          var endMessage = gettextCatalog.getString('Build done');
+          checkGraph()
+            .then(function () {
+              return tools.buildCode(startMessage, endMessage);
+            })
+            .then(function () {
+              resetBuildStack();
+            })
+            .catch(function () {});
         })
         .catch(function () {});
     };
@@ -1456,17 +1913,69 @@ angular.module('icestudio').controller(
         return;
       }
 
-      var startMessage = gettextCatalog.getString('Start upload');
-      var endMessage = gettextCatalog.getString('Upload done');
-      checkGraph()
+      checkProjectSaved()
         .then(function () {
-          return tools.uploadCode(startMessage, endMessage);
-        })
-        .then(function () {
-          resetBuildStack();
+          var startMessage = gettextCatalog.getString('Start upload');
+          var endMessage = gettextCatalog.getString('Upload done');
+          checkGraph()
+            .then(function () {
+              return tools.uploadCode(startMessage, endMessage);
+            })
+            .then(function () {
+              resetBuildStack();
+            })
+            .catch(function () {});
         })
         .catch(function () {});
     };
+
+    $scope.cleanProject = function () {
+      alertify.confirm(
+        gettextCatalog.getString(
+          'Removing the synthesis artifacts, testbenches, etc. may lose information if you customized apio.ini or hand-made files. Do you want to continue?'
+        ),
+        function () {
+          checkProjectSaved()
+            .then(function () {
+              var removed = [];
+              ['apio.ini', 'main.v', 'main.pcf', 'main.lpf'].forEach(
+                function (f) {
+                  var fp = path.join(common.BUILD_DIR, f);
+                  if (fs.existsSync(fp)) {
+                    fs.unlinkSync(fp);
+                    removed.push(f);
+                  }
+                }
+              );
+              var buildOut = path.join(common.BUILD_DIR, '_build');
+              if (fs.existsSync(buildOut)) {
+                utils.deleteFolderRecursive(buildOut);
+                removed.push('_build/');
+              }
+              if (removed.length > 0) {
+                alertify.success(
+                  gettextCatalog.getString('Cleaned: ') + removed.join(', ')
+                );
+              } else {
+                alertify.message(gettextCatalog.getString('Nothing to clean'));
+              }
+            })
+            .catch(function () {});
+        }
+      );
+    };
+
+    function checkProjectSaved() {
+      return new Promise(function (resolve) {
+        if (common.BUILD_DIR !== common.BUILD_DIR_TMP) {
+          resolve();
+          return;
+        }
+        $scope.saveProject(function () {
+          resolve();
+        });
+      });
+    }
 
     function checkGraph() {
       return new Promise(function (resolve, reject) {
@@ -1545,61 +2054,70 @@ angular.module('icestudio').controller(
 
     $scope.about = function () {
       // English un-translated description:
+      //-- Render one credited person: name + social links.
+      function aboutPerson(name, github, twitter) {
+        var links =
+          '<a class="action-open-url-external-browser" href="https://github.com/' +
+          github +
+          '"><img class="about-ico" src="resources/images/icon-github.svg"></a>';
+        if (twitter) {
+          links +=
+            '<a class="action-open-url-external-browser" href="https://twitter.com/' +
+            twitter +
+            '"><img class="about-ico" src="resources/images/icon-x.svg"></a>';
+        }
+        return (
+          '<div class="about-person"><span class="about-pname">' +
+          name +
+          '</span><span class="about-links">' +
+          links +
+          '</span></div>'
+        );
+      }
+
       var content = [
-        '<div class="row">',
-        '  <div class="col-sm-4">',
-        '    <img width="220px" src="resources/images/icestudio-github.svg">',
-        '  </div>',
-        '  <div class="col-sm-7" style="margin-left: 45px;">',
-        '    <h4>Icestudio</h4>',
-        '    <p><i>Visual editor for open FPGA boards</i></p>',
-        '    <p>Version: <span style="user-select: text;">' +
+        '<div class="about-credits">',
+
+        //-- Header: logo (white symbol blends into the brand-blue card) + title
+        '  <div class="about-header">',
+        '    <img class="about-logo" src="resources/images/icestudio-logo.png">',
+        '    <div class="about-titlebox">',
+        '      <h2 class="about-name-title">Icestudio</h2>',
+        '      <p class="about-tagline"><i>Visual editor for open FPGA boards</i></p>',
+        '      <p class="about-meta">Version <span class="about-version">' +
           $scope.version +
-          '</span></p>',
-        '    <p>License: GPL-2.0</p>',
+          '</span> &middot; License GPL-2.0</p>',
+        '    </div>',
         '  </div>',
-        '</div>',
-        '<div class="row" style="margin-top:30px;">',
-        '  <div class="col-sm-12">',
 
-        '    <p>Core Team:</p>',
-        '    <ul class="credits-developers-list">',
-
-        '           <li><strong>Carlos Venegas Arrabé</strong>&nbsp;&nbsp;&nbsp;',
-        '<a class="action-open-url-external-browser" href="https://github.com/cavearr"><img class="credits-rss-icon" src="resources/images/icon-github.svg"></a>&nbsp;&nbsp;',
-        '<a class="action-open-url-external-browser" href="https://twitter.com/cavearr"><img class="credits-rss-icon" src="resources/images/icon-twitter.svg"></a>',
-        '</li>',
-        '           <li><strong>Juan González Gómez</strong>&nbsp;&nbsp;&nbsp;',
-        '<a class="action-open-url-external-browser" href="https://github.com/Obijuan"><img class="credits-rss-icon" src="resources/images/icon-github.svg"></a>&nbsp;&nbsp;',
-        '<a class="action-open-url-external-browser" href="https://twitter.com/Obijuan_cube"><img class="credits-rss-icon" src="resources/images/icon-twitter.svg"></a>',
-        '</li>',
-        '</ul>',
-        '    <p>Highlighted contributors:</p>',
-        '    <ul class="credits-developers-list">',
-
-        '           <li><strong>Alex Gutierrez Tomas</strong>&nbsp;&nbsp;&nbsp;',
-        '<a class="action-open-url-external-browser" href="https://github.com/mslider"><img class="credits-rss-icon" src="resources/images/icon-github.svg"></a>&nbsp;&nbsp;',
-        '<a class="action-open-url-external-browser" href="https://twitter.com/microslider"><img class="credits-rss-icon" src="resources/images/icon-twitter.svg"></a>',
-        '</li>',
-        '           <li><strong>Joaquim</strong>&nbsp;&nbsp;&nbsp;',
-        '<a class="action-open-url-external-browser" href="https://github.com/jojo535275"><img class="credits-rss-icon" src="resources/images/icon-github.svg"></a>&nbsp;&nbsp;',
-        '</li>',
-        '           <li><strong>Democrito</strong>&nbsp;&nbsp;&nbsp;',
-        '<a class="action-open-url-external-browser" href="https://github.com/Democrito"><img class="credits-rss-icon" src="resources/images/icon-github.svg"></a>&nbsp;&nbsp;',
-        '</li>',
-        '<li><strong>Fernando Mosquera</strong>&nbsp;&nbsp;&nbsp;',
-        '<a class="action-open-url-external-browser" href="https://github.com/benitoss"><img class="credits-rss-icon" src="resources/images/icon-github.svg"></a>&nbsp;&nbsp;',
-        '</li>',
-        '</ul>',
-        '    <p>Thanks to <strong>Jesús Arroyo Torrens</strong>, ',
-        '<a class="action-open-url-external-browser" href="https://github.com/Jesus89"><img class="credits-rss-icon" src="resources/images/icon-github.svg"></a>&nbsp;&nbsp;',
-        '<a class="action-open-url-external-browser" href="https://twitter.com/JesusArroyo89"><img class="credits-rss-icon" src="resources/images/icon-twitter.svg"></a>',
-        'who started this project and was the main developer from 2016/Jan/28 to 2019/Oct',
-        '</p>',
-        '    <p>Thanks to the rest of <a class="action-open-url-external-browser" href="https://github.com/FPGAwars/icestudio#user-content-main-page">contributors</a></p>',
-        '    <p><span class="copyleft">&copy;</span> <a class="action-open-url-external-browser" href="https://fpgawars.github.io">FPGAwars</a> 2016-2024</p>',
-        '<img src="resources/images/fpgawars-logo.png">',
+        //-- Core Team
+        '  <h3 class="about-section">Core Team</h3>',
+        '  <div class="about-people">',
+        '    ' + aboutPerson('Carlos Venegas Arrabé', 'cavearr', 'cavearr'),
+        '    ' + aboutPerson('Juan González Gómez', 'Obijuan', 'Obijuan_cube'),
         '  </div>',
+
+        //-- Highlighted contributors
+        '  <h3 class="about-section">Highlighted contributors</h3>',
+        '  <div class="about-people">',
+        '    ' + aboutPerson('Alex Gutierrez Tomas', 'mslider', 'microslider'),
+        '    ' + aboutPerson('Joaquim', 'jojo535275'),
+        '    ' + aboutPerson('Democrito', 'Democrito'),
+        '    ' + aboutPerson('Fernando Mosquera', 'benitoss'),
+        '  </div>',
+
+        //-- Thanks + footer
+        '  <p class="about-thanks">Thanks to <strong>Jesús Arroyo Torrens</strong> ',
+        '    <a class="action-open-url-external-browser" href="https://github.com/Jesus89"><img class="about-ico" src="resources/images/icon-github.svg"></a>',
+        '    <a class="action-open-url-external-browser" href="https://twitter.com/JesusArroyo89"><img class="about-ico" src="resources/images/icon-x.svg"></a>',
+        '    &mdash; who started this project and was its main developer from 2016/Jan/28 to 2019/Oct.</p>',
+        '  <p class="about-thanks">Thanks to the rest of <a class="action-open-url-external-browser about-extlink" href="https://github.com/FPGAwars/icestudio#user-content-main-page">contributors</a>.</p>',
+
+        '  <div class="about-footer">',
+        '    <span class="about-copy"><span class="copyleft">&copy;</span> <a class="action-open-url-external-browser about-extlink" href="https://fpgawars.github.io">FPGAwars</a> 2016&ndash;2026</span>',
+        '    <img class="about-fpgawars" src="resources/images/fpgawars-logo.png">',
+        '  </div>',
+
         '</div>',
       ].join('\n');
       alertify.alert(content);
@@ -2145,11 +2663,22 @@ angular.module('icestudio').controller(
     //////////////////////////////////////
 
     //----------------------------------------------------
-    //-- Callback function for launching CM (Collection manager)
-    //-- from Menu
+    //-- Callback function for launching CM from Menu
     //----------------------------------------------------
 
     function showCollectionManager() {
+      //-- The external collections folder is mandatory. If it is not set (or
+      //-- it was deleted), force its configuration before opening the manager.
+      if (!externalCollectionsValid()) {
+        $scope.setExternalCollections(function () {
+          iceStudio.bus.events.publish(
+            'pluginManager.launch',
+            'collectionManager2'
+          );
+        });
+        return;
+      }
+
       iceStudio.bus.events.publish(
         'pluginManager.launch',
         'collectionManager2'
@@ -2220,6 +2749,22 @@ angular.module('icestudio').controller(
 
         case 'upload':
           $scope.uploadCode();
+          break;
+
+        case 'clean':
+          $scope.cleanProject();
+          break;
+
+        case 'console':
+          $scope.toggleOutputConsole();
+          break;
+
+        case 'fpga-resources-toggle':
+          $scope.toggleFPGAResources();
+          break;
+
+        case 'copy-fpga-resources':
+          $scope.copyFPGAResources();
           break;
       }
       return false;

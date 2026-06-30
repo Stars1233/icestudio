@@ -60,6 +60,18 @@
         padding: 0;
         overflow: hidden;
       }
+      /* Anti-FOUC: paint the splash blue from the very first frame and keep the
+         body hidden until EVERY <head> stylesheet has loaded. The inline script
+         at the end of <head> adds the `css-ready` class, and the browser only
+         runs that script once the preceding stylesheets are parsed — so on slow
+         machines (mostly Windows) the unstyled HTML is never shown before the
+         CSS is ready. */
+      html {
+        background-color: #305eac;
+      }
+      html:not(.css-ready) body {
+        visibility: hidden;
+      }
       /* -- Splash screen  */
       #main-icestudio-load-wrapper {
         position: absolute;
@@ -74,24 +86,69 @@
         transition: opacity 1s ease;
       }
 
-      #main-icestudio-load-wrapper img {
+      /* Background splash image. The actual image + author credit are set at
+         runtime from resources/images/splash/splash.json (configurable). */
+      #splash-bg {
         position: absolute;
         top: 0;
         left: 0;
         right: 0;
-        bottom: 0;
-        margin: auto;
-        width: 100%;
+        bottom: 100px; /* leave room for the bottom blue band */
+        background-color: #305eac;
+        background-position: center;
+        background-size: cover;
+        background-repeat: no-repeat;
       }
 
-      #main-icestudio-load-wrapper--bar {
+      /* Author credit (free images), small text, top-right over the image */
+      #splash-credits {
+        position: absolute;
+        top: 10px;
+        right: 16px;
+        z-index: 3;
+        font-family: 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+        font-size: 11px;
+        line-height: 1.4;
+        color: rgba(255, 255, 255, 0.9);
+        text-decoration: none;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+      }
+      #splash-credits:hover {
+        text-decoration: underline;
+        color: #fff;
+      }
+
+      /* Bottom blue band (100px) with the icestudio logo on the right */
+      #splash-band {
         position: absolute;
         bottom: 0;
         left: 0;
+        right: 0;
+        height: 100px;
+        background-color: #305eac;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 44px;
+        box-sizing: border-box;
+      }
+      #splash-logo-icestudio {
+        height: 80px;
+      }
+      #splash-logo-fpgawars {
+        height: 64px;
+      }
+
+      /* Thin loading progress line sitting on top of the bottom band */
+      #main-icestudio-load-wrapper--bar {
+        position: absolute;
+        bottom: 100px;
+        left: 0;
         width: 0;
-        height: 24px;
+        height: 4px;
+        z-index: 2;
         animation: progres 3s infinite linear;
-        background-color: white;
+        background-color: #fff;
       }
 
       @keyframes progres {
@@ -135,13 +192,6 @@
 #main-icestudio-wrapper.loaded {
     display: block;
 }*/
-
-      .splash-img-center,
-      .splash-img-container {
-        overflow: hidden;
-        width: 100%;
-        height: 100vh;
-      }
 
       .spinner-wrapper {
         width: 100%;
@@ -215,19 +265,6 @@
       href="node_modules/alertifyjs/build/css/themes/default.min.css"
     />
 
-    <!-- Jexcel:  is a lightweight Vanilla JavaScript plugin to create  -->
-    <!-- amazing web-based interactive HTML tables and spreadsheets     -->
-    <!-- compatible with other spreadsheet software                     -->
-    <!-- https://github.com/jspreadsheet/ce                             -->
-    <link
-      rel="stylesheet"
-      href="node_modules/jspreadsheet-ce/dist/jspreadsheet.css"
-    />
-
-    <!-- jSuites: jSuites is a collection of lightweight common         -->
-    <!-- required javascript web components                             -->
-    <!-- https://github.com/jsuites/jsuites                             -->
-    <link rel="stylesheet" href="node_modules/jsuites/dist/jsuites.css" />
     <!-- sweetAlert                                                     -->
     <!-- Beautiful popups                                               -->
     <link
@@ -269,6 +306,18 @@
 
     <!-- Version window -->
     <link rel="stylesheet" href="styles/version.css" />
+
+    <!-- Output console -->
+    <link rel="stylesheet" href="styles/console.css" />
+
+    <!-- Anti-FOUC reveal: this inline script is parser-blocking and, because it
+         follows the stylesheets above, the browser delays running it until all
+         of them have loaded/parsed. Marking <html> as `css-ready` here (before
+         the body is even parsed) means the body is only ever rendered with the
+         CSS already applied — no flash of unstyled HTML on slow machines. -->
+    <script>
+      document.documentElement.classList.add('css-ready');
+    </script>
   </head>
 
   <!---------------------------------------------------------------->
@@ -284,17 +333,59 @@
     <!-- is open (including the initial one)               -->
     <!------------------------------------------------------->
     <div id="main-icestudio-load-wrapper">
+      <!-- Background image + author credit are filled at runtime from
+           resources/images/splash/splash.json (see the inline script below). -->
+      <div id="splash-bg"></div>
+      <a id="splash-credits" href="#" target="_blank" rel="noopener"></a>
       <div id="main-icestudio-load-wrapper--bar"></div>
-
-      <div class="splash-img-container">
-        <div class="splash-img-center">
-          <img
-            src="resources/images/icestudio-github.svg"
-            alt="icestudio splash"
-          />
-        </div>
+      <!-- Bottom blue band: icestudio + FPGAwars logos on the right -->
+      <div id="splash-band">
+        <img
+          id="splash-logo-icestudio"
+          src="resources/images/icestudio-github.svg"
+          alt="Icestudio"
+        />
+        <img
+          id="splash-logo-fpgawars"
+          src="resources/images/fpgawars-logo.png"
+          alt="FPGA wars"
+        />
       </div>
     </div>
+
+    <!-- Configurable splash: read the image + credit metadata and apply them.
+         To change the splash, edit resources/images/splash/splash.json (image
+         filename, author, link, source) and drop the new free image alongside
+         it. -->
+    <script>
+      (function () {
+        function applySplash(meta) {
+          try {
+            if (meta && meta.image) {
+              var bg = document.getElementById('splash-bg');
+              if (bg) {
+                bg.style.backgroundImage =
+                  "url('resources/images/splash/" + meta.image + "')";
+              }
+            }
+            var credits = document.getElementById('splash-credits');
+            if (credits && meta && meta.author && meta.link) {
+              credits.textContent =
+                meta.author + (meta.source ? ' · ' + meta.source : '');
+              credits.href = meta.link;
+            }
+          } catch (e) {
+            /* keep the plain blue band on any error */
+          }
+        }
+        fetch('resources/images/splash/splash.json')
+          .then(function (r) {
+            return r.json();
+          })
+          .then(applySplash)
+          .catch(function () {});
+      })();
+    </script>
 
     <!-------------------------------------------------------->
     <!-- ICESTUDIO MAIN WINDOW                              -->
@@ -400,17 +491,6 @@
     <!-- https://alertifyjs.com/                                        -->
     <script src="node_modules/alertifyjs/build/alertify.js"></script>
 
-    <!-- jSuites: a collection of lightweight common required           -->
-    <!-- javascript web components                                      -->
-    <!-- https://www.npmjs.com/package/jsuites                          -->
-    <script src="node_modules/jsuites/dist/jsuites.js"></script>
-
-    <!-- jexcel: Jspreadsheet CE is a lightweight Vanilla JavaScript    -->
-    <!-- plugin to create amazing web-based interactive HTML tables     -->
-    <!-- and spreadsheets compatible with other spreadsheet software    -->
-    <!-- https://github.com/jspreadsheet/ce                             -->
-    <script src="node_modules/jspreadsheet-ce/dist/index.js"></script>
-
     <!-- mustache: a logic-less template syntax. It can be used for     -->
     <!-- html, config files, source code - anything. It works by        -->
     <!-- expanding tags in a template using values provided in a hash   -->
@@ -506,6 +586,7 @@
     <script src="scripts/services/compiler.js"></script>
     <script src="scripts/services/drivers.js"></script>
     <script src="scripts/services/graph.js"></script>
+    <script src="scripts/services/outputConsole.js"></script>
     <script src="scripts/services/profile.js"></script>
     <script src="scripts/services/project.js"></script>
     <script src="scripts/services/collections.js"></script>

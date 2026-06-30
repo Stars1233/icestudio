@@ -119,8 +119,7 @@ angular.module('icestudio').service(
 
         //-- Constant parameter block
         case blocks.BASIC_CONSTANT:
-          form = new forms.FormBasicConstant();
-          newBasicConstant2(form, callback);
+          newBasicConstant2(callback);
           break;
 
         case blocks.BASIC_MEMORY:
@@ -322,7 +321,10 @@ angular.module('icestudio').service(
       });
     }
 
-    function newBasicConstant2(form, callback) {
+    function newBasicConstant2(callback) {
+      //-- Create the form
+      let form = new forms.FormBasicConstant();
+
       //-- Display the form
       form.display((evt) => {
         //-- The callback is executed when the user has pressed the OK button
@@ -356,7 +358,7 @@ angular.module('icestudio').service(
           block.position.x = positionX;
 
           //-- Build the cell
-          let cell = loadBasic(block);
+          let cell = loadBasicConstant(block);
 
           //-- Insert the block into the array
           cells.push(cell);
@@ -1139,6 +1141,13 @@ angular.module('icestudio').service(
           return;
         }
 
+        //-- Original block vertical centre (captured before any change). Used
+        //-- to re-centre the block after a virtual<->physical toggle so the
+        //-- wire stays straight: the port sits at the block centre, so growing
+        //-- the height only downward would bend the bus.
+        let origCenterY =
+          cellView.model.position().y + cellView.model.size().height / 2;
+
         //-- Now we have two bloks:
         //--   The initial one: block.data
         //--   The new one entered by the user: portInfo
@@ -1249,7 +1258,45 @@ angular.module('icestudio').service(
 
         cellView.model.translate(0, offset);
         graph.stopBatch('change');
-        cellView.apply();
+
+        //-- Toggling the FPGA pin (virtual <-> physical) changes the block
+        //-- structure: the physical block has pin selectors and a different box
+        //-- markup that the IO view builds once, at initialize, from the data.
+        //-- An in-place update (apply) cannot create/remove those selectors, so
+        //-- the block renders broken (no selectors, looks disconnected) even
+        //-- though the data is correct (re-opening the file shows it fine).
+        //-- Recreate the VIEW while keeping the MODEL (same id and wires): drop
+        //-- the stale HTML overlay, remove the view and re-render it.
+        if (form.virtualIni !== form.virtual) {
+          let paper = cellView.paper;
+          let model = cellView.model;
+          if (cellView.$box) {
+            cellView.$box.remove();
+          }
+          paper.removeView(model);
+          paper.renderView(model);
+          //-- The block height changes with the mode (a virtual port is 1 unit
+          //-- tall; a physical one grows with the pin count), which moves the
+          //-- port. The IO view sets that height by mutating the size in place,
+          //-- WITHOUT firing change:size, so the connected wires are never
+          //-- re-anchored and the bus stays drawn at the old position. Re-apply
+          //-- the size through resize() so JointJS fires change:size and
+          //-- re-routes the wires to the new port position. (The transient +1
+          //-- height is never painted: both calls run in the same frame.)
+          let size = model.get('size');
+          model.resize(size.width, size.height + 1);
+          model.resize(size.width, size.height);
+
+          //-- Re-centre the block on the original block's vertical centre so
+          //-- the wire stays straight instead of bending: the height grew/shrank
+          //-- only downward (the old position became the new top), so shift the
+          //-- block to align both centres. translate() fires change:position,
+          //-- which also re-routes the connected wires to the new port.
+          let curCenterY = model.position().y + model.get('size').height / 2;
+          model.translate(0, origCenterY - curCenterY);
+        } else {
+          cellView.apply();
+        }
 
         resultAlert = alertify.success(
           gettextCatalog.getString('Block updated')

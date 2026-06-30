@@ -1,0 +1,38 @@
+{
+  "manifest_ver": "1.0",
+  "id": "apioShell",
+  "name": "Apio Shell",
+  "author": {
+    "name": "Carlos Venegas",
+    "twitter": "@cavearr"
+  },
+  "version": "1.0",
+  "launchAtStartup": false,
+  "icon": "icon.png",
+  "multipleInstances": false,
+  "gui": {
+    "type": "embedded",
+    "windowed": "true",
+    "layout": ["apioShell.html"],
+    "style": ["css/style.css", "vendor/xterm/css/xterm.css"],
+    "styleThemed": {
+      "dark": ["css/dark/dark.css"],
+      "light": ["css/light/light.css"]
+    },
+    "styleHost": ["css/host.css"],
+    "scripts": [
+      "js/events.js",
+      "vendor/xterm/lib/xterm.js",
+      "vendor/xterm/lib/xterm-loader.js",
+      "vendor/xterm/lib/xterm-addon-fit.js",
+      "vendor/xterm/lib/fit-loader.js",
+      "js/apioShell.js"
+    ],
+    "views": [],
+    "width": "720px",
+    "height": "480px",
+    "resizable": true,
+    "title": true,
+    "minimizable": true
+  }
+}

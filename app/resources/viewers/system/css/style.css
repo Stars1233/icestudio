@@ -1,19 +1,124 @@
+/* System information viewer — dark, monospaced, aligned with the Icestudio UI */
+:root {
+  --si-bg: #232323;
+  --si-fg: #d8d8d8;
+  --si-muted: #8a8a8a;
+  --si-accent: #79b8ff;
+  --si-line: #3a3a3a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
 body {
-  background-color: #61c4b4;
-  margin-left: 30px;
-  margin-right: 30px;
+  margin: 0;
+  min-height: 100%;
 }
 
-ul {
-  border: solid;
-  border-width: 2px;
-  border-radius: 5px;
-  padding-top: 10px;
-  padding-bottom: 10px;
-  box-shadow: 5px 5px black;
+body {
+  background: var(--si-bg);
+  color: var(--si-fg);
+  font-family: 'SF Mono', 'Menlo', 'Consolas', 'Roboto Mono',
+    'DejaVu Sans Mono', monospace;
+  font-size: 12.5px;
+  line-height: 1.5;
+  padding: 18px 22px 56px;
+  -webkit-user-select: text;
+  user-select: text;
 }
 
-span {
-  font-weight: bold;
-  color: #305eac;
+#si-title {
+  margin: 0 0 16px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #fff;
+}
+
+/* Floating copy button (top-right) */
+#si-copy {
+  position: fixed;
+  top: 12px;
+  right: 14px;
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-family: inherit;
+  font-size: 12px;
+  color: #fff;
+  background: #305eac;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  transition: background 0.12s ease;
+}
+#si-copy:hover {
+  background: #3a6dc4;
+}
+#si-copy.copied {
+  background: #2e8b57;
+}
+#si-copy svg {
+  display: block;
+}
+
+/* Report sections */
+.si-group {
+  margin-bottom: 18px;
+}
+.si-group-title {
+  margin: 0 0 8px;
+  padding-bottom: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--si-accent);
+  border-bottom: 1px solid var(--si-line);
+}
+.si-row {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  gap: 4px 14px;
+  padding: 2px 0;
+}
+.si-key {
+  color: var(--si-muted);
+}
+.si-val {
+  color: #eaeaea;
+  word-break: break-all;
+}
+
+/* Diagnostic check statuses */
+.si-status {
+  font-weight: 600;
+}
+.si-ok {
+  color: #5fd38d;
+}
+.si-warn {
+  color: #e6b450;
+}
+
+/* Anonymization note, pinned to the bottom */
+#si-note {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: 0;
+  padding: 8px 22px;
+  font-size: 11px;
+  color: var(--si-muted);
+  background: #1c1c1c;
+  border-top: 1px solid var(--si-line);
+}
+#si-note code {
+  color: #cbd6e6;
 }

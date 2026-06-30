@@ -1,0 +1,4 @@
+/* Host-document styles: ensure the plugin window content does not overflow */
+.wafle-plugin-window[data-plugin='boardEditor'] .wafle-plugin-content {
+  overflow: hidden;
+}

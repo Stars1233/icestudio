@@ -121,6 +121,28 @@
   color: #666;
 }
 
+.cm2-header {
+  border-bottom: 1px solid #e2e2e2;
+}
+.cm2-filter {
+  color: #333;
+  background: #fff;
+  border: 1px solid #ccc;
+}
+.cm2-filter::placeholder {
+  color: #aaa;
+}
+.cm2-reindex {
+  color: #333;
+  border-color: #ccc;
+}
+.cm2-reindex:hover {
+  background: #e7e7e7;
+}
+.cm-loader--path {
+  color: #999;
+}
+
 /* iceCM Tree-view styles */
 .tree-view {
   padding: 10px 10px 10px 20px;

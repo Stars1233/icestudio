@@ -1,8 +1,12 @@
 {
   "label": "Nandland Go board",
+  "mode": "apio",
   "SysClkMhz": 12,
-  "datasheet": "https://www.nandland.com/goboard/introduction.html",
   "interface": "FTDI",
+  "datasheet": "https://www.nandland.com/goboard/introduction.html",
+  "apio": {
+    "board": "go-board"
+  },
   "FPGAResources": {
     "ffs": 1280,
     "luts": 1280,

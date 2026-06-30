@@ -1,0 +1,7 @@
+{
+  "label": "iCE40HX8K-EVB",
+  "SysClkMhz": 0,
+  "datasheet": "https://www.olimex.com/Products/FPGA/iCE40/iCE40HX8K-EVB/open-source-hardware",
+  "interface": "FTDI",
+  "FPGAResources": {}
+}

@@ -1,0 +1,101 @@
+<div id="ihub-root" class="ihub-wrapper">
+  <!-- Search hint (text set in JS; shown only for the Examples category) -->
+  <div id="ihub-search-note" class="ihub-search-note"></div>
+  <!-- Top search -->
+  <div class="ihub-search">
+    <input
+      type="text"
+      id="ihub-search-input"
+      class="ihub-search--input"
+      placeholder="Search…"
+      autocomplete="off"
+    />
+  </div>
+
+  <!-- Categories + actions -->
+  <div class="ihub-toolbar">
+    <div class="ihub-cats">
+      <button
+        type="button"
+        class="ihub-cat active"
+        data-cat="collections"
+        data-guievt="click"
+        data-handler="this.cat"
+        data-args='{"cat":"collections"}'
+      >
+        Collections
+      </button>
+      <button
+        type="button"
+        class="ihub-cat"
+        data-cat="examples"
+        data-guievt="click"
+        data-handler="this.cat"
+        data-args='{"cat":"examples"}'
+      >
+        Examples
+      </button>
+    </div>
+    <div class="ihub-actions">
+      <button
+        type="button"
+        id="ihub-refresh"
+        class="ihub-btn"
+        data-guievt="click"
+        data-handler="this.refresh"
+        title="Check for new versions"
+      >
+        Refresh
+      </button>
+      <button
+        type="button"
+        id="ihub-updateall"
+        class="ihub-btn"
+        data-guievt="click"
+        data-handler="this.updateAll"
+        title="Update all updatable collections"
+      >
+        Update all
+      </button>
+      <button
+        type="button"
+        id="ihub-installall"
+        class="ihub-btn"
+        data-guievt="click"
+        data-handler="this.installAll"
+        title="Install all available collections"
+      >
+        Install all
+      </button>
+      <button
+        type="button"
+        id="ihub-add"
+        class="ihub-btn ihub-btn--primary"
+        data-guievt="click"
+        data-handler="this.add"
+        title="Add a collection from a file or URL"
+      >
+        Add
+      </button>
+    </div>
+  </div>
+
+  <!-- Body: list (2/3) + detail (1/3) -->
+  <div class="ihub-body">
+    <div id="ihub-list" class="ihub-list"></div>
+    <div class="ihub-detail">
+      <div id="ihub-detail-content" class="ihub-detail--content">
+        <div class="ihub-detail--placeholder">Select an item</div>
+      </div>
+      <div id="ihub-detail-footer" class="ihub-detail--footer"></div>
+    </div>
+  </div>
+
+  <!-- Blocking overlay during install / remove -->
+  <div id="ihub-overlay" class="ihub-overlay">
+    <div class="ihub-overlay--box">
+      <div class="ihub-spinner"></div>
+      <div id="ihub-overlay-msg" class="ihub-overlay--msg">Working…</div>
+    </div>
+  </div>
+</div>

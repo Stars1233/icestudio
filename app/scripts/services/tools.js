@@ -25,11 +25,9 @@ angular
       nodeAdmZip,
       _package,
       $rootScope,
-      gui
+      gui,
+      outputConsole
     ) {
-      //-- Debug
-      console.log('---> scripts/services/tools.js (RUN)');
-
       //-- Flag that indicates if there is an apio command already running
       var taskRunning = false;
 
@@ -49,8 +47,10 @@ angular
         apio: '-',
         installed: false,
         disabled: false,
+        channel: 'stable', //-- Apio toolchain channel: 'stable' | 'ci'
       };
       this.toolchain = toolchain;
+      toolchain.channel = profile.get('apioChannel') || 'stable';
 
       iceStudio.bus.events.subscribe(
         'toolchain.upload.resolve',
@@ -64,140 +64,40 @@ angular
       //-- Execute the apio verify command. It checks the syntax of the current
       //-- circuit
       this.verifyCode = function (startMessage, endMessage) {
-        console.log('APIO VERIFY', this.toolchain.apio);
-        let board =
-          common.selectedBoard.name === 'MCH2022_badge'
-            ? 'iCE40-UP5K'
-            : common.selectedBoard.name;
-
-        let apioParams = [];
-
-        if (iceStudio.toolchain.apio >= '0.9.6') {
-          apioParams = ['lint'];
-        } else {
-          apioParams = ['verify', '--board', board];
-        }
-
-        return apioRun(apioParams, startMessage, endMessage);
+        return apioRun(['lint'], startMessage, endMessage);
       };
 
       //-- Execute the apio build command. It builds the current circuit
       this.buildCode = function (startMessage, endMessage) {
-        let board =
-          common.selectedBoard.name === 'MCH2022_badge'
-            ? 'iCE40-UP5K'
-            : common.selectedBoard.name;
-        let apioParams = [];
-        if (iceStudio.toolchain.apio >= '0.9.6') {
-          apioParams = ['build'];
-        } else if (toolchain.apio >= '0.9.0') {
-          apioParams = ['build', '--board', board, '--top-module', 'main'];
-        } else {
-          apioParams = ['build', '--board', board];
-        }
-        return apioRun(apioParams, startMessage, endMessage);
+        return apioRun(['build'], startMessage, endMessage);
       };
 
       //-- Execute the apio upload command. It uploads the bitstream to the
       //-- current board
       this.uploadCode = function (startMessage, endMessage) {
-        if (common.selectedBoard.name === 'MCH2022_badge') {
-          return toolchainRun(['upload'], startMessage, endMessage);
-        }
-        let apioParams = [];
-        if (iceStudio.toolchain.apio >= '0.9.6') {
-          apioParams = ['upload'];
-        } else if (toolchain.apio >= '0.9.0') {
-          apioParams = [
-            'upload',
-            '--board',
-            common.selectedBoard.name,
-            '--top-module',
-            'main',
-          ];
-        } else {
-          apioParams = ['upload', '--board', common.selectedBoard.name];
-        }
-
-        return apioRun(apioParams, startMessage, endMessage);
+        return apioRun(['upload'], startMessage, endMessage);
       };
 
-      //----------------------------------------------------------------
-      //-- Execute an external toolchain command: build, verify, upload
-      function toolchainRun(commands, startMessage, endMessage) {
-        return new Promise(function (resolve) {
-          //-- Variable for storing the verilog source code of
-          //-- the current circuit
-          let sourceCode = '';
-
-          //-- The command can only be executed if there is no other
-          //-- command already running
-          if (!taskRunning) {
-            //-- Flag that there is a command running
-            taskRunning = true;
-
-            if (infoAlert) {
-              infoAlert.dismiss(false);
-            }
-
-            if (resultAlert) {
-              resultAlert.dismiss(false);
-            }
-            graph
-              .resetCodeErrors()
-              .then(function () {
-                utils.beginBlockingTask();
-                if (startMessage) {
-                  startAlert = alertify.message(startMessage, 99999);
-                }
-
-                return generateCode(commands);
-              })
+      //-- Generate all design files (verilog, pcf/lpf, list, apio.ini)
+      //-- without running any apio command. Used by apioShell plugin.
+      this.compileDesign = function () {
+        return new Promise(function (resolve, reject) {
+          try {
+            apioIntegrityCheck();
+            writeApioIni();
+            generateCode(['build'])
               .then(function (output) {
-                sourceCode = output.code;
-
                 return syncResources(output.code, output.internalResources);
               })
               .then(function () {
-                let hd = new IceHD();
-                let bitstream = hd.joinPath(common.BUILD_DIR, 'hardware.bin');
-
-                let uploader = hd.joinPath(
-                  common.DEFAULT_PLUGIN_DIR,
-                  'mch2022-tools'
-                );
-                uploader = hd.joinPath(uploader, 'fpga');
-
-                let python = hd.joinPath(common.ENV_BIN_DIR, 'python3');
-
-                if (hd.isFile(bitstream)) {
-                  iceStudio.bus.events.publish('toolchain.upload', {
-                    cmd: commands,
-                    msg: { end: endMessage },
-                    bitstream: bitstream,
-                    uploader: uploader,
-                    python: python,
-                  });
-                } else {
-                  alertify.error(
-                    gettextCatalog.getString(
-                      'Bitstream not found: Build your project first'
-                    ),
-                    30
-                  );
-                  utils.endBlockingTask();
-                  restoreTask();
-                }
+                resolve();
               })
-              .catch(function (/* e */) {
-                // Error
-                utils.endBlockingTask();
-                restoreTask();
-              });
+              .catch(reject);
+          } catch (err) {
+            reject(err);
           }
-          resolve();
         });
-      }
+      };
 
       function toolchainRunResolve(data) {
         common.commandOutput = data.commandOutput;
@@ -214,37 +114,29 @@ angular
 
       function apioIntegrityCheck() {
         let test = true;
-
         const hd = new IceHD();
-        console.log('Checks for APIO project integrity');
-        //Check if build dir exists
         if (!nodeFs.existsSync(common.BUILD_DIR)) {
-          console.log('Build dir not exists', common.BUILD_DIR);
           nodeFs.mkdirSync(common.BUILD_DIR, { recursive: true });
-        } //-- if buildir exists
-
-        if (iceStudio.toolchain.apio >= '0.9.6') {
-          if (!nodeFs.existsSync(hd.joinPath(common.BUILD_DIR, 'Apio.ini'))) {
-            console.log('Apio.ini not found');
-            test = false;
-          } //-- if buildir exists
         }
-
+        if (!nodeFs.existsSync(hd.joinPath(common.BUILD_DIR, 'apio.ini'))) {
+          test = false;
+        }
         return test;
       } //--Apio Integrity check
 
       //-- Execute an apio command: build, verify, upload
       function apioRun(commands, startMessage, endMessage) {
         return new Promise(function (resolve, reject) {
-          if (!apioIntegrityCheck()) {
-            //--S-- CheckIntegrity
-
-            let board =
-              common.selectedBoard.name === 'MCH2022_badge'
-                ? 'iCE40-UP5K'
-                : common.selectedBoard.name;
-            executeLocalSync(['create', '--board', board]);
-          } //--E-- CheckIntegrity
+          //-- Ensure the build dir exists.
+          apioIntegrityCheck();
+          //-- (Re)write apio.ini for apio-mode boards so it always reflects the
+          //-- current board and Tools > Preferences (e.g. verilator-extra-
+          //-- options). writeApioIni only touches the file when its content
+          //-- changed, so apio's build cache is preserved. "custom" boards
+          //-- never fall back to apio, so they don't need it.
+          if (!common.selectedBoard || common.selectedBoard.mode !== 'custom') {
+            writeApioIni();
+          }
 
           if (taskRunning) {
             reject(new Error('Another task is already running'));
@@ -290,10 +182,37 @@ angular
               var hostname = profile.get('remoteHostname');
               var command = commands[0];
               if (command === 'build') {
-                if (profile.get('showFPGAResources')) {
-                  commands = commands.concat('--verbose-pnr');
-                }
+                //-- Always capture the FPGA resource report (--verbose-pnr) so
+                //-- the last synthesis result is available whenever the
+                //-- resources panel is shown, regardless of whether it was on
+                //-- during the build.
+                commands = commands.concat('--verbose-pnr');
               }
+              var board = common.selectedBoard;
+              var actionKey = command === 'lint' ? 'verify' : command;
+
+              //-- Per-action override: if the board defines its own command(s)
+              //-- for this action (optionally per-OS), run those instead of
+              //-- apio. This enables combos (e.g. apio build + custom upload)
+              //-- and "apio raw" invocations.
+              var custom = resolveActionCommands(board, actionKey);
+              if (custom && custom.length) {
+                return executeCustom(command, custom);
+              }
+
+              //-- No explicit command for this action. In "custom" mode there
+              //-- is no apio fallback, so it is a no-op.
+              if (board && board.mode === 'custom') {
+                return noopCustom(actionKey);
+              }
+
+              //-- apio fallback. For project boards, apio supports project-level
+              //-- definitions (boards.jsonc/fpgas.jsonc/programmers.jsonc): copy
+              //-- them into the build dir so apio can find them.
+              if (board && board.origin === 'project') {
+                copyProjectBoardConfigs();
+              }
+
               if (hostname) {
                 return executeRemote(commands, hostname);
               } else {
@@ -304,18 +223,36 @@ angular
               return processResult(result, sourceCode);
             })
             .then(function () {
-              // Success
+              // Success: green toast only; details stay in the output console.
               if (endMessage) {
                 resultAlert = alertify.success(
                   gettextCatalog.getString(endMessage)
                 );
               }
+              outputConsole.endCommand(false);
               utils.endBlockingTask();
               restoreTask();
               resolve();
             })
-            .catch(function (/* e */) {
-              // Error
+            .catch(function (e) {
+              //-- Toolchain not installed: the Yes/No install prompt was
+              //-- already shown by checkToolchainInstalled() and apio was never
+              //-- launched (no spinner started). Just release the lock.
+              if (e && e.message === 'TOOLCHAIN_NOT_INSTALLED') {
+                utils.endBlockingTask();
+                restoreTask();
+                return;
+              }
+              // Error: red toast only (no error content). The full output is in
+              // the output console, which opens automatically on failure.
+              if (resultAlert) {
+                resultAlert.dismiss(false);
+              }
+              resultAlert = alertify.error(
+                gettextCatalog.getString('Command failed'),
+                5
+              );
+              outputConsole.endCommand(true);
               utils.endBlockingTask();
               restoreTask();
             });
@@ -334,21 +271,44 @@ angular
       }
 
       //------------------------------------------------------------------------
-      //-- Check if the toolchain has been installed
-      //-- We know if it has been already installed by watching the
-      //-- toolchain.installed flag.
-      //-- If it is not installed an Alert windows is shown
+      //-- Is the apio toolchain installed? PURELY a physical on-disk check: no
+      //-- apio command is run and no command output is parsed. Two things must
+      //-- be present on disk:
+      //--   * the apio CLI executable  -> common.APIO_EXE (in the apio-bundle)
+      //--   * the toolchain packages   -> APIO_HOME/packages (downloaded, non-empty)
+      //-- If either is missing the toolchain is not usable. This is the single
+      //-- source of truth for "is the toolchain installed?" used by
+      //-- verify/build/upload.
+      function isToolchainInstalled() {
+        try {
+          //-- apio CLI executable present on disk?
+          if (!nodeFs.existsSync(common.APIO_EXE)) {
+            return false;
+          }
+          //-- toolchain packages downloaded on disk?
+          var pkgDir = nodePath.join(common.APIO_HOME, 'packages');
+          return (
+            nodeFs.existsSync(pkgDir) && nodeFs.readdirSync(pkgDir).length > 0
+          );
+        } catch (e) {
+          return false;
+        }
+      }
+      this.isToolchainInstalled = isToolchainInstalled;
+
+      //------------------------------------------------------------------------
+      //-- Gate for verify/build/upload: if the toolchain is not installed
+      //-- (physical disk check above), ask the user whether to install it
+      //-- (Yes/No) and abort BEFORE launching apio — so apio is never run, there
+      //-- is no "Command failed" toast nor shell output, and the loading spinner
+      //-- can never hang on a missing/failed apio process.
       function checkToolchainInstalled() {
         return new Promise(function (resolve, reject) {
-          //-- Check the installation flag
-          if (toolchain.installed) {
+          if (isToolchainInstalled()) {
             resolve();
-          } //-- Toolchain Not installed. Show an alert window
-          else {
-            toolchainNotInstalledAlert(
-              gettextCatalog.getString('Toolchain not installed')
-            );
-            reject();
+          } else {
+            toolchainNotInstalledConfirm();
+            reject(new Error('TOOLCHAIN_NOT_INSTALLED'));
           }
         });
       }
@@ -379,35 +339,25 @@ angular
             //only verification
             console.log('ONLY VERIFY');
           } else {
+            //-- Select the constraint format from the board architecture:
+            //--   ecp5  -> LPF, gowin -> CST, otherwise (ice40...) -> PCF
             var archName = common.selectedBoard.info.arch;
-            if (archName === 'ecp5') {
-              // LPF file
-              var lpfFile = compiler.generate('lpf', project.get(), opt)[0];
-              nodeFs.writeFileSync(
-                nodePath.join(common.BUILD_DIR, lpfFile.name),
-                lpfFile.content,
-                'utf8'
-              );
-
-              //-- Xilinx FPGA
-            } else if (archName === 'xc7') {
-              //-- XDC file
-              console.log('* Generating .xdc file......');
-              var xdcFile = compiler.generate('xdc', project.get(), opt)[0];
-              nodeFs.writeFileSync(
-                nodePath.join(common.BUILD_DIR, xdcFile.name),
-                xdcFile.content,
-                'utf8'
-              );
-            } else {
-              // PCF file
-              var pcfFile = compiler.generate('pcf', project.get(), opt)[0];
-              nodeFs.writeFileSync(
-                nodePath.join(common.BUILD_DIR, pcfFile.name),
-                pcfFile.content,
-                'utf8'
-              );
-            }
+            var constraintType =
+              archName === 'ecp5'
+                ? 'lpf'
+                : archName === 'gowin'
+                  ? 'cst'
+                  : 'pcf';
+            var constraintFile = compiler.generate(
+              constraintType,
+              project.get(),
+              opt
+            )[0];
+            nodeFs.writeFileSync(
+              nodePath.join(common.BUILD_DIR, constraintFile.name),
+              constraintFile.content,
+              'utf8'
+            );
           }
 
           // List files
@@ -503,7 +453,13 @@ angular
       //-- toolchain.apio global object
       //-- It is also checked if the version is correct (with the version given in the
       //-- package.json package)
-      function checkToolchain(callback, notifyerror = true) {
+      function checkToolchain(
+        callback,
+        notifyerror = true,
+        notifyMissing = true
+      ) {
+        //-- Keep the channel indicator in sync with the profile
+        toolchain.channel = profile.get('apioChannel') || 'stable';
         //-- Comand to Execute: apio --version
         //-- It returns the apio version
         //-- Ej:
@@ -521,10 +477,13 @@ angular
               //-- Flag apio is not installed
               toolchain.installed = false;
 
-              // Show an error notification
-              toolchainNotInstalledAlert(
-                gettextCatalog.getString('Toolchain not installed')
-              );
+              // Show an error notification (unless suppressed, e.g. at startup
+              // where the Setup Wizard handles the missing toolchain)
+              if (notifyMissing) {
+                toolchainNotInstalledAlert(
+                  gettextCatalog.getString('Toolchain not installed')
+                );
+              }
 
               //-- Execute the callback, if any
               if (callback) {
@@ -536,37 +495,32 @@ angular
             else {
               //-- Convert the object received to a string
               let msg = '' + output;
-              console.log(`------------------> DEBUG: ${msg}`);
 
               //-- Get the version number
-              const version = msg.match(/\d+\.\d+\.\d+/);
-              toolchain.apio = version ? version[0] : null;
-
-              //toolchain.apio = msg.match(/apio,\sversion\s(.+)/)[1];
-              console.log(`---> DEBUG: ${toolchain.apio}`);
+              var match = msg.match(/apio[\s,].*?v?(\d+\.\d+\.\d+)/i);
+              if (match) {
+                toolchain.apio = match[1];
+              }
 
               iceStudio.toolchain.apio = toolchain.apio;
-              //-- Check if the apio version is ok with the specification
-              //-- in the package.json file
 
-              toolchain.installed =
-                toolchain.apio >= _package.apio.min &&
-                toolchain.apio < _package.apio.max;
+              //-- If version was extracted, apio is installed
+              toolchain.installed = !!match;
 
               iceStudio.toolchain.installed = toolchain.installed;
-              //-- Everything is ok: call the callback function
+
               if (toolchain.installed) {
                 if (callback) {
                   callback();
                 }
-              }
-              //-- An old version of apio is installed
-              else {
-                iceConsole.log('Toolchain version does not match');
+              } else {
+                iceConsole.log('Toolchain version could not be determined');
 
-                toolchainNotInstalledAlert(
-                  gettextCatalog.getString('Toolchain version does not match')
-                );
+                if (notifyMissing) {
+                  toolchainNotInstalledAlert(
+                    gettextCatalog.getString('Toolchain not installed')
+                  );
+                }
               }
             }
           },
@@ -593,6 +547,54 @@ angular
         };
       }
 
+      //-- Ask the user whether to install the missing toolchain (Yes/No modal).
+      //-- On "Yes" it launches the EXISTING install pipeline (same as the Tools
+      //-- menu / Setup Wizard) via the 'installToolchain' broadcast. Strings are
+      //-- internationalized like the rest of the UI.
+      function toolchainNotInstalledConfirm() {
+        //-- resultAlert is a notification (alertify.error/warning/...), which
+        //-- DOES have dismiss(). Do NOT touch toolchainAlert here: that var
+        //-- holds an alertify DIALOG (install progress), and dialogs have no
+        //-- dismiss() — calling it threw a TypeError that turned the rejection
+        //-- into a bogus "Command failed" with no prompt.
+        if (resultAlert) {
+          resultAlert.dismiss(false);
+        }
+        //-- alertify confirm labels are global: set them to Yes/No for this
+        //-- dialog and restore OK/Cancel afterwards so other confirms keep
+        //-- their default labels.
+        var restoreLabels = function () {
+          alertify.set('confirm', 'labels', {
+            ok: gettextCatalog.getString('OK'),
+            cancel: gettextCatalog.getString('Cancel'),
+          });
+        };
+        alertify.set('confirm', 'labels', {
+          ok: gettextCatalog.getString('Yes'),
+          cancel: gettextCatalog.getString('No'),
+        });
+        alertify.confirm(
+          gettextCatalog.getString('Toolchain not installed') +
+            '.<br>' +
+            gettextCatalog.getString('Do you want to install it?'),
+          function () {
+            //-- Yes: install the toolchain (existing install process). Defer it
+            //-- so THIS confirm dialog finishes closing first: alertify reuses a
+            //-- single confirm dialog, so opening the channel dialog
+            //-- (showApioChannel -> alertify.confirm) synchronously from here
+            //-- clashes with the closing one and it never appears.
+            restoreLabels();
+            setTimeout(function () {
+              $rootScope.$broadcast('installToolchain');
+            }, 300);
+          },
+          function () {
+            //-- No: keep the current state, do nothing
+            restoreLabels();
+          }
+        );
+      }
+
       //-- TODO: Think about removing this function in future versions....
       function executeRemote(commands, hostname) {
         return new Promise(function (resolve) {
@@ -606,7 +608,7 @@ angular
               ssh: true,
               recursive: true,
               delete: true,
-              include: ['*.v', '*.pcf', '*.lpf', '*.list'],
+              include: ['*.v', '*.pcf', '*.lpf', '*.cst', '*.list'],
               exclude: [
                 '.sconsign.dblite',
                 '*.out',
@@ -659,6 +661,7 @@ angular
         });
       }
 
+      /* jshint ignore:start */
       async function executeLocalSync(commands) {
         try {
           await executeLocal(commands);
@@ -666,6 +669,7 @@ angular
           console.log('Execute command fails', commands);
         }
       }
+      /* jshint ignore:end */
       function executeLocal(commands) {
         return new Promise(function (resolve) {
           if (commands[0] === 'upload') {
@@ -697,33 +701,407 @@ angular
                 'tools._executeLocal>' + command + '\n'
               );
             }
-            nodeChildProcess.exec(
-              command,
-              {
-                maxBuffer: 5000 * 1024,
-              }, // To avoid buffer overflow
-              function (error, stdout, stderr) {
-                if (commands[0] === 'upload') {
-                  // Upload command requires to restore the drivers (Mac OS)
-                  drivers.postUpload();
-                }
+            //-- Stream the toolchain output live to the output console. Use
+            //-- spawn (not exec) so stdout/stderr arrive in real time. The
+            //-- console is cleared and the command echoed at the start.
+            outputConsole.startCommand(command);
 
-                common.commandOutput = command + '\n\n' + stdout + stderr;
-                $(document).trigger('commandOutputChanged', [
-                  common.commandOutput,
-                ]);
-                resolve({
-                  error: error,
-                  stdout: stdout,
-                  stderr: stderr,
-                });
+            var stdout = '';
+            var stderr = '';
+            var done = false;
+
+            function finish(error) {
+              if (done) {
+                return;
               }
-            );
+              done = true;
+              if (commands[0] === 'upload') {
+                // Upload command requires to restore the drivers (Mac OS)
+                drivers.postUpload();
+              }
+              common.commandOutput = command + '\n\n' + stdout + stderr;
+              $(document).trigger('commandOutputChanged', [
+                common.commandOutput,
+              ]);
+              resolve({ error: error, stdout: stdout, stderr: stderr });
+            }
+
+            var child = nodeChildProcess.spawn(command, { shell: true });
+            child.stdout.on('data', function (data) {
+              var chunk = data.toString();
+              stdout += chunk;
+              outputConsole.write(chunk);
+            });
+            child.stderr.on('data', function (data) {
+              var chunk = data.toString();
+              stderr += chunk;
+              outputConsole.write(chunk);
+            });
+            child.on('error', function (err) {
+              finish(err);
+            });
+            child.on('close', function (code) {
+              finish(
+                code === 0
+                  ? null
+                  : Object.assign(
+                      new Error('Process exited with code ' + code),
+                      {
+                        code: code,
+                      }
+                    )
+              );
+            });
+          }
+        });
+      }
+
+      //----------------------------------------------------------------------
+      //-- apio.ini helpers
+      //----------------------------------------------------------------------
+
+      //-- Build the apio.ini content for the selected board, using the apio
+      //-- board identifier (defaults to the board name for back-compat)
+      function buildApioIni() {
+        var board = common.selectedBoard;
+        var apioBoard =
+          (board && board.apioBoard) || (board && board.name) || '';
+        var ini =
+          '[env:default]\nboard = ' + apioBoard + '\ntop-module = main\n';
+
+        //-- Extra Verilator options from the user's Tools > Preferences (Verify
+        //-- tab). apio.ini exposes "verilator-extra-options" (board-agnostic),
+        //-- so this customizes Verify for any board in a clean way.
+        var verilatorExtra = getVerilatorExtraOptions();
+        if (verilatorExtra.length) {
+          ini += 'verilator-extra-options = ' + verilatorExtra.join(' ') + '\n';
+        }
+        return ini;
+      }
+
+      //-- Verilator waiver file written next to apio.ini. It uses FILE-SCOPED
+      //-- lint_off rules so the relaxed checks only apply where the offending
+      //-- code is generated/vendored, WITHOUT masking the same rule in the
+      //-- user's own Verilog:
+      //--   ASSIGNIN (main.v)      : a module 'input' wired to the inout
+      //--                            PACKAGE_PIN of an SB_IO primitive (the IO /
+      //--                            pull-up blocks). Valid for synthesis (yosys
+      //--                            handles SB_IO correctly); the user cannot
+      //--                            edit the generated connection.
+      //--   COMBDLY  (cells_sim.v) : non-blocking '<=' in a combinational block
+      //--                            inside the vendor SB_IO simulation model.
+      //-- Extensible: add a "lint_off -rule <X> -file <Y>" line per new case.
+      var VERILATOR_WAIVERS_FILE = 'icestudio_waivers.vlt';
+      var VERILATOR_WAIVERS_CONTENT =
+        '`verilator_config\n' +
+        'lint_off -rule ASSIGNIN -file "*main.v"\n' +
+        'lint_off -rule COMBDLY -file "*cells_sim.v"\n';
+
+      //-- Write the Verilator waiver file into the build directory, but only
+      //-- when the user enabled the "Relax I/O primitive checks" toggle (so
+      //-- when it is off the ASSIGNIN/COMBDLY errors surface and the output
+      //-- console can hint at the option). Rewrites only when it changed, to
+      //-- preserve apio's build cache. Referenced from verilator-extra-options.
+      function writeVerilatorWaivers() {
+        var verify = (profile.get('toolPreferences') || {}).verify || {};
+        if (!verify.relaxIoPrimitives) {
+          return;
+        }
+        var hd = new IceHD();
+        var p = hd.joinPath(common.BUILD_DIR, VERILATOR_WAIVERS_FILE);
+        var current = null;
+        try {
+          current = nodeFs.readFileSync(p, 'utf8');
+        } catch (e) {
+          current = null;
+        }
+        if (current !== VERILATOR_WAIVERS_CONTENT) {
+          nodeFs.writeFileSync(p, VERILATOR_WAIVERS_CONTENT, 'utf8');
+        }
+      }
+
+      //-- Collect the extra Verilator options for Verify. Both relaxations are
+      //-- user toggles (Tools > Preferences > Verify):
+      //--   relaxIoPrimitives -> the file-scoped ASSIGNIN/COMBDLY waiver file
+      //--   relaxRealToInt    -> -Wno-REALCVT
+      function getVerilatorExtraOptions() {
+        var opts = [];
+        var verify = (profile.get('toolPreferences') || {}).verify || {};
+        if (verify.relaxIoPrimitives) {
+          //-- File-scoped waiver: ASSIGNIN (the generated SB_IO IO connection)
+          //-- and COMBDLY (the vendor SB_IO model). Scoped so the same checks
+          //-- still apply to the user's own Verilog.
+          opts.push(VERILATOR_WAIVERS_FILE);
+        }
+        if (verify.relaxRealToInt) {
+          //-- Silence Verilator's REALCVT warning (implicit real->integer
+          //-- conversion), benign for blocks that compute a count as real
+          //-- (e.g. $ceil) and truncate it to an integer output.
+          opts.push('-Wno-REALCVT');
+        }
+        return opts;
+      }
+
+      //-- Write apio.ini into the build directory.
+      //-- Rewrites only when the content actually changes, so apio's build
+      //-- cache (which depends on the apio.ini mtime) is preserved when the
+      //-- board and Tools preferences are unchanged.
+      function writeApioIni() {
+        //-- The waiver file is referenced from verilator-extra-options, so it
+        //-- must exist alongside apio.ini before Verify runs.
+        writeVerilatorWaivers();
+        var hd = new IceHD();
+        var iniPath = hd.joinPath(common.BUILD_DIR, 'apio.ini');
+        var content = buildApioIni();
+        var current = null;
+        try {
+          current = nodeFs.readFileSync(iniPath, 'utf8');
+        } catch (e) {
+          current = null;
+        }
+        if (current !== content) {
+          nodeFs.writeFileSync(iniPath, content, 'utf8');
+        }
+      }
+
+      //-- For "project" boards, copy the apio custom-board definition files
+      //-- (boards.jsonc / fpgas.jsonc / programmers.jsonc) from the project
+      //-- directory into the build directory, where apio (run with
+      //-- -p BUILD_DIR) can find them.
+      function copyProjectBoardConfigs() {
+        var dir =
+          project.dirname ||
+          (project.filepath ? utils.dirname(project.filepath) : '');
+        if (!dir) {
+          return;
+        }
+        var files = ['boards.jsonc', 'fpgas.jsonc', 'programmers.jsonc'];
+        files.forEach(function (f) {
+          var src = nodePath.join(dir, f);
+          try {
+            if (nodeFs.statSync(src).isFile()) {
+              nodeFse.copySync(src, nodePath.join(common.BUILD_DIR, f));
+            }
+          } catch (e) {
+            //-- File not present in the project: ignore
+          }
+        });
+      }
+
+      //----------------------------------------------------------------------
+      //-- Custom commands: per-action, per-OS command lines declared in the
+      //-- board definition (info.commands). They may invoke "apio raw",
+      //-- a custom flasher, or any toolchain command. Empty action ⇒ apio.
+      //----------------------------------------------------------------------
+
+      //-- Resolve the command list for an action, picking the current OS
+      //-- variant. A spec can be a plain array (all OS) or an object keyed
+      //-- by linux/darwin/windows (+ optional "default"). Returns null when
+      //-- there is no command for this action.
+      function resolveActionCommands(board, actionKey) {
+        if (!board || !board.info || !board.info.commands) {
+          return null;
+        }
+        return resolveOSCommands(board.info.commands[actionKey]);
+      }
+
+      function resolveOSCommands(spec) {
+        if (!spec) {
+          return null;
+        }
+        if (Array.isArray(spec)) {
+          return spec.slice();
+        }
+        if (typeof spec === 'object') {
+          var osKey = common.LINUX
+            ? 'linux'
+            : common.DARWIN
+              ? 'darwin'
+              : common.WIN32
+                ? 'windows'
+                : 'default';
+          var arr = spec[osKey] || spec['default'] || null;
+          return arr ? arr.slice() : null;
+        }
+        return null;
+      }
+
+      //-- Best-effort serial port detection for custom flashers ({SERIAL_PORT})
+      function detectSerialPort() {
+        try {
+          if (common.WIN32) {
+            return '';
+          }
+          var entries = nodeFs.readdirSync('/dev');
+          var patterns = common.DARWIN
+            ? [
+                /^cu\.usbserial/,
+                /^cu\.usbmodem/,
+                /^cu\.wchusbserial/,
+                /^cu\.SLAB/,
+              ]
+            : [/^ttyUSB/, /^ttyACM/];
+          for (var p = 0; p < patterns.length; p++) {
+            for (var i = 0; i < entries.length; i++) {
+              if (patterns[p].test(entries[i])) {
+                return '/dev/' + entries[i];
+              }
+            }
+          }
+        } catch (e) {
+          //-- ignore
+        }
+        return '';
+      }
+
+      //-- Build the placeholder substitution context for custom commands
+      function buildPlaceholderContext() {
+        var board = common.selectedBoard;
+        var arch = (board.info && board.info.arch) || '';
+        var constraintName =
+          arch === 'ecp5'
+            ? 'main.lpf'
+            : arch === 'gowin'
+              ? 'main.cst'
+              : 'main.pcf';
+        var usb = (board.info && board.info.usb) || {};
+        var projectDir =
+          project.dirname ||
+          (project.filepath ? utils.dirname(project.filepath) : '');
+        return {
+          BUILD_DIR: common.BUILD_DIR,
+          TOP: 'main',
+          CONSTRAINT_FILE: nodePath.join(common.BUILD_DIR, constraintName),
+          BITSTREAM: nodePath.join(common.BUILD_DIR, 'hardware.bin'),
+          VERILOG: nodePath.join(common.BUILD_DIR, 'main.v'),
+          ARCH: arch,
+          APIO: utils.getApioExecutable(),
+          APIO_HOME: common.APIO_HOME || '',
+          PROJECT_DIR: projectDir,
+          BOARD: board.apioBoard || board.name,
+          FPGA: (board.info && board.info.fpga) || '',
+          USB_VID: usb.vid || '',
+          USB_PID: usb.pid || '',
+          SERIAL_PORT: detectSerialPort(),
+        };
+      }
+
+      //-- Replace {PLACEHOLDER} tokens in a command string
+      function substitute(cmd, ctx) {
+        return cmd.replace(/\{(\w+)\}/g, function (match, key) {
+          return Object.prototype.hasOwnProperty.call(ctx, key)
+            ? ctx[key]
+            : match;
+        });
+      }
+
+      //-- Run a list of shell commands sequentially in the build dir,
+      //-- accumulating output. Stops at the first non-zero exit.
+      function runSequential(cmds, accOutput, done) {
+        if (!cmds.length) {
+          done({ error: null, output: accOutput });
+          return;
+        }
+        var cmd = cmds[0];
+        var rest = cmds.slice(1);
+        accOutput += '$ ' + cmd + '\n';
+        if (typeof common.DEBUGMODE !== 'undefined' && common.DEBUGMODE === 1) {
+          require('fs').appendFileSync(
+            common.LOGFILE,
+            'tools.runSequential>' + cmd + '\n'
+          );
+        }
+        nodeChildProcess.exec(
+          cmd,
+          {
+            cwd: common.BUILD_DIR,
+            maxBuffer: 5000 * 1024,
+          },
+          function (error, stdout, stderr) {
+            accOutput += (stdout || '') + (stderr || '');
+            if (error) {
+              done({ error: error, output: accOutput });
+            } else {
+              runSequential(rest, accOutput, done);
+            }
+          }
+        );
+      }
+
+      //-- No custom command for this action and no apio fallback ("custom"
+      //-- mode): resolve as a no-op success with an informative message.
+      function noopCustom(actionKey) {
+        return new Promise(function (resolve) {
+          common.commandOutput =
+            '[custom] No "' +
+            actionKey +
+            '" command defined for board ' +
+            (common.selectedBoard && common.selectedBoard.name) +
+            '\n';
+          $(document).trigger('commandOutputChanged', [common.commandOutput]);
+          resolve({ error: null, stdout: common.commandOutput, stderr: '' });
+        });
+      }
+
+      //-- Run a resolved list of custom command lines for an action,
+      //-- substituting placeholders. Marks the result as custom so that
+      //-- processResult shows the output generically (not apio matching).
+      function executeCustom(action, resolvedCommands) {
+        return new Promise(function (resolve) {
+          var ctx = buildPlaceholderContext();
+          var resolved = resolvedCommands.map(function (c) {
+            return substitute(c, ctx);
+          });
+
+          function start() {
+            runSequential(resolved, '', function (result) {
+              if (action === 'upload') {
+                //-- Upload command requires to restore the drivers (Mac OS)
+                drivers.postUpload();
+              }
+              common.commandOutput = result.output;
+              $(document).trigger('commandOutputChanged', [
+                common.commandOutput,
+              ]);
+              resolve({
+                error: result.error,
+                stdout: result.output,
+                stderr: result.error ? result.output : '',
+                custom: true,
+              });
+            });
+          }
+
+          if (action === 'upload') {
+            //-- Upload command requires drivers setup (Mac OS)
+            drivers.preUpload(function () {
+              start();
+            });
+          } else {
+            start();
           }
         });
       }
 
       function processResult(result, code) {
+        //-- Error/warning details now stream to the output console, so the
+        //-- toasts that used to dump that content here are silenced: shadow
+        //-- alertify within this function with no-op error/warning (returning a
+        //-- dummy with dismiss() so existing resultAlert handling stays safe).
+        //-- The single red/green result toast is shown by apioRun.
+        var alertify = (function () {
+          var dummy = {
+            dismiss: function () {},
+          };
+          return {
+            error: function () {
+              return dummy;
+            },
+            warning: function () {
+              return dummy;
+            },
+          };
+        })();
         result = result || {};
         let _error = result.error;
         let stdout = result.stdout;
@@ -735,7 +1113,16 @@ angular
           if (_error || stderr) {
             // -- Process errors
             reject();
-            if (stdout) {
+            if (result.custom) {
+              // -- Custom command output comes from the board's own tools, not
+              // -- apio, so show it generically instead of matching apio
+              // -- error strings.
+              var customOut = (stdout || '') + (stderr || '');
+              resultAlert = alertify.error(
+                customOut || gettextCatalog.getString('Error'),
+                30
+              );
+            } else if (stdout) {
               var boardName = common.selectedBoard.name;
               var boardLabel = common.selectedBoard.info.label;
               // - Apio errors
@@ -861,51 +1248,30 @@ angular
                 // Verilator
                 //
                 //-----------------------------------
-                // - Iverilog errors & warnings
-                // main.v:#: error: ...
-                // main.v:#: warning: ...
-                // main.v:#: syntax error
+                // - Verilator errors & warnings
+                // %Error: main.v:#:#: syntax error, ...
+                // %(Error|Warning)...: main.v:#:#: ...
 
-                if (iceStudio.toolchain.apio < '0.9.6') {
-                  re = /main.v:([0-9]+):\s(error|warning):\s(.*?)[\r|\n]/g;
-                  while ((matchError = re.exec(stdout))) {
-                    codeErrors.push({
-                      line: parseInt(matchError[1]),
-                      msg: matchError[3].replace(/\sin\smain\..*$/, ''),
-                      type: matchError[2],
-                    });
-                  }
-                  re = /main.v:([0-9]+):\ssyntax\serror[\r|\n]/g;
-                  while ((matchError = re.exec(stdout))) {
-                    codeErrors.push({
-                      line: parseInt(matchError[1]),
-                      msg: 'Syntax error',
-                      type: 'error',
-                    });
-                  }
-                } else {
-                  re = /%Error:\s+(\w+\.v):(\d+):(\d+):\s*(syntax error,.*)$/gm;
+                re = /%Error:\s+(\w+\.v):(\d+):(\d+):\s*(syntax error,.*)$/gm;
 
-                  while ((matchError = re.exec(stdout))) {
-                    codeErrors.push({
-                      line: parseInt(matchError[2]),
-                      msg: matchError[4].trim(),
-                      type: 'error',
-                    });
-                  }
-
-                  re =
-                    /%(Error|Warning)(-[A-Z0-9]+)?: main\.v:(\d+):(\d+): (.*?)[\r\n]/g;
-                  while ((matchError = re.exec(stdout))) {
-                    codeErrors.push({
-                      line: parseInt(matchError[3]),
-                      msg: matchError[5].trim(),
-                      type: matchError[1].toLowerCase(), // Convert 'Error' or 'Warning' to lowercase for type
-                    });
-                  }
-                  console.log('ERRORS', codeErrors);
-                  //console.log('ERROR_TASK',code);
+                while ((matchError = re.exec(stdout))) {
+                  codeErrors.push({
+                    line: parseInt(matchError[2]),
+                    msg: matchError[4].trim(),
+                    type: 'error',
+                  });
                 }
+
+                re =
+                  /%(Error|Warning)(-[A-Z0-9]+)?: main\.v:(\d+):(\d+): (.*?)[\r\n]/g;
+                while ((matchError = re.exec(stdout))) {
+                  codeErrors.push({
+                    line: parseInt(matchError[3]),
+                    msg: matchError[5].trim(),
+                    type: matchError[1].toLowerCase(), // Convert 'Error' or 'Warning' to lowercase for type
+                  });
+                }
+                console.log('ERRORS', codeErrors);
 
                 // - Yosys errors
                 // ERROR: ... main.v:#...
@@ -1371,11 +1737,118 @@ angular
       );
 
       //----------------------------------------------------------------
-      //-- MENU ENTRY: Tools/Toolchain/INstall (stable)
       //----------------------------------------------------------------
-      //-- Install the STABLE toolchain
-      //-- It displays a messages and if the user click on ok it will
-      //-- download the toolchain
+      //-- Apio channel helpers
+      //----------------------------------------------------------------
+      //-- Current channel from the profile ('stable' | 'ci')
+      function getApioChannel() {
+        return profile.get('apioChannel') || 'stable';
+      }
+
+      //-- Build date (YYYYMMDD) of this platform's bundle asset in a release
+      function getApioBundleDate(release) {
+        if (!release || !release.assets) {
+          return '';
+        }
+        var platform = common.getApioPlatformBundle();
+        var ext = common.APIO_BUNDLE_EXT;
+        var pattern = 'apio-cli-' + platform + '-';
+        for (var i = 0; i < release.assets.length; i++) {
+          var name = release.assets[i].name;
+          if (
+            name.indexOf(pattern) === 0 &&
+            name.indexOf('-bundle.' + ext) !== -1
+          ) {
+            var m = name.substring(pattern.length).match(/^(\d{6,8})/);
+            return m ? m[1] : '';
+          }
+        }
+        return '';
+      }
+
+      //-- Semver inside a tag ('v1.5.0' → '1.5.0'); '' when the tag is a date
+      function getApioTagVersion(tag) {
+        var m = String(tag || '').match(/(\d+\.\d+\.\d+)/);
+        return m ? m[1] : '';
+      }
+
+      //-- Normalize a date to digits only (2026-06-19 → 20260619) for comparison
+      function normApioDate(d) {
+        return String(d || '').replace(/\D/g, '');
+      }
+
+      //-- Display label for a release: 'YYYY-MM-DD' plus the version in
+      //-- parentheses when the tag carries one (e.g. '2026-06-19 (1.5.0)')
+      function formatApioReleaseLabel(release) {
+        var date = getApioBundleDate(release);
+        var dateFmt = /^\d{8}$/.test(date)
+          ? date.slice(0, 4) + '-' + date.slice(4, 6) + '-' + date.slice(6, 8)
+          : date;
+        var ver = getApioTagVersion(release ? release['tag_name'] : '');
+        return dateFmt + (ver ? ' (' + ver + ')' : '');
+      }
+
+      //-- Channel selector dialog. If onSave is provided it runs after the
+      //-- channel is saved (used to chain the first installation).
+      function showApioChannel(onSave) {
+        var current = getApioChannel();
+        var content =
+          '<div class="apio-channel-form">' +
+          '<p>' +
+          gettextCatalog.getString(
+            'Choose the Apio toolchain channel to install/update from:'
+          ) +
+          '</p>' +
+          '<ul style="margin:0 0 12px 18px;padding:0;">' +
+          '<li><b>Stable</b>: ' +
+          gettextCatalog.getString('the latest stable release (recommended).') +
+          '</li>' +
+          '<li><b>CI</b>: ' +
+          gettextCatalog.getString(
+            'the latest nightly build (newest features, may be unstable).'
+          ) +
+          '</li>' +
+          '</ul>' +
+          '<p><label>' +
+          gettextCatalog.getString('Channel') +
+          ': <select id="apio-channel-select" class="ajs-input" style="width:auto;">' +
+          '<option value="stable"' +
+          (current === 'stable' ? ' selected' : '') +
+          '>Stable</option>' +
+          '<option value="ci"' +
+          (current === 'ci' ? ' selected' : '') +
+          '>CI</option>' +
+          '</select></label></p>' +
+          '</div>';
+
+        alertify.confirm(
+          gettextCatalog.getString('Apio channel'),
+          content,
+          function () {
+            var sel = document.getElementById('apio-channel-select');
+            var value = sel && sel.value === 'ci' ? 'ci' : 'stable';
+            profile.set('apioChannel', value);
+            toolchain.channel = value;
+            utils.rootScopeSafeApply();
+            if (typeof onSave === 'function') {
+              onSave();
+            } else {
+              alertify.success(
+                gettextCatalog.getString('Apio channel set to {{ch}}', {
+                  ch: value === 'ci' ? 'CI' : 'Stable',
+                })
+              );
+            }
+          },
+          function () {}
+        );
+      }
+      this.showApioChannel = showApioChannel;
+
+      //-- MENU ENTRY: Tools/Toolchain/Install
+      //----------------------------------------------------------------
+      //-- Install the toolchain. First let the user pick the channel
+      //-- (Stable / CI); on Save it downloads and installs that channel.
       //--
       this.installToolchain = function () {
         iceConsole.log('------> MENU ENTRY POINT: Install Toolchain');
@@ -1383,44 +1856,34 @@ angular
           resultAlert.dismiss(false);
         }
 
-        //-- Show a confirmation dialog
-        alertify.confirm(
-          gettextCatalog.getString(
-            'Install the <b>STABLE Toolchain</b>. This operation requires Internet connection.<br>' +
-              '<p><b>NOTE:</b> You need to disconnect your VPN (if any) to allow the toolchain installation</p> ' +
-              '<p>Do you want to continue?</p>'
-          ),
+        showApioChannel(function () {
+          //-- Remove the toolchain for starting a fresh installation
+          utils.removeToolchain();
 
-          //-- This function is executed when the user press OK
-          function () {
-            //-- Remove the toolchain for starting a fresh installation
-            utils.removeToolchain();
-
-            //-- Install Apio STABLE version
-            installOnlineToolchain(common.APIO_VERSION_STABLE);
-          }
-        );
-      };
-
-      //--------------------------------------------------------------------
-      //-- Install the DEVELOPMENT toolchain
-      //--
-      this.installToolchainDev = function () {
-        if (resultAlert) {
-          resultAlert.dismiss(false);
-        }
-        alertify.confirm(
-          gettextCatalog.getString(
-            'Install the DEVELOPMENT toolchain. It will be downloaded. This operation requires Internet connection. Do you want to continue?'
-          ),
-          function () {
-            installOnlineToolchain(common.APIO_VERSION_DEV);
-          }
-        );
+          //-- Install the toolchain (downloads the selected channel's bundle)
+          installOnlineToolchain();
+        });
       };
 
       //--------------------------------------------------------------
-      //-- Install the LATEST STABLE toolchain
+      //-- Install the toolchain for the Setup Wizard.
+      //-- The channel was already chosen in the wizard, so this skips the
+      //-- channel dialog and reports completion through onFinish(err) (err is
+      //-- falsy on success). Reuses the same install pipeline as the menu.
+      this.installToolchainWizard = function (channel, onFinish) {
+        if (resultAlert) {
+          resultAlert.dismiss(false);
+        }
+        //-- Persist the chosen channel
+        profile.set('apioChannel', channel === 'ci' ? 'ci' : 'stable');
+        toolchain.channel = profile.get('apioChannel');
+        //-- Fresh install
+        utils.removeToolchain();
+        installOnlineToolchain(onFinish);
+      };
+
+      //--------------------------------------------------------------
+      //-- Update the toolchain
       //--
       this.updateToolchain = function () {
         iceConsole.log('------------------------------------------');
@@ -1429,13 +1892,109 @@ angular
         if (resultAlert) {
           resultAlert.dismiss(false);
         }
-        alertify.confirm(
-          gettextCatalog.getString(
-            'Install the LATEST STABLE toolchain. It will be downloaded. This operation requires Internet connection. Do you want to continue?'
-          ),
-          function () {
-            installOnlineToolchain(common.APIO_VERSION_LATEST_STABLE);
-          }
+
+        // Check installed version silently (no alerts), then compare with the
+        // latest release of the SELECTED CHANNEL.
+        installationStatus();
+
+        var channel = getApioChannel();
+        var chLabel = channel === 'ci' ? 'CI' : 'Stable';
+
+        // Get installed version by running apio --version silently
+        // Output example: "Apio CLI version 1.3.0 (darwin-arm64-pyinst-2026-02-25)"
+        utils.executeCommand(
+          [common.APIO_CMD, '--version'],
+          function (error, output) {
+            var installedVersion = '';
+            var installedDate = '';
+            if (!error && output) {
+              var msg = '' + output;
+              var vMatch = msg.match(/apio[\s,].*?v?(\d+\.\d+\.\d+)/i);
+              if (vMatch) {
+                installedVersion = vMatch[1];
+              }
+              // Extract build date from parenthetical, e.g. "pyinst-2026-02-25"
+              var dMatch = msg.match(/(\d{4}-\d{2}-\d{2})\s*\)?\s*$/m);
+              if (dMatch) {
+                installedDate = dMatch[1];
+              }
+            }
+
+            // Query GitHub for the latest release of the selected channel
+            utils.getLatestGithubRelease(
+              'FPGAwars',
+              'apio',
+              function (ghError, release) {
+                restoreStatus();
+
+                if (ghError) {
+                  alertify.error(
+                    gettextCatalog.getString('Error checking for updates') +
+                      ': ' +
+                      ghError
+                  );
+                  return;
+                }
+
+                //-- Compare by the bundle BUILD DATE (robust across channels:
+                //-- the stable tag is a semver while CI tags are dates).
+                var remoteDate = getApioBundleDate(release);
+                var remoteLabel = formatApioReleaseLabel(release);
+                iceConsole.log(
+                  'Update check [' +
+                    channel +
+                    ']: installed=' +
+                    installedVersion +
+                    ' (' +
+                    installedDate +
+                    '), remote=' +
+                    remoteLabel
+                );
+
+                //-- Same build already installed → up to date, do not reinstall
+                if (
+                  installedDate &&
+                  normApioDate(installedDate) === normApioDate(remoteDate)
+                ) {
+                  alertify.success(
+                    gettextCatalog.getString(
+                      'Toolchain is up to date ({{ch}}: {{version}})',
+                      { ch: chLabel, version: utils.bold(remoteLabel) }
+                    )
+                  );
+                  return;
+                }
+
+                //-- A different build for this channel: install it (note this
+                //-- can be a downgrade, e.g. when switching from CI to Stable).
+                var msg2;
+                if (installedVersion) {
+                  var installedLabel =
+                    installedDate +
+                    (installedVersion ? ' (' + installedVersion + ')' : '');
+                  msg2 = gettextCatalog.getString(
+                    '{{ch}} channel: {{from}} → {{to}}. Install it now?',
+                    {
+                      ch: chLabel,
+                      from: utils.bold(installedLabel),
+                      to: utils.bold(remoteLabel),
+                    }
+                  );
+                } else {
+                  msg2 = gettextCatalog.getString(
+                    'Install the toolchain ({{ch}}: {{version}}). Continue?',
+                    { ch: chLabel, version: utils.bold(remoteLabel) }
+                  );
+                }
+
+                alertify.confirm(msg2, function () {
+                  installOnlineToolchain();
+                });
+              },
+              channel
+            );
+          },
+          false // no error notifications
         );
       };
 
@@ -1486,50 +2045,194 @@ angular
       );
 
       //--------------------------------------------
-      //-- Enable the drivers
-      //--
-      this.enableDrivers = function () {
-        //-- It only works if the toolchain has been
-        //-- previoiusly installed
+      //-- Install / uninstall the FPGA board drivers via apio.
+      //-- Modern apio manages the platform-specific driver setup (Zadig on
+      //-- Windows, udev rules on Linux, libusb/FTDI on macOS), so this replaces
+      //-- the legacy drivers.enable()/disable() mechanism (sudo-prompt + manual
+      //-- per-OS handling), which is obsolete and crashes on current Node
+      //-- (sudo-prompt uses the removed util.isObject).
+      function apioDrivers(action) {
+        //-- It only works if the toolchain has been installed
         checkToolchain(function () {
-          if (toolchain.installed) {
-            //-- Enable the drivers!
-            drivers.enable();
+          if (!toolchain.installed) {
+            return;
           }
+          //-- Pick the driver type from the selected board's interface
+          //-- (default to FTDI, the most common for Icestudio boards).
+          var iface =
+            common.selectedBoard &&
+            common.selectedBoard.info &&
+            common.selectedBoard.info.interface === 'Serial'
+              ? 'serial'
+              : 'ftdi';
+
+          //-- On Linux apio installs the udev rules with `sudo`, which needs an
+          //-- interactive terminal to read the password. Icestudio's GUI has no
+          //-- controlling terminal, so run the command inside a terminal
+          //-- emulator where sudo can prompt. (Windows elevates via Zadig/UAC
+          //-- and macOS needs no driver install, so those run spawned.)
+          if (common.LINUX) {
+            apioDriversLinuxTerminal(action, iface);
+            return;
+          }
+
+          alertify.message(
+            gettextCatalog.getString(
+              (action === 'uninstall' ? 'Uninstalling' : 'Installing') +
+                ' ' +
+                iface +
+                ' drivers...'
+            )
+          );
+          utils.executeCommand(
+            [common.APIO_CMD, 'drivers', action, iface],
+            function (error) {
+              if (error) {
+                alertify.error(
+                  gettextCatalog.getString('Driver operation failed')
+                );
+              } else {
+                alertify.success(
+                  gettextCatalog.getString(
+                    action === 'uninstall'
+                      ? 'Drivers uninstalled'
+                      : 'Drivers installed'
+                  )
+                );
+              }
+            },
+            false
+          );
         });
+      }
+
+      //-- Run "apio drivers <action> <iface>" inside a Linux terminal emulator
+      //-- so apio's `sudo` step can prompt for the password (the GUI has no
+      //-- TTY). Falls back to showing the command if no terminal is found.
+      function apioDriversLinuxTerminal(action, iface) {
+        var fs = require('fs');
+        var os = require('os');
+        var nodepath = require('path');
+        var cp = nodeChildProcess;
+        var manual = 'apio drivers ' + action + ' ' + iface;
+
+        //-- Script the terminal runs: the apio command + a pause so the window
+        //-- stays open for the output and the sudo prompt.
+        var script =
+          '#!/usr/bin/env bash\n' +
+          'echo "Icestudio: ' +
+          manual +
+          '"\n' +
+          'echo "(you may be asked for your sudo password)"\n' +
+          'echo\n' +
+          common.APIO_CMD +
+          ' drivers ' +
+          action +
+          ' ' +
+          iface +
+          '\n' +
+          'status=$?\n' +
+          'echo\n' +
+          'if [ "$status" = "0" ]; then echo "Done."; else echo "Failed (exit $status)."; fi\n' +
+          'echo "Press ENTER to close this window..."\n' +
+          'read _\n';
+
+        var scriptPath = nodepath.join(
+          os.tmpdir(),
+          'icestudio-apio-drivers.sh'
+        );
+        try {
+          fs.writeFileSync(scriptPath, script, { mode: 0o755 });
+        } catch (e) {
+          alertify.error(
+            gettextCatalog.getString('Could not prepare the drivers command')
+          );
+          return;
+        }
+
+        //-- Terminal emulators and their invocation (first available wins)
+        var candidates = [
+          ['x-terminal-emulator', ['-e', 'bash', scriptPath]],
+          ['gnome-terminal', ['--', 'bash', scriptPath]],
+          ['konsole', ['-e', 'bash', scriptPath]],
+          ['mate-terminal', ['--', 'bash', scriptPath]],
+          ['tilix', ['-e', 'bash', scriptPath]],
+          ['xfce4-terminal', ['-x', 'bash', scriptPath]],
+          ['xterm', ['-e', 'bash', scriptPath]],
+        ];
+
+        function available(cmd) {
+          try {
+            cp.execSync('command -v ' + cmd, { stdio: 'ignore' });
+            return true;
+          } catch (e) {
+            return false;
+          }
+        }
+
+        var term = null;
+        for (var i = 0; i < candidates.length; i++) {
+          if (available(candidates[i][0])) {
+            term = candidates[i];
+            break;
+          }
+        }
+
+        if (!term) {
+          alertify.warning(
+            gettextCatalog.getString(
+              'No terminal emulator found. Open a terminal and run:'
+            ) +
+              '<br><code>' +
+              manual +
+              '</code>',
+            0
+          );
+          return;
+        }
+
+        try {
+          var child = cp.spawn(term[0], term[1], {
+            detached: true,
+            stdio: 'ignore',
+          });
+          child.unref();
+          alertify.message(
+            gettextCatalog.getString('Running ' + manual + ' in a terminal...')
+          );
+        } catch (e) {
+          alertify.warning(
+            gettextCatalog.getString('Open a terminal and run:') +
+              '<br><code>' +
+              manual +
+              '</code>',
+            0
+          );
+        }
+      }
+
+      //-- Enable the drivers (install them via apio)
+      this.enableDrivers = function () {
+        apioDrivers('install');
       };
 
-      //---------------------------------------------
-      //-- Disable the drivers
-      //--
+      //-- Disable the drivers (uninstall them via apio)
       this.disableDrivers = function () {
-        //-- It only works if the toolchain has been
-        //-- Already installed
-        checkToolchain(function () {
-          if (toolchain.installed) {
-            drivers.disable();
-          }
-        });
+        apioDrivers('uninstall');
       };
 
       //---------------------------------------------------------
-      //-- Install the toolchain according to the given version
-      //-- Values for the version parameter:
-      //--  * common.APIO_VERSION_STABLE
-      //--  * common.APIO_VERSION_LATEST_STABLE
-      //--  * common.APIO_VERSION_DEV
+      //-- Install the toolchain (downloads the apio bundle)
       //--
-      function installOnlineToolchain(version) {
+      function installOnlineToolchain(onFinish) {
         //-- Waiting state: Spinner on
         installationStatus();
 
-        //-- Progress bar
+        //-- Progress bar with collapsible console output
         const content = [
           '<div>',
           '  <p id="progress-message">' +
-            gettextCatalog.getString('Installing {{version}}', {
-              version: utils.printApioVersion(version),
-            }) +
+            gettextCatalog.getString('Starting installation...') +
             '  </p>',
           '  <br>',
           '  <div class="progress">',
@@ -1537,10 +2240,20 @@ angular
           '      aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width:0%">',
           '    </div>',
           '  </div>',
+          '  <div id="console-toggle" style="cursor:pointer;user-select:none;color:#888;font-size:12px;margin-top:8px;display:flex;align-items:center;justify-content:space-between;">',
+          '    <span><span id="console-arrow">&#9654;</span> Output</span>',
+          '    <button id="console-copy-btn" title="Copy to clipboard"',
+          '      style="background:#444;color:#ccc;border:1px solid #666;border-radius:3px;padding:2px 8px;font-size:11px;cursor:pointer;">',
+          '      Copy',
+          '    </button>',
+          '  </div>',
+          '  <div id="console-wrapper" style="display:none;margin-top:4px;">',
+          '    <pre id="console-output"',
+          '      style="background:#1e1e1e;color:#d4d4d4;font-family:Menlo,Consolas,Courier New,monospace;font-size:11px;padding:6px 8px;max-height:240px;overflow:auto;border-radius:4px;border:1px solid #333;margin:0;white-space:pre;"></pre>',
+          '  </div>',
           '</div>',
         ].join('\n');
 
-        //-- Show the progress window
         toolchainAlert = alertify.alert(content, function () {
           setTimeout(function () {
             initProgress();
@@ -1554,42 +2267,95 @@ angular
         // Hide OK button
         $(toolchainAlert.__internal.buttons[0].element).addClass('hidden');
 
+        //-- Setup console toggle. Use .off('click') first: installOnlineToolchain
+        //-- runs on every install and alertify reuses the dialog, so without it
+        //-- the handler would stack and a single click would toggle several
+        //-- times (the panel would expand and immediately collapse again).
+        $('#console-toggle')
+          .off('click')
+          .on('click', function () {
+            var wrapper = $('#console-wrapper');
+            var arrow = $('#console-arrow');
+            if (wrapper.is(':visible')) {
+              wrapper.slideUp(150);
+              arrow.html('&#9654;');
+            } else {
+              wrapper.slideDown(150);
+              arrow.html('&#9660;');
+            }
+          });
+
+        //-- Setup copy button (same anti-stacking guard)
+        $('#console-copy-btn')
+          .off('click')
+          .on('click', function (e) {
+            e.stopPropagation();
+            e.preventDefault();
+            var el = document.getElementById('console-output');
+            var text = el ? el.textContent : '';
+            if (!text || text.trim() === '') {
+              return;
+            }
+            try {
+              var clipboard = nw.Clipboard.get();
+              clipboard.set(text, 'text');
+            } catch (err) {
+              // Fallback: copy via hidden textarea
+              var ta = document.createElement('textarea');
+              ta.value = text;
+              ta.style.position = 'fixed';
+              ta.style.left = '-9999px';
+              document.body.appendChild(ta);
+              ta.select();
+              document.execCommand('copy');
+              document.body.removeChild(ta);
+            }
+            var btn = $(this);
+            btn.text('Copied!');
+            setTimeout(function () {
+              btn.text('Copy');
+            }, 1500);
+          });
+
+        //-- Listen for command output events
+        $(document).on('commandOutputChanged.install', function (e, data) {
+          appendToConsole(data);
+        });
+
         //-- Toolchain not yet installed
         toolchain.installed = false;
 
-        //-- Store the apio version to install in the global object common.APIO_VERSION
-        //-- The functions that need to know the apio version can read it from there
-        common.APIO_VERSION = version;
+        updateProgress(gettextCatalog.getString('Starting installation...'), 0);
 
-        // Steps for installing the toolchains
-        // These functions are called one by one, secuentially
+        // Steps for installing the toolchain
+        // These functions are called one by one, sequentially
         // When one function is done, the next one is called
-        async.series([
-          //-- Internet connection is needed: check it
-          checkInternetConnection,
+        async.series(
+          [
+            //-- Internet connection is needed: check it
+            checkInternetConnection,
 
-          //-- Python3 is needed: Check it
-          ensurePythonIsAvailable,
+            //-- Download the apio bundle
+            downloadApioBundle,
 
-          //-- Create the virtual python environment
-          createVirtualenv,
-
-          //-- Install apio through pip
-          installOnlineApio,
-
-          repairPermissions,
-          //--------- Install the apio packages
-          //--------- apio packages install -f
-          apioInstallOssCadSuite,
-          repairPermissions,
-
-          //-- Drivers
-          apioInstallDrivers,
-
-          repairPermissions,
-          //-- Finish installation!
-          installationCompleted,
-        ]);
+            repairPermissions,
+            //-- Install apio packages
+            apioInstallPackages,
+            repairPermissions,
+            //-- Install drivers (Windows only)
+            apioInstallDrivers,
+            repairPermissions,
+            //-- Finish installation!
+            installationCompleted,
+          ],
+          function (err) {
+            installationError(err);
+            //-- Notify the caller (e.g. the Setup Wizard) of completion.
+            if (typeof onFinish === 'function') {
+              onFinish(err);
+            }
+          }
+        );
       }
 
       //---------------------------------------------------------------
@@ -1616,68 +2382,80 @@ angular
           restoreStatus();
 
           //-- Show a notification
-          resultAlert = alertify.error(
-            gettextCatalog.getString('Internet connection required'),
-            30
-          );
+          var msg = gettextCatalog.getString('Internet connection required');
+          appendToConsole('\n[ERROR] ' + msg + '\n');
+          resultAlert = alertify.error(msg, 30);
           callback(true);
         });
       }
 
-      //-------------------------------------------------------
-      //-- Check if python is available
+      //---------------------------------------------------------------
+      //-- Download the apio bundle and extract it
       //--
-      function ensurePythonIsAvailable(callback) {
-        iceConsole.log('**** STEP: Check Python');
-
-        //-- Update the progress bar
-        updateProgress(gettextCatalog.getString('Check Python...'), 0);
-
-        //-- Read the python executable (if it exists...)
-        if (utils.getPythonExecutable()) {
-          callback();
-        } //-- No python3 detected
-        else {
-          closeToolchainAlert();
-          restoreStatus();
-          resultAlert = alertify.error(
-            gettextCatalog.getString('At least Python 3.7 is required'),
-            30
-          );
-          callback(true);
+      function downloadApioBundle(callback) {
+        iceConsole.log('**** STEP: Download Apio bundle');
+        var platform = common.getApioPlatformBundle();
+        if (!platform) {
+          callback('Unsupported platform');
+          return;
         }
-      }
+        var ext = common.APIO_BUNDLE_EXT;
+        // Pattern to match the bundle asset for this platform
+        var bundlePattern = 'apio-cli-' + platform + '-';
 
-      //---------------------------------------------------
-      //-- Create the Python virtual environment
-      //-- Apio and other python packages are installed in the virtual env
-      //-- so that they do not interfere with the rest of the packages
-      //-- installed in your system
-      //--
-      function createVirtualenv(callback) {
-        iceConsole.log('**** STEP: Create virtualenv');
+        updateProgress(
+          gettextCatalog.getString('Finding latest Apio release...'),
+          15
+        );
 
-        //-- Update the progress bar
-        updateProgress(gettextCatalog.getString('Create virtualenv...'), 20);
+        // Query GitHub API for the latest release
+        utils.getLatestGithubRelease(
+          'FPGAwars',
+          'apio',
+          function (error, release) {
+            if (error) {
+              appendToConsole(
+                '[ERROR] Failed to get latest release: ' + error + '\n'
+              );
+              callback(error);
+              return;
+            }
 
-        //-- Create the virtual env
-        utils.createVirtualenv(callback);
-      }
+            appendToConsole('Latest release: ' + release['tag_name'] + '\n');
 
-      //------------------------------------------
-      //-- Install the apio toolchain
-      //--
-      function installOnlineApio(callback) {
-        iceConsole.log('**** STEP: Install APIO');
+            // Find the bundle asset matching our platform
+            var asset = null;
+            for (var i = 0; i < release.assets.length; i++) {
+              var name = release.assets[i].name;
+              if (
+                name.indexOf(bundlePattern) === 0 &&
+                name.indexOf('-bundle.' + ext) !== -1
+              ) {
+                asset = release.assets[i];
+                break;
+              }
+            }
 
-        //-- Get the apio package with params
-        let apio = utils.getApioParameters();
+            if (!asset) {
+              var msg = 'No bundle found for platform: ' + platform;
+              appendToConsole('[ERROR] ' + msg + '\n');
+              callback(msg);
+              return;
+            }
 
-        //-- Show the installing command in the progres bar windows
-        updateProgress('pip ' + apio, 40);
-
-        //-- Perform the real installation
-        utils.installOnlineApio(callback);
+            appendToConsole('Downloading: ' + asset.name + '\n');
+            updateProgress(
+              gettextCatalog.getString('Downloading Apio bundle...'),
+              20
+            );
+            utils.downloadAndExtractBundle(
+              asset['browser_download_url'],
+              common.APIO_BUNDLE_DIR,
+              callback
+            );
+          },
+          getApioChannel()
+        );
       }
 
       //------------------------------------------
@@ -1691,42 +2469,61 @@ angular
       }
 
       //-------------------------------------------
-      //-- Install the apio oss-cad-suite package
+      //-- Install apio packages
       //--
-      function apioInstallOssCadSuite(callback) {
-        iceConsole.log('**** STEP: APIO install oss-cad-suite');
-
-        //-- Package name to install
-        let pkgName = 'oss-cad-suite';
-
-        //-- When installing the stable version, specific stable
-        //-- versions of the toolchains are installed (not the latest)
-        //-- Ex. system@1.1.2 --> Install system package version 1.1.2
-        //-- Ex. system --> Install the latest available version
-        if (common.APIO_VERSION === common.APIO_VERSION_STABLE) {
-          pkgName += '@' + common.APIO_PKG_OSS_CAD_SUITE_VERSION;
-        }
-
-        updateProgress(
-          gettextCatalog.getString('Apio packages install -f', {
-            name: pkgName,
-          }),
-          60
-        );
-        utils.apioInstall(pkgName, callback);
+      function apioInstallPackages(callback) {
+        iceConsole.log('**** STEP: APIO packages install');
+        updateProgress(gettextCatalog.getString('Installing packages...'), 50);
+        utils.apioInstall('', callback);
       }
 
       //---------------------------------------------
-      //-- Install the Drivers
+      //-- Install the Drivers (Windows only)
       //--
       function apioInstallDrivers(callback) {
         if (common.WIN32) {
           iceConsole.log('**** STEP: APIO install drivers');
-
-          updateProgress(gettextCatalog.getString('Apio install drivers'), 80);
-          utils.apioInstall('drivers', callback);
+          updateProgress(gettextCatalog.getString('Installing drivers...'), 80);
+          utils.executeCommand(
+            [common.APIO_CMD, 'drivers', 'install', 'ftdi'],
+            null,
+            true,
+            callback
+          );
         } else {
           callback();
+        }
+      }
+
+      //---------------------------------------------
+      //-- Handle installation errors
+      //--
+      function installationError(err) {
+        if (err) {
+          iceConsole.log('**** INSTALLATION ERROR: ' + err);
+          appendToConsole(
+            '\n[ERROR] Toolchain installation failed: ' + err + '\n'
+          );
+          // Don't close the alert so user can see the console output
+          restoreStatus();
+          // Show OK button so user can dismiss after reading the log
+          if (toolchainAlert && toolchainAlert.__internal) {
+            $(toolchainAlert.__internal.buttons[0].element).removeClass(
+              'hidden'
+            );
+          }
+          updateProgress(gettextCatalog.getString('Installation failed'), 0);
+          $('#progress-bar')
+            .removeClass('progress-bar-info progress-bar-striped active')
+            .addClass('progress-bar-danger')
+            .css('width', '100%')
+            .text('Error');
+          // Auto-expand the console on error
+          var wrapper = $('#console-wrapper');
+          if (!wrapper.is(':visible')) {
+            wrapper.slideDown(150);
+            $('#console-arrow').html('&#9660;');
+          }
         }
       }
 
@@ -1765,8 +2562,11 @@ angular
 
             //-- Notification: Installed!
             alertify.success(gettextCatalog.getString('Toolchain installed'));
-
-            setupDriversAlert();
+            //-- NOTE: the old "setup the drivers" prompt was removed. Modern
+            //-- apio installs the drivers during the toolchain installation
+            //-- (apio drivers install ftdi) and the legacy drivers.enable()
+            //-- path (sudo-prompt) crashes on current Node. Drivers can still
+            //-- be (re)installed from Tools -> Toolchain -> Drivers (via apio).
           }
 
           restoreStatus();
@@ -1796,8 +2596,41 @@ angular
         }
       }
 
+      function appendToConsole(text) {
+        var el = document.getElementById('console-output');
+        if (!el) {
+          return;
+        }
+
+        // Strip ANSI escape codes (CSI sequences including ?, extended colors)
+        var clean = text.replace(/\x1b\[[\?]?[0-9;]*[a-zA-Z]/g, '');
+        // Strip control chars except \n and \r
+        clean = clean.replace(/[\x00-\x09\x0b\x0c\x0e-\x1f]/g, '');
+
+        // Split into segments by \n and \r to simulate terminal behavior
+        // \r = overwrite current line, \n = new line
+        var content = el.textContent;
+        var lines = content.length > 0 ? content.split('\n') : [''];
+
+        for (var i = 0; i < clean.length; i++) {
+          var ch = clean[i];
+          if (ch === '\n') {
+            lines.push('');
+          } else if (ch === '\r') {
+            // Carriage return: clear current line (will be overwritten)
+            lines[lines.length - 1] = '';
+          } else {
+            lines[lines.length - 1] += ch;
+          }
+        }
+
+        el.textContent = lines.join('\n');
+        el.scrollTop = el.scrollHeight;
+      }
+
       function updateProgress(message, value) {
         $('#progress-message').text(message);
+        appendToConsole('>> ' + message + '\n');
         var bar = $('#progress-bar');
         if (value === 100) {
           bar.removeClass('progress-bar-striped active');
@@ -1817,9 +2650,15 @@ angular
           .attr('aria-valuenow', 0)
           .css('width', '0%')
           .removeClass('notransition');
+        //-- Clear console output
+        var el = document.getElementById('console-output');
+        if (el) {
+          el.textContent = '';
+        }
       }
 
       function closeToolchainAlert() {
+        $(document).off('commandOutputChanged.install');
         toolchainAlert.callback();
         toolchainAlert.close();
       }

@@ -4,15 +4,39 @@ angular
   .module('icestudio')
   .service(
     'collections',
-    function (common, profile, gettextCatalog, $exceptionHandler) {
-      console.log('---> scripts/services/collections.js (RUN)');
-
+    function (common, profile, gettextCatalog, $exceptionHandler, utils) {
       let iceColl = new IceCollection({
         location: {
           default: common.DEFAULT_COLLECTION_DIR,
           internal: common.INTERNAL_COLLECTIONS_DIR,
           external: profile.get('externalCollections'),
         },
+      });
+
+      let self = this;
+
+      //----------------------------------------------------------------------
+      //-- Reindex requested from the Collection Manager plugin.
+      //-- Rescan all the collections from disk and resend the environment to
+      //-- the plugins, which triggers a forced (full) reindex in the worker.
+      //----------------------------------------------------------------------
+      iceStudio.bus.events.subscribe('collectionService.rescan', function () {
+        try {
+          self.loadAllCollections();
+          self.sort();
+          if (
+            typeof ICEpm !== 'undefined' &&
+            ICEpm &&
+            typeof ICEpm.setEnvironment === 'function'
+          ) {
+            ICEpm.setEnvironment(common);
+          } else {
+            //-- Fallback: publish the env update directly on the bus
+            iceStudio.bus.events.publish('pluginManager.updateEnv', common);
+          }
+        } catch (e) {
+          $exceptionHandler(e);
+        }
       });
 
       /*
@@ -24,6 +48,70 @@ angular
         this.loadDefaultCollection();
         this.loadInternalCollections();
         this.loadExternalCollections();
+        //-- Collections changed: drop the cached block-id index so it is
+        //-- rebuilt lazily from the fresh trees on the next membership check.
+        common.collectionBlockIds = null;
+      };
+
+      //----------------------------------------------------------------------
+      //-- Collection block-id index
+      //--
+      //-- Build (lazily) a Set with the canonical, content-addressed id of
+      //-- every block .ice file present in the installed collections, so we
+      //-- can answer "does this dependency id belong to an installed
+      //-- collection?" in O(1). Ids are computed with utils.blockId, the same
+      //-- recipe project.addBlock uses, so they match a design's dependency
+      //-- keys for the same (unmodified) block.
+      //----------------------------------------------------------------------
+      function eachCollectionBlockPath(callback) {
+        var cols = [common.defaultCollection]
+          .concat(common.internalCollections || [])
+          .concat(common.externalCollections || []);
+        cols.forEach(function (col) {
+          if (col && col.content && col.content.blocks) {
+            walk(col.content.blocks);
+          }
+        });
+        function walk(nodes) {
+          (nodes || []).forEach(function (node) {
+            if (node.isDir || (node.children && node.children.length)) {
+              walk(node.children);
+            } else if (
+              typeof node.name === 'string' &&
+              /\.ice$/i.test(node.name)
+            ) {
+              callback(node.path);
+            }
+          });
+        }
+      }
+
+      this.buildBlockIdIndex = function () {
+        var ids = new Set();
+        try {
+          eachCollectionBlockPath(function (path) {
+            var fileIds = utils.collectionIdsFromFile(path);
+            for (var i = 0; i < fileIds.length; i++) {
+              ids.add(fileIds[i]);
+            }
+          });
+        } catch (e) {
+          $exceptionHandler(e);
+        }
+        common.collectionBlockIds = ids;
+        return ids;
+      };
+
+      //-- True when the given dependency id belongs to an installed
+      //-- collection block (builds the index on first use).
+      this.isCollectionBlock = function (id) {
+        if (!id) {
+          return false;
+        }
+        if (!(common.collectionBlockIds instanceof Set)) {
+          this.buildBlockIdIndex();
+        }
+        return common.collectionBlockIds.has(id);
       };
 
       this.loadDefaultCollection = function () {
@@ -85,7 +173,9 @@ angular
       function sortCollections(collections) {
         for (var i in collections) {
           var collection = collections[i];
-          if (collection.content) {
+          //-- Defensive: skip null/empty slots (e.g. defaultCollection not
+          //-- loaded yet) instead of dereferencing collection.content.
+          if (collection && collection.content) {
             sortContent(collection.content.blocks);
             sortContent(collection.content.examples);
           }

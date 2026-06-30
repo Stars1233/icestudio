@@ -30,11 +30,25 @@ class IceBlock {
   }
 
   busLoadFromFile(args) {
-    this.fs.readFile(args.path, function (path, content) {
-      args.obj = JSON.parse(content);
-      //--  ICEpm.publishAt(args.id, "block.loadedFromFile", args);
-      iceStudio.bus.events.publish('block.loadedFromFile', args);
-    });
+    //-- Always publish 'block.loadedFromFile' (even on a read/parse error, with
+    //-- obj=false) so the indexer can skip an invalid file and keep going. A
+    //-- single malformed .ice (or a macOS ._ AppleDouble file) must never stall
+    //-- the whole indexing pipeline.
+    this.fs.readFile(
+      args.path,
+      function (path, content) {
+        try {
+          args.obj = JSON.parse(content);
+        } catch (e) {
+          args.obj = false;
+        }
+        iceStudio.bus.events.publish('block.loadedFromFile', args);
+      },
+      function (path) {
+        args.obj = false;
+        iceStudio.bus.events.publish('block.loadedFromFile', args);
+      }
+    );
   }
 
   get() {

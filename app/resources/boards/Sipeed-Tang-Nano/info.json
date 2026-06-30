@@ -1,0 +1,8 @@
+{
+  "label": "Sipeed Tang Nano",
+  "SysClkMhz": 0,
+  "datasheet": "",
+  "interface": "FTDI",
+  "arch": "gowin",
+  "FPGAResources": {}
+}

@@ -1,16 +1,37 @@
-<div class="playground">
-  <div id="cm2-root" class="wrapper">
-    <div class="lds-grid">
-      <div></div>
-      <div></div>
-      <div></div>
-      <div></div>
-      <div></div>
-      <div></div>
-      <div></div>
-      <div></div>
-      <div></div>
+<div class="wrapper">
+  <div id="cm2-header" class="cm2-header">
+    <input
+      type="text"
+      id="cm2-filter"
+      class="cm2-filter"
+      placeholder="Filter blocks…"
+      autocomplete="off"
+    />
+    <button
+      type="button"
+      id="cm2-reindex"
+      class="cm2-reindex"
+      data-guievt="click"
+      data-handler="this.reindex"
+      title="Rescan and reindex all collections"
+    ></button>
+  </div>
+  <div class="playground">
+    <div id="cm2-status" class="cm2-status">
+      <div class="lds-grid">
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+      </div>
+      <div class="cm-loader--status">Indexing database</div>
+      <div class="cm-loader--path"></div>
     </div>
-    <div class="cm-loader--status">Indexing Database</div>
+    <div id="cm2-tree" class="cm2-tree"></div>
   </div>
 </div>

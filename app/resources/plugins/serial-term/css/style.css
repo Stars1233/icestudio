@@ -1,38 +1,414 @@
-/* Style for the Serial Terminal */
+/* ==========================================================================
+   Serial Terminal — modern UI
+   Aligned with the iceHub design language (colours, radii, typography) but
+   kept self-contained: serial-term is an external-window plugin.
+   ========================================================================== */
+
+:root {
+  --st-bg: #323232;
+  --st-panel: #3a3a3a;
+  --st-elevated: #2c2c2c;
+  --st-text: #dddddd;
+  --st-muted: #8a8a8a;
+  --st-border: #555555;
+  --st-border-soft: #4a4a4a;
+  --st-input-bg: #2c2c2c;
+  --st-input-text: #eeeeee;
+  --st-btn-bg: #383838;
+  --st-btn-hover: #4a4a4a;
+  --st-primary: #2f6db0;
+  --st-primary-hover: #3a7fc6;
+  --st-danger: #b0432f;
+  --st-danger-hover: #c6543f;
+  --st-accent: #79b8ff;
+  --st-success: #57e07e;
+  --st-radius: 7px;
+  --st-radius-sm: 5px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+}
 
 body {
-  padding: 30px;
-  background: #222;
-}
-select {
-  color: black;
-}
-
-div id='terminal' {
-  height: 50px;
-  width: 50px;
-  background-color: powderblue;
+  background: var(--st-bg);
+  color: var(--st-text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
+    Arial, sans-serif;
+  font-size: 13px;
+  -webkit-font-smoothing: antialiased;
 }
 
-textarea {
-  display: inline-block;
-  margin: 0;
-  padding: 0.2em;
-  width: auto;
-  min-width: 30em;
-  /* The max-width "100%" value fixes a weird issue where width is too wide by default and extends beyond 100% of the parent in some agents. */
-  max-width: 100%;
-  /* Height "auto" will allow the text area to expand vertically in size with a horizontal scrollbar if pre-existing content is added to the box before rendering. Remove this if you want a pre-set height. Use "em" to match the font size set in the website. */
-  height: auto;
-  /* Use "em" to define the height based on the text size set in your website and the text rows in the box, not a static pixel value. */
-  min-height: 10em;
-  /* Do not use "border" in textareas unless you want to remove the 3D box most browsers assign and flatten the box design. */
-  /*border: 1px solid black;*/
-  cursor: text;
-  /* Some textareas have a light gray background by default anyway. */
-  background-color: #2f3131;
-  /* Overflow "auto" allows the box to start with no scrollbars but add them as content fills the box. */
+.hidden {
+  display: none !important;
+}
+
+.st-app {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Header (always visible)                                                    */
+/* -------------------------------------------------------------------------- */
+.st-header {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--st-panel);
+  border-bottom: 1px solid var(--st-border);
+}
+.st-header--status {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--st-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.st-header--status.is-connected {
+  color: var(--st-success);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Panels                                                                     */
+/* -------------------------------------------------------------------------- */
+.st-panel {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 18px;
   overflow: auto;
-  /* Resize creates a tab in the lower right corner of textarea for most modern browsers and allows users to resize the box manually. Note: Resize isn't supported by most older agents and IE. */
-  resize: both;
+}
+.st-panel--term {
+  padding: 0;
+  gap: 0;
+}
+
+.st-section-title {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--st-muted);
+}
+
+/* Settings grid */
+.st-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 14px;
+  max-width: 640px;
+}
+.st-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.st-field label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--st-muted);
+}
+
+/* Inputs & selects */
+.st-input,
+.st-select {
+  width: 100%;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--st-border);
+  border-radius: var(--st-radius-sm);
+  background: var(--st-input-bg);
+  color: var(--st-input-text);
+  font-size: 13px;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.st-input::placeholder {
+  color: var(--st-muted);
+}
+.st-input:focus,
+.st-select:focus {
+  border-color: var(--st-accent);
+  box-shadow: 0 0 0 2px rgba(121, 184, 255, 0.18);
+}
+.st-select {
+  padding-right: 28px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 20 20' fill='%238a8a8a'><path d='M5 7l5 6 5-6z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+}
+.st-select--sm {
+  width: auto;
+  height: 28px;
+  font-size: 12px;
+}
+
+/* Buttons */
+.st-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--st-border);
+  border-radius: var(--st-radius-sm);
+  background: var(--st-btn-bg);
+  color: var(--st-text);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+.st-btn:hover {
+  background: var(--st-btn-hover);
+}
+.st-btn:active {
+  transform: translateY(1px);
+}
+.st-btn--primary {
+  background: var(--st-primary);
+  border-color: var(--st-primary);
+  color: #fff;
+}
+.st-btn--primary:hover {
+  background: var(--st-primary-hover);
+  border-color: var(--st-primary-hover);
+}
+.st-btn--danger {
+  background: var(--st-danger);
+  border-color: var(--st-danger);
+  color: #fff;
+}
+.st-btn--danger:hover {
+  background: var(--st-danger-hover);
+  border-color: var(--st-danger-hover);
+}
+.st-btn--ghost {
+  background: transparent;
+}
+.st-btn--ghost:hover {
+  background: var(--st-btn-hover);
+}
+.st-btn--sm {
+  height: 28px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+.st-actions {
+  display: flex;
+  gap: 10px;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Terminal panel                                                             */
+/* -------------------------------------------------------------------------- */
+.st-term-wrap {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+}
+.st-terminal {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  padding: 8px 10px;
+  background: #1e1e1e;
+}
+.st-term-copy {
+  position: absolute;
+  top: 8px;
+  right: 16px;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid var(--st-border);
+  border-radius: var(--st-radius-sm);
+  background: rgba(56, 56, 56, 0.82);
+  color: var(--st-text);
+  font-size: 11px;
+  cursor: pointer;
+  opacity: 0.5;
+  transition:
+    opacity 0.15s,
+    background 0.15s;
+}
+.st-term-copy:hover {
+  opacity: 1;
+  background: var(--st-btn-hover);
+}
+.st-toolbar {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  padding: 10px 14px;
+  background: var(--st-panel);
+  border-top: 1px solid var(--st-border);
+}
+.st-toolbar--btns {
+  display: flex;
+  gap: 8px;
+}
+.st-toolbar--opts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  font-size: 12px;
+  color: var(--st-muted);
+}
+.st-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  user-select: none;
+}
+.st-check input {
+  accent-color: var(--st-primary);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Manual: side panel sliding in from the right (overlays the content)        */
+/* -------------------------------------------------------------------------- */
+.st-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+.st-backdrop.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+.st-side {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 100;
+  height: 100%;
+  width: min(380px, 86vw);
+  display: flex;
+  flex-direction: column;
+  background: var(--st-panel);
+  border-left: 1px solid var(--st-border);
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.35);
+  transform: translateX(100%);
+  transition: transform 0.25s ease;
+}
+.st-side.is-open {
+  transform: translateX(0);
+}
+.st-side--head {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  border-bottom: 1px solid var(--st-border);
+}
+.st-side--close {
+  padding: 2px 7px;
+  border: none;
+  border-radius: var(--st-radius-sm);
+  background: transparent;
+  color: var(--st-muted);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+.st-side--close:hover {
+  background: var(--st-btn-hover);
+  color: var(--st-text);
+}
+.st-side--body {
+  flex: 1 1 auto;
+  overflow: auto;
+  padding: 14px 16px;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.st-side--body h3 {
+  margin: 18px 0 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--st-accent);
+}
+.st-side--body h3:first-child {
+  margin-top: 0;
+}
+.st-side--body ul {
+  margin: 6px 0;
+  padding-left: 18px;
+}
+.st-side--body li {
+  margin: 4px 0;
+}
+.st-side--body p {
+  margin: 6px 0;
+}
+.st-side--body kbd {
+  display: inline-block;
+  padding: 1px 6px;
+  border: 1px solid var(--st-border);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background: var(--st-elevated);
+  font-family: monospace;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.st-legend {
+  list-style: none;
+  padding-left: 0;
+}
+.st-legend li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.st-dot {
+  flex: 0 0 auto;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }

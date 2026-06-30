@@ -1,0 +1,8 @@
+{
+  "label": "Sipeed Tang Nano 20k",
+  "SysClkMhz": 0,
+  "datasheet": "https://wiki.sipeed.com/hardware/en/tang/tang-nano-20k/nano-20k.html",
+  "interface": "FTDI",
+  "arch": "gowin",
+  "FPGAResources": {}
+}

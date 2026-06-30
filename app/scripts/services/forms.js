@@ -1,5 +1,3 @@
-/* global jspreadsheet */
-
 //---------------------------------------------------------------------------
 //-- Forms managment
 //---------------------------------------------------------------------------
@@ -50,12 +48,15 @@ angular
         }
 
         //---------------------------------------------
-        //-- Read the Field value (returns the label text)
-        //---------------------------------------------
+        //-- Read the Field value
+        //-- A label is presentational and has no user value. Returning its
+        //-- text would pollute the form's (dense) values array and be misread
+        //-- as a port: e.g. the code block "Tools" tab label became a phantom
+        //-- "importverilogcodefromfile" input when inout ports are disabled and
+        //-- the label landed at the inout-left index. Mirror ButtonField.read()
+        //-- and return an empty string.
         read() {
-          //-- Read the text content from the DOM
-          let value = $(`#label${this.formId}`).text();
-          return value;
+          return '';
         }
       }
 
@@ -728,77 +729,6 @@ angular
         }
       }
 
-      //---------------------------------------------------------
-      //-- GRIDFIELD. It represents a grid in a Form
-      //---------------------------------------------------------
-      class GridField {
-        constructor(formId, className, cols, data) {
-          this.cols = cols;
-          this.data = data;
-          this.tableId = `table${formId}`;
-          this.table = null;
-          this.className = className;
-          this.onEnter = null;
-
-          //-- Html template for building the grid
-          this.htmlTemplate = `
-            <div id="%TABLE_ID%" class="%CLASS_NAME%"></div>
-          `;
-        }
-
-        //---------------------------------------------------------
-        //-- Return a string with the HTML code for this grid
-        //---------------------------------------------------------
-        html() {
-          return this.htmlTemplate
-            .replace('%TABLE_ID%', `${this.tableId}`)
-            .replace('%CLASS_NAME%', `${this.className}`);
-        }
-
-        //---------------------------------------------
-        init() {
-          this.table = jspreadsheet(document.getElementById(this.tableId), {
-            data: this.data,
-            columns: this.cols,
-            rowDrag: true,
-            allowInsertRow: true,
-            allowDeleteRow: true,
-            allowInsertColumn: false,
-            allowManualInsertRow: false,
-            tableOverflow: true,
-            tableHeight: '200px',
-            contextMenu: false,
-            onchange: () => {
-              if (typeof this.onEnter === 'function') {
-                this.onEnter(this);
-              }
-            },
-          });
-        }
-
-        //---------------------------------------------
-        //-- Read the Field value
-        //-- Return the data in the grid
-        //---------------------------------------------
-        read() {
-          return this.table.getData();
-        }
-
-        allowEnter() {
-          const editor = document.querySelector(
-            `#${this.tableId} .editor input`
-          );
-          if (editor) {
-            editor.blur();
-            if (typeof this.onEnter === 'function') {
-              this.onEnter(this);
-            }
-            return false;
-          }
-          return true;
-        }
-      }
-
       class Form {
         //-- Build a blank form
         constructor() {
@@ -941,7 +871,7 @@ angular
                 //-- Read the value from the field
                 let value = field.read();
 
-                //-- Add the value to the array, if it is not null
+                //-- Add the value to the array
                 values.push(value);
               });
             });
@@ -1888,9 +1818,6 @@ angular
           //-- Create a blank Form (calling the upper Class)
           super();
 
-          this._updatingFromText = false;
-          this._updatingFromGrid = false;
-
           //--- Add the different Fields:
 
           //-- Field 0: Input port names
@@ -2020,83 +1947,6 @@ angular
 
           this.addField(field6, toolsLabel);
 
-          //-------- Field 7: Combobox for selecting the display mode
-          //-- Options
-          let options = [
-            {
-              value: 1,
-              label: gettextCatalog.getString('Grid'),
-            },
-            {
-              value: 2,
-              label: gettextCatalog.getString('Manual'),
-            },
-          ];
-
-          const columns = [
-            { type: 'text', title: 'Name', width: 140 },
-            {
-              type: 'dropdown',
-              title: 'Type',
-              width: 80,
-              source: ['IN', 'OUT', 'BIDI'],
-            },
-            { type: 'numeric', title: 'Bus width', width: 80 },
-            { type: 'checkbox', title: 'Signed', width: 55 },
-            { type: 'checkbox', title: 'Registered', width: 80 },
-            { type: 'checkbox', title: 'Enable', width: 60 },
-          ];
-          const data = [['', 'IN', 1, false, false, true]];
-
-          let field7 = new GridField(7, 'ports-table', columns, data);
-          field7.onEnter = () => this.onEnterIOPortsTable(field7.table);
-          this.addField(field7, modulePortsLabel);
-
-          field0.onChange((value) => {
-            if (this._updatingFromGrid) {
-              return;
-            }
-            this._updatingFromText = true;
-            this.updateIOPortsTable(field7.table, value, 'IN');
-            this._updatingFromText = false;
-          });
-          field1.onChange((value) => {
-            if (this._updatingFromGrid) {
-              return;
-            }
-            this._updatingFromText = true;
-            this.updateIOPortsTable(field7.table, value, 'OUT');
-            this._updatingFromText = false;
-          });
-          if (allowInoutPorts) {
-            field3.onChange((value) => {
-              if (this._updatingFromGrid) {
-                return;
-              }
-              this._updatingFromText = true;
-              this.updateIOPortsTable(field7.table, value, 'BIDI');
-              this._updatingFromText = false;
-            });
-            field4.onChange((value) => {
-              if (this._updatingFromGrid) {
-                return;
-              }
-              this._updatingFromText = true;
-              this.updateIOPortsTable(field7.table, value, 'BIDI');
-              this._updatingFromText = false;
-            });
-          }
-
-          let field8 = new ComboboxField(
-            options,
-            gettextCatalog.getString('Display mode:'), //-- Top message
-            1, //-- Default value
-            8, //-- Field id
-            'fit-content' //-- Width
-          );
-
-          this.addField(field8, modulePortsLabel);
-
           //-- Control the notifications generated by
           //-- the errors when processing the form
           this.resultAlert = null;
@@ -2111,19 +1961,6 @@ angular
             this.iniPortsInOutLeft = portsInOutLeft;
             this.iniPortsInOutRight = portsInOutRight;
           }
-
-          this.inInput = Array.isArray(this.fields)
-            ? this.fields[0]
-            : this.fields[modulePortsLabel][0];
-          this.outInput = Array.isArray(this.fields)
-            ? this.fields[1]
-            : this.fields[modulePortsLabel][1];
-          this.bidiInput1 = Array.isArray(this.fields)
-            ? this.fields[3]
-            : this.fields[modulePortsLabel][3];
-          this.bidiInput2 = Array.isArray(this.fields)
-            ? this.fields[4]
-            : this.fields[modulePortsLabel][4];
         }
 
         //-----------------------------------------------------------------------
@@ -2188,31 +2025,21 @@ angular
           //-- Parse the input parameters
           this.inParams = Form.parseNames(this.values[2].replace(/\s+/g, ''));
 
-          //-- This part is temporaly disabled
-          //-- When not using inputoutput ports (which is the normal case)
-          //-- This code does not work.
-          //-- This.values[3] and this.values[4] are arrays, so it has no
-          //-- sense to use this.values[3].replace(...)... It generates
-          //-- and excepcion and the block cannot be created
-          //-- This should be FIXED. But for the moment, it is disabled
-
           //-- Values[3]: InputOutput port names at the left of the block
           //-- If field is present in Values, then parse the inout port names
-          // if (this.values[3]) {
-          //   this.inoutLeftPorts = Form.parseNames(
-          //     //-- BUG!! this.values[3] is an array! (¿?)
-          //     this.values[3].replace(/\s+/g, '')
-          //   );
-          // }
+          if (this.values[3]) {
+            this.inoutLeftPorts = Form.parseNames(
+              this.values[3].replace(/\s+/g, '')
+            );
+          }
 
           //-- Values[4]: InputOutput port names at the right of the block
           //-- If field is present in Values, then parse the inout port names
-          //-- Idem
-          // if (this.values[4]) {
-          //   this.inoutRightPorts = Form.parseNames(
-          //     this.values[4].replace(/\s+/g, '')
-          //   );
-          // }
+          if (this.values[4]) {
+            this.inoutRightPorts = Form.parseNames(
+              this.values[4].replace(/\s+/g, '')
+            );
+          }
         }
 
         //------------------------------------------------
@@ -2334,182 +2161,6 @@ angular
 
           //-- Return a boolean value
           return changed;
-        }
-
-        onEnterIOPortsTable(table) {
-          if (this._updatingFromText) {
-            return;
-          }
-
-          const grouped = {
-            IN: [],
-            OUT: [],
-            BIDI: [],
-          };
-
-          table.getData().forEach((row) => {
-            const enabled = row[5] !== false;
-            if (!enabled) {
-              return;
-            }
-            let name = row[0]?.trim();
-            const type = row[1]?.toUpperCase();
-            const busWidth = parseInt(row[2], 10);
-            const signed = row[3] === true;
-
-            if (!name || !type) {
-              return;
-            }
-
-            if (!isNaN(busWidth) && busWidth > 1) {
-              name += `[${busWidth - 1}:0]`;
-            }
-
-            if (signed) {
-              name = `@${name}`;
-            }
-
-            if (grouped[type]) {
-              grouped[type].push(name);
-            }
-          });
-
-          this._updatingFromGrid = true;
-          this.inInput.write(grouped.IN.join(', '));
-          this.outInput.write(grouped.OUT.join(', '));
-          if (this.hasOwnProperty('inoutLeftPorts')) {
-            this.bidiInput1.write(grouped.BIDI.join(', '));
-          }
-          if (this.hasOwnProperty('inoutRightPorts')) {
-            this.bidiInput2.write(grouped.BIDI.join(', '));
-          }
-          this._updatingFromGrid = false;
-
-          const coords = table.selectedCell || [];
-          const row = coords[1] || 0;
-          const data = table.getData();
-          const rowData = table.getRowData(row);
-          const name = rowData[0];
-          const totalRows = data.length;
-
-          const isEmpty = !name;
-          const defaultRow = ['', 'IN', 1, false, false, true];
-
-          if (isEmpty) {
-            const otherEmptyRowExists = data.some((r, i) => !r[0] && i !== row);
-
-            if (otherEmptyRowExists || totalRows > 1) {
-              table.deleteRow(row);
-
-              const stillHasEmptyRow = table.getData().some((r) => !r[0]);
-              if (!stillHasEmptyRow) {
-                table.insertRow([...defaultRow]);
-              }
-            }
-          } else {
-            const hasEmptyRow = data.some((r) => !r[0]);
-            if (!hasEmptyRow) {
-              table.insertRow([...defaultRow]);
-            }
-          }
-        }
-
-        updateIOPortsTable(instance, textList, type) {
-          const parsedNames = textList
-            .split(',')
-            .map((n) => {
-              let trimmed = n.trim();
-              let signed = false;
-
-              if (trimmed.startsWith('@')) {
-                signed = true;
-                trimmed = trimmed.slice(1);
-              }
-
-              const match = trimmed.match(/^(\w+)\[(\d+):(\d+)\]$/);
-              if (match) {
-                const name = match[1];
-                const msb = parseInt(match[2], 10);
-                const lsb = parseInt(match[3], 10);
-                const busWidth = Math.abs(msb - lsb) + 1;
-                return { name, busWidth, signed };
-              }
-              return { name: trimmed, busWidth: 1, signed };
-            })
-            .filter(({ name }) => name !== '');
-
-          const defaultRow = ['', 'IN', 1, false, false, true];
-          const data = instance.getData();
-
-          const nameToRowIndex = new Map();
-          const usedIndexes = new Set();
-
-          data.forEach((row, index) => {
-            const name = row[0];
-            if (name) {
-              nameToRowIndex.set(name, index);
-            }
-          });
-
-          const newNames = parsedNames.map((p) => p.name);
-          parsedNames.forEach(({ name, busWidth, signed }) => {
-            if (nameToRowIndex.has(name)) {
-              const i = nameToRowIndex.get(name);
-              const row = instance.getData()[i];
-              if (row[1] !== type) {
-                instance.setValueFromCoords(1, i, type);
-              }
-              if (row[2] !== busWidth) {
-                instance.setValueFromCoords(2, i, busWidth);
-              }
-              instance.setValueFromCoords(3, i, signed);
-              usedIndexes.add(i);
-            } else {
-              let reused = false;
-              for (let i = 0; i < data.length; i++) {
-                const [existingName, existingType] = data[i];
-                if (
-                  existingType === type &&
-                  !newNames.includes(existingName) &&
-                  !usedIndexes.has(i) &&
-                  existingName
-                ) {
-                  instance.setValueFromCoords(0, i, name);
-                  instance.setValueFromCoords(2, i, busWidth);
-                  instance.setValueFromCoords(3, i, signed);
-                  usedIndexes.add(i);
-                  reused = true;
-                  break;
-                }
-              }
-              if (!reused) {
-                instance.insertRow([name, type, busWidth, signed, false, true]);
-              }
-            }
-          });
-
-          for (let i = instance.getData().length - 1; i >= 0; i--) {
-            const [name, rowType] = instance.getData()[i];
-            if (rowType === type && name && !newNames.includes(name)) {
-              instance.deleteRow(i);
-            }
-          }
-
-          const updated = instance.getData();
-          let hasEmptyRow = false;
-
-          for (let i = updated.length - 1; i >= 0; i--) {
-            const length = instance.getData().length;
-            if (!updated[i][0] && length > 1) {
-              instance.deleteRow(i);
-            } else if (!updated[i][0]) {
-              hasEmptyRow = true;
-            }
-          }
-
-          if (!hasEmptyRow) {
-            instance.insertRow([...defaultRow]);
-          }
         }
       }
 
@@ -3067,6 +2718,67 @@ angular
         }
       }
 
+      //-------------------------------------------------------------------------
+      //--- DIRECTORY FIELD. A read-only text box plus a "Browse" button that
+      //--- opens the native system directory chooser. The box is read-only so
+      //--- the value is always an existing directory picked by the user (or a
+      //--- default proposed programmatically).
+      //-------------------------------------------------------------------------
+      class DirectoryField {
+        constructor(msg, value, formId, placeholder) {
+          this.msg = msg;
+          this.value = value || '';
+          this.formId = formId;
+          this.placeholder = placeholder || '';
+        }
+
+        html() {
+          return `
+            <p>${this.msg}</p>
+            <div class="ajs-dir-field">
+              <input class="ajs-input ajs-dir-input"
+                     type="text"
+                     id="form${this.formId}"
+                     value="${this.value}"
+                     placeholder="${this.placeholder}"
+                     autocomplete="off"
+                     readonly />
+              <button type="button"
+                      class="ajs-button ajs-dir-browse"
+                      id="form${this.formId}-browse">${gettextCatalog.getString(
+                        'Browse…'
+                      )}</button>
+            </div>
+          `;
+        }
+
+        read() {
+          return $(`#form${this.formId}`).val();
+        }
+
+        write(value) {
+          $(`#form${this.formId}`).val(value);
+        }
+
+        init() {
+          const id = this.formId;
+          //-- Reuse the global nwjs directory chooser used elsewhere in the app
+          $(`#form${id}-browse`)
+            .off('click')
+            .on('click', function () {
+              const chooser = $('#input-choose-save-dir');
+              chooser.off('change').on('change', function () {
+                const dir = $(this).val();
+                if (dir) {
+                  $(`#form${id}`).val(dir);
+                }
+                $(this).val('');
+              });
+              chooser.trigger('click');
+            });
+        }
+      }
+
       class FormExternalCollections extends Form {
         constructor(collectionPath) {
           //-- Create a blank Form (calling the upper Class)
@@ -3074,11 +2786,18 @@ angular
 
           //----- Add the different Fields:
 
-          //-- Field 0: External collection path
-          let field0 = new TextField(
-            gettextCatalog.getString('Enter the external collection path'), //-- Top message
-            collectionPath, //-- Python path
-            0 //-- Field id
+          //-- Field 0: External collection path (directory chooser)
+          let field0 = new DirectoryField(
+            gettextCatalog.getString(
+              'Select a directory for your external collections. ' +
+                'Icestudio will install collections in this folder and index ' +
+                'any collection you place or create inside it, making its ' +
+                'blocks and examples available in your designs. ' +
+                'This folder is required and must exist.'
+            ), //-- Top message
+            collectionPath, //-- Current/proposed directory
+            0, //-- Field id
+            gettextCatalog.getString('No directory selected') //-- Placeholder
           );
 
           //-- Add the fields to the form
@@ -3114,6 +2833,7 @@ angular
       //-- Public classes
       this.Form = Form;
       this.TextField = TextField;
+      this.DirectoryField = DirectoryField;
       this.CheckboxField = CheckboxField;
       this.FormBasicInput = FormBasicInput;
       this.FormBasicOutput = FormBasicOutput;

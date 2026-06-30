@@ -1,0 +1,30 @@
+{
+  "manifest_ver": "1.0",
+  "id": "iceHub",
+  "name": "iceHub",
+  "author": {
+    "name": "Carlos Venegas",
+    "twitter": "@cavearr"
+  },
+  "version": "0.1",
+  "launchAtStartup": false,
+  "icon": "icon.svg",
+  "multipleInstances": false,
+  "gui": {
+    "type": "embedded",
+    "windowed": "true",
+    "title": true,
+    "resizable": true,
+    "width": "1000px",
+    "height": "660px",
+    "layout": ["iceHub.html"],
+    "style": ["css/style.css"],
+    "styleThemed": {
+      "dark": ["css/dark/dark.css"],
+      "light": ["css/light/light.css"]
+    },
+    "styleHost": ["css/host.css"],
+    "scripts": ["js/install.js", "js/iceHub.js"],
+    "views": []
+  }
+}

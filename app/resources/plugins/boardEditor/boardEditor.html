@@ -1,0 +1,294 @@
+<div id="be-root">
+  <!-- Toolbar -->
+  <div id="be-toolbar">
+    <button class="be-btn" id="be-new" title="Create a new board">New</button>
+    <button class="be-btn" id="be-clone" title="Clone the selected board">
+      Clone
+    </button>
+    <button class="be-btn be-primary" id="be-save" title="Save board">
+      Save
+    </button>
+    <button
+      class="be-btn be-danger"
+      id="be-delete"
+      title="Delete board (project boards only)"
+    >
+      Delete
+    </button>
+    <span class="be-sep"></span>
+    <button
+      class="be-btn"
+      id="be-import-pcf"
+      title="Import a PCF/LPF constraint file into the pinout"
+    >
+      Import PCF/LPF
+    </button>
+    <button
+      class="be-btn"
+      id="be-import-apio"
+      title="Import board metadata from apio"
+    >
+      Import from apio
+    </button>
+    <span class="be-spacer"></span>
+    <label
+      class="be-check"
+      title="Allow editing distribution boards (developer)"
+    >
+      <input type="checkbox" id="be-devmode" /> Developer mode
+    </label>
+    <button class="be-btn" id="be-reload" title="Reload board list">
+      &#x21bb;
+    </button>
+  </div>
+
+  <div id="be-body">
+    <!-- Board list -->
+    <div id="be-list-panel">
+      <input type="text" id="be-filter" placeholder="Filter boards..." />
+      <div id="be-list"></div>
+    </div>
+
+    <!-- Editor -->
+    <div id="be-editor">
+      <div id="be-status" class="be-status"></div>
+
+      <div id="be-tabs">
+        <button class="be-tab be-tab-active" data-tab="info">Info</button>
+        <button class="be-tab" data-tab="pinout">Pinout</button>
+        <button class="be-tab" data-tab="rules">Rules</button>
+        <button class="be-tab" data-tab="commands" id="be-tab-commands">
+          Commands
+        </button>
+      </div>
+
+      <!-- INFO TAB -->
+      <div class="be-panel be-panel-active" data-panel="info">
+        <div class="be-field">
+          <label>Board id (folder name)</label>
+          <input type="text" id="f-name" placeholder="my-board" />
+        </div>
+        <div class="be-field">
+          <label>Label</label>
+          <input type="text" id="f-label" placeholder="My Board" />
+        </div>
+        <div class="be-row">
+          <div class="be-field">
+            <label>Build mode (default per action)</label>
+            <select id="f-mode">
+              <option value="apio">
+                apio — actions without a command run via apio
+              </option>
+              <option value="custom">custom — no apio fallback</option>
+            </select>
+          </div>
+          <div class="be-field">
+            <label>Apio board id</label>
+            <input type="text" id="f-apio" placeholder="alhambra-ii" />
+          </div>
+        </div>
+        <div class="be-row">
+          <div class="be-field">
+            <label>Arch</label>
+            <input type="text" id="f-arch" placeholder="ice40 / ecp5 / gowin" />
+          </div>
+          <div class="be-field">
+            <label>FPGA (id/part)</label>
+            <input type="text" id="f-fpga" placeholder="ice40hx4k-tq144-8k" />
+          </div>
+          <div class="be-field">
+            <label>Interface</label>
+            <input type="text" id="f-interface" placeholder="FTDI" />
+          </div>
+          <div class="be-field">
+            <label>Sys Clk (MHz)</label>
+            <input type="number" id="f-clk" placeholder="12" />
+          </div>
+        </div>
+        <div class="be-row">
+          <div class="be-field">
+            <label>USB VID</label>
+            <input type="text" id="f-usbvid" placeholder="0403" />
+          </div>
+          <div class="be-field">
+            <label>USB PID</label>
+            <input type="text" id="f-usbpid" placeholder="6010" />
+          </div>
+        </div>
+        <div class="be-field">
+          <label>Datasheet URL</label>
+          <input type="text" id="f-datasheet" placeholder="http://..." />
+        </div>
+        <div class="be-field">
+          <label>Menu group (project boards)</label>
+          <input type="text" id="f-group" placeholder="PROJECT" />
+        </div>
+        <fieldset class="be-fieldset">
+          <legend>FPGA Resources</legend>
+          <div class="be-row">
+            <div class="be-field">
+              <label>ffs</label><input type="number" id="f-ffs" />
+            </div>
+            <div class="be-field">
+              <label>luts</label><input type="number" id="f-luts" />
+            </div>
+            <div class="be-field">
+              <label>pios</label><input type="number" id="f-pios" />
+            </div>
+            <div class="be-field">
+              <label>plbs</label><input type="number" id="f-plbs" />
+            </div>
+            <div class="be-field">
+              <label>brams</label><input type="number" id="f-brams" />
+            </div>
+          </div>
+        </fieldset>
+      </div>
+
+      <!-- PINOUT TAB -->
+      <div class="be-panel" data-panel="pinout">
+        <div class="be-tabbar">
+          <button class="be-btn be-small" id="be-pin-add">+ Add pin</button>
+          <span class="be-hint"
+            >name = signal label shown in the UI, value = FPGA pin, type =
+            input/output/inout</span
+          >
+        </div>
+        <table class="be-table" id="be-pinout">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Value (pin)</th>
+              <th>Type</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <!-- RULES TAB -->
+      <div class="be-panel" data-panel="rules">
+        <h4>
+          Input rules
+          <button class="be-btn be-small" id="be-rin-add">+ Add</button>
+        </h4>
+        <table class="be-table" id="be-rules-in">
+          <thead>
+            <tr>
+              <th>port</th>
+              <th>pin</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <h4>
+          Output rules
+          <button class="be-btn be-small" id="be-rout-add">+ Add</button>
+        </h4>
+        <table class="be-table" id="be-rules-out">
+          <thead>
+            <tr>
+              <th>pin</th>
+              <th>bit</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <!-- COMMANDS TAB -->
+      <div class="be-panel" data-panel="commands">
+        <p class="be-hint">
+          One shell command per line.
+          <b>Leave an action empty to use apio</b> (mode "apio"). Mix freely
+          (e.g. apio build + custom upload = combo). Per-OS columns override per
+          operating system; if the three are equal it is stored as a single
+          all-OS command. Use <code>{APIO} raw -- &lt;tool&gt; ...</code>
+          to run a toolchain tool through apio.
+        </p>
+        <p class="be-hint">
+          Placeholders:
+          <code
+            >{BUILD_DIR} {TOP} {VERILOG} {CONSTRAINT_FILE} {BITSTREAM} {ARCH}
+            {FPGA} {BOARD} {APIO} {APIO_HOME} {PROJECT_DIR} {SERIAL_PORT}
+            {USB_VID} {USB_PID}</code
+          >
+        </p>
+        <div class="be-cmd">
+          <div class="be-cmd-group">
+            <div class="be-cmd-title">
+              build <span>— empty = apio build</span>
+            </div>
+            <label class="be-cmd-os">Linux</label>
+            <textarea id="cmd-build-linux" rows="2"></textarea>
+            <label class="be-cmd-os">macOS</label>
+            <textarea id="cmd-build-darwin" rows="2"></textarea>
+            <label class="be-cmd-os">Windows</label>
+            <textarea id="cmd-build-windows" rows="2"></textarea>
+          </div>
+          <div class="be-cmd-group">
+            <div class="be-cmd-title">
+              upload <span>— empty = apio upload</span>
+            </div>
+            <label class="be-cmd-os">Linux</label>
+            <textarea id="cmd-upload-linux" rows="2"></textarea>
+            <label class="be-cmd-os">macOS</label>
+            <textarea id="cmd-upload-darwin" rows="2"></textarea>
+            <label class="be-cmd-os">Windows</label>
+            <textarea id="cmd-upload-windows" rows="2"></textarea>
+          </div>
+          <div class="be-cmd-group">
+            <div class="be-cmd-title">
+              verify <span>— empty = apio lint</span>
+            </div>
+            <label class="be-cmd-os">Linux</label>
+            <textarea id="cmd-verify-linux" rows="2"></textarea>
+            <label class="be-cmd-os">macOS</label>
+            <textarea id="cmd-verify-darwin" rows="2"></textarea>
+            <label class="be-cmd-os">Windows</label>
+            <textarea id="cmd-verify-windows" rows="2"></textarea>
+          </div>
+          <div class="be-cmd-group">
+            <div class="be-cmd-title">
+              clean <span>— empty = apio clean</span>
+            </div>
+            <label class="be-cmd-os">Linux</label>
+            <textarea id="cmd-clean-linux" rows="2"></textarea>
+            <label class="be-cmd-os">macOS</label>
+            <textarea id="cmd-clean-darwin" rows="2"></textarea>
+            <label class="be-cmd-os">Windows</label>
+            <textarea id="cmd-clean-windows" rows="2"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- hidden file input for PCF import -->
+  <input
+    type="file"
+    id="be-file"
+    accept=".pcf,.lpf,.cst"
+    style="display: none"
+  />
+
+  <!-- Apio import modal -->
+  <div id="be-modal" class="be-modal-overlay" style="display: none">
+    <div class="be-modal">
+      <div class="be-modal-header">Import board from apio</div>
+      <input type="text" id="be-modal-filter" placeholder="Filter boards..." />
+      <div id="be-modal-list" class="be-modal-list"></div>
+      <div class="be-modal-footer">
+        <span id="be-modal-count" class="be-hint"></span>
+        <span class="be-spacer"></span>
+        <button class="be-btn" id="be-modal-cancel">Cancel</button>
+        <button class="be-btn be-primary" id="be-modal-import" disabled>
+          Import
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

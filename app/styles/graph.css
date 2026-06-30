@@ -73,11 +73,9 @@
   display: none;
 }
 
-.clock-path{
-
-  fill:none; 
+.clock-path {
+  fill: none;
   stroke: #555;
   stroke-width: 1.2;
-  stroke-linejoin round;
+  stroke-linejoin: round;
 }
-

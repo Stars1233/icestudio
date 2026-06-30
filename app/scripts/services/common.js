@@ -19,11 +19,22 @@ angular.module('icestudio').service(
     nodeFs,
     _package
   ) {
-    console.log('---> scripts/services/common.js (RUN)');
-
     // Project version. It defines the current structure for the
     // icestudio projects (Both in memory and on the .ice files)
     this.VERSION = '1.2';
+
+    //-- Format a resource-usage percentage (used/total*100) for the footer
+    //-- FPGA resources display. Returns '-' when the values are not valid
+    //-- numbers (e.g. an unparsed field on the first synthesis), avoiding the
+    //-- "NaN%" a raw division would otherwise produce.
+    this.pct = function (used, total) {
+      var u = parseFloat(used);
+      var t = parseFloat(total);
+      if (!isFinite(u) || !isFinite(t) || t <= 0) {
+        return '-';
+      }
+      return ((u / t) * 100).toFixed(1);
+    };
 
     // Project status: Has it change from the previous build or not?
     this.hasChangesSinceBuild = false;
@@ -33,6 +44,11 @@ angular.module('icestudio').service(
 
     // All project dependencies
     this.allDependencies = {};
+
+    //-- Set of content-addressed dependency ids of every block in the
+    //-- installed collections. Built lazily by the `collections` service
+    //-- (isCollectionBlock) and invalidated (null) on a collection rescan.
+    this.collectionBlockIds = null;
 
     // Selected board
     this.boards = []; //-- Array with the board objects. Initialized with the boards.loadBoards() function
@@ -60,12 +76,6 @@ angular.module('icestudio').service(
 
     // Command output
     this.commandOutput = '';
-
-    // Apio develop URL
-    // The apio develop is installed using this command:
-    // pip install -U git+https://github.com/FPGAwars/apio.git@develop#egg=apio
-    this.APIO_PIP_VCS =
-      'git+https://github.com/FPGAwars/apio.git@develop#egg=apio';
 
     // Operating system: true/false
     this.LINUX = Boolean(process.platform.indexOf('linux') > -1);
@@ -106,13 +116,9 @@ angular.module('icestudio').service(
     //--   |---> icestudio.log : Log file (debugging)
     //--   |---> .icestudio : Icestudio folder
     //--   |---> .icestudio/collections: Installed collections
-    //--   |---> .icestudio/apio : Apio in installed in this folder
+    //--   |---> .icestudio/apio : Apio packages installed in this folder
+    //--   |---> .icestudio/apio-bundle: Apio bundle (executable + libs)
     //--   |---> .icestudio/profile.json
-    //--   |---> .icestudio/venv: Python virtual environment
-    //--   |---> .icestudio/venv/bin : Executables (Linux, mac)
-    //--   |---> .icestudio/venv/Scripts: Executables (Windows)
-    //--   |---> .icestudio/venv/bin/pip3
-    //--   |---> .icestudio/venv/bin/apio
     //--
     this.ICESTUDIO_HOME =
       this.WIN32 && process.arch === 'ia32' ? 'icestudio_home' : '.icestudio';
@@ -128,26 +134,61 @@ angular.module('icestudio').service(
       this.ICESTUDIO_DIR,
       'collections'
     );
-    this.APIO_HOME_DIR = nodePath.join(this.ICESTUDIO_DIR, 'apio');
+
+    //-- OS "Documents" folder, used to propose a default location for the
+    //-- user (external) collections. It adapts to each operating system.
+    this.DOCUMENTS_DIR = (function (base, isLinux) {
+      //-- On Linux honor the XDG user-dirs setting when it is exported
+      if (isLinux && process.env.XDG_DOCUMENTS_DIR) {
+        return process.env.XDG_DOCUMENTS_DIR;
+      }
+      let docs = nodePath.join(base, 'Documents');
+      try {
+        if (nodeFs.existsSync(docs)) {
+          return docs;
+        }
+      } catch (e) {
+        // Ignore and fall back below
+      }
+      //-- Windows/macOS always have a "Documents" folder; on a minimal Linux
+      //-- it may be missing, in which case fall back to the home folder.
+      return isLinux ? base : docs;
+    })(this.BASE_DIR, this.LINUX);
+
+    //-- Default folder proposed (and created) for the external collections.
+    //-- The user installs and creates indexable collections inside it.
+    this.DEFAULT_EXTERNAL_COLLECTIONS_DIR = nodePath.join(
+      this.DOCUMENTS_DIR,
+      'Icestudio',
+      'collections'
+    );
+
+    this.APIO_HOME = nodePath.join(this.ICESTUDIO_DIR, 'apio');
     this.PROFILE_PATH = nodePath.join(this.ICESTUDIO_DIR, 'profile.json');
 
-    //-- Python virtual environment
-    this.ENV_DIR = nodePath.join(this.ICESTUDIO_DIR, 'venv');
+    // Apio bundle directory
+    this.APIO_BUNDLE_DIR = nodePath.join(this.ICESTUDIO_DIR, 'apio-bundle');
 
-    //-- Folder for the executables in the python virtual environment
-    this.ENV_BIN_DIR = nodePath.join(
-      this.ENV_DIR,
-      this.WIN32 ? 'Scripts' : 'bin'
-    );
-
-    //-- pip3 executable in the virtual environment
-    this.ENV_PIP = nodePath.join(this.ENV_BIN_DIR, 'pip3');
-
-    //-- apio executable in the virtual environment
-    this.ENV_APIO = nodePath.join(
-      this.ENV_BIN_DIR,
+    // Apio executable inside the bundle
+    this.APIO_EXE = nodePath.join(
+      this.APIO_BUNDLE_DIR,
       this.WIN32 ? 'apio.exe' : 'apio'
     );
+
+    // Bundle file extension per platform
+    this.APIO_BUNDLE_EXT = this.WIN32 ? 'zip' : 'tgz';
+
+    // Platform identifier for bundle download URL
+    this.getApioPlatformBundle = function () {
+      if (this.DARWIN) {
+        return process.arch === 'arm64' ? 'darwin-arm64' : 'darwin-x86-64';
+      } else if (this.LINUX) {
+        return 'linux-x86-64';
+      } else if (this.WIN32) {
+        return 'windows-amd64';
+      }
+      return null;
+    };
 
     this.CACHE_DIR = nodePath.join(this.ICESTUDIO_DIR, '.cache');
     this.IMAGE_CACHE_DIR = nodePath.join(this.CACHE_DIR, 'images');
@@ -155,82 +196,31 @@ angular.module('icestudio').service(
 
     //-- Get the Icestudio Version
     this.ICESTUDIO_VERSION = _package.version;
-    this.ICESTUDIO_VERSION_TS = _package.versionTs;
-    this.ICESTUDIO_VERSION_INI = _package.versionIni;
-    console.log(
-      `---> scripts/services/common.js: Version: ${this.ICESTUDIO_VERSION_TS}`
-    );
 
-    //-- Apio version values
-    this.APIO_VERSION_STABLE = 0; //-- Use the stable version
-    this.APIO_VERSION_LATEST_STABLE = 1; //-- Use the latest stable (available in the pypi repo)
-    this.APIO_VERSION_DEV = 2; //-- Use the development apio version (from the github repo)
-    this.APIO_VERSION = this.APIO_VERSION_STABLE; //-- Default apio version: STABLE
-
-    //-- Apio PACKAGES VERSION to install for the Stable Version
-    this.APIO_PKG_OSS_CAD_SUITE_VERSION = '0.0.9';
-
-    //-- Get the System PATH
-    this.PATH = process.env.PATH;
-
-    //-- Set the apio command. It consist of two parts. The first is for defining two
-    //-- environment variables: APIO_HOME_DIR and PATH
-    //--    * APIO_HOME_DIR: It is used by apio to know where is located its installation.
-    //--    * PATH: The PATH env variable (The virtuan env path is added in the begining)
+    //-- Set the apio command. It sets the APIO_HOME environment variable
+    //-- (used by apio to locate its package installation) and invokes the
+    //-- bundled apio executable directly.
     //--
-    //-- The second part is the apio executable itself
+    //-- EXAMPLE FOR Linux/macOS:
+    //-- APIO_CMD = APIO_HOME="/home/obijuan/.icestudio/apio"
+    //--            "/home/obijuan/.icestudio/apio-bundle/apio"
     //--
-    //-- EXAMPLE FOR Linux/MAC: (split in several lines)
-    //-- APIO_CMD = APIO_HOME_DIR="/home/obijuan/.icestudio/apio"
-    //              PATH="/home/obijuan/.icestudio/venv/bin:$PATH"
-    //              "/home/obijuan/.icestudio/venv/bin/apio"
-    //-- NOTICE THE paths are quoted! This is needed because there can be path with spaces in their folder names
-
-    //-- EXAMPLE FOR Windows: (split in several lines)
-    //-- APIO_CMD = set APIO_HOME_DIR="c:\Users\Obijuan\.icestudio\apio"&
-    //              set PATH=c:\Users\Obijuan\.icestudio\venv\bin\apio;%PATH%&
-    //              "C:\Users\Obijuan\.icestudio\venv\Scripts\apio.exe"
+    //-- EXAMPLE FOR Windows:
+    //-- APIO_CMD = set APIO_HOME="C:\Users\Obijuan\.icestudio\apio"&
+    //--            "C:\Users\Obijuan\.icestudio\apio-bundle\apio.exe"
+    //--
+    //-- NOTICE: paths are quoted to handle folder names that contain spaces.
+    //-- IMPORTANT (Windows): There must be NO SPACE between the value and '&'.
+    //-- A trailing space would be included in the variable value.
 
     if (this.WIN32) {
       //-- Apio execution command for Windows machines
-
-      //-- APIO_HOME_DIR env variable
       this.APIO_CMD =
-        'set APIO_HOME_DIR="' +
-        this.APIO_HOME_DIR +
-        '"& ' +
-        'set PATH=' +
-        this.ENV_BIN_DIR +
-        ';' +
-        this.PATH +
-        '& ' +
-        '"' +
-        this.ENV_APIO +
-        '"';
-
-      //-- IMPORTANT!!! THERE SHOULD BE NO SPACE between APIO_HOME_DIR and the '&' operator in Windows!!
-      //-- This a very difficult ERROR TO SPOT:
-      //-- set APIO_HOME_DIR=c:\Users\Obijuan\.icestudio\apio &
-      //-- It will set the APIO_HOME_DIR environment var to "c:\Users\Obijuan\.icestudio\apio "
-      //-- (Notice the space in the end)
+        'set APIO_HOME="' + this.APIO_HOME + '"& "' + this.APIO_EXE + '"';
     } else {
-      //-- Apio execution command for Linux/MAC machines
-
+      //-- Apio execution command for Linux/macOS machines
       this.APIO_CMD =
-        //-- APIO_HOME_DIR env variable
-        'APIO_HOME_DIR="' +
-        this.APIO_HOME_DIR +
-        '" ' +
-        //-- Add the virtual env PATH in the begining of the PATH env. variable
-        'PATH="' +
-        this.ENV_BIN_DIR +
-        ':' +
-        this.PATH +
-        '" ' +
-        //-- Apio executable
-        '"' +
-        this.ENV_APIO +
-        '"';
+        'APIO_HOME="' + this.APIO_HOME + '" "' + this.APIO_EXE + '"';
     }
 
     this.BUILD_DIR_OBJ = new nodeTmp.dirSync({
@@ -282,6 +272,12 @@ angular.module('icestudio').service(
     };
 
     this.isEditingSubmodule = false;
+
+    //-- True while the block currently being viewed is a shielded collection
+    //-- block (read-only). Drives the padlock visibility, independently of
+    //-- isEditingSubmodule. A local block or a fork sets this to false (no
+    //-- padlock).
+    this.currentBlockIsCollection = false;
 
     let storage = new IceHD();
     if (!storage.isValidPath(this.ICESTUDIO_DIR)) {

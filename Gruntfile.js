@@ -42,37 +42,38 @@
 //--------------------------------------------------------------------
 //-- How to upgrade to a new version of NW
 //--
-//-- NOTE: The building process is done by the nw-builder. But it is
-//-- only implemented for Linux64, Win64 and OXS64, but NOT for ARM
-//-- So it has to be done "manually"
-//
-//--  1. Set the new NW version in the package.json and package-lock.json
-//--     files:
-//--     Ex.
-//--     [...]
-//--       "nw": "0.58.0",
-//--     [...]
+//-- Since NWjs >= 0.83 ARM Linux is officially supported, so the
+//-- build for all the platforms (linux64, aarch64, win64, osx64,
+//-- osxarm64) goes through the standard nw-builder pipeline.
 //--
-//--  2. Remove the cache and dist folders and Execute the command
-//--     "npm install" for installing the updated version
+//--  1. Bump the NW version in the root package.json:
+//--       "nw": "0.111.3-sdk"
+//--     (keep the "-sdk" suffix for local dev; flavor is controlled
+//--      independently in the Gruntfile, see below)
 //--
-//--  3. It is enough for building for Linux, Win and Mac..
-//--      You can test it by generating the packages for these platforms
-//--      Ex. npm run buildLinux64
+//--  2. Remove the cache/ and dist/ folders and run `npm install` to
+//--     pull the new NW binary.
 //--
-//--  4. More steps are needed for ARM:
-//--     -Open this link and check the name of the NW ARM release
-//--       It will be something like: "nw60-arm64_2022-01-08"
-//--     -https://github.com/LeonardLaszlo/nw.js-armv7-binaries/releases
+//--  3. Build for each platform:
+//--       npm run buildLinux64
+//--       npm run buildAarch64
+//--       npm run buildWindows
+//--       npm run buildOSX
+//--       npm run buildOSXARM64
 //--
-//--  5. Copy that name and place it in the NWJS_ARM_RELEASE_NAME constant
+//-- ----------------------------------------------------------------
+//-- NW build FLAVOR (sdk vs normal)
+//-- ----------------------------------------------------------------
+//-- Two flavors are supported:
+//--   - "sdk"    Includes the DevTools, larger binary. Used for WIP.
+//--   - "normal" Smaller, used for stable releases.
 //--
-//--  6. Check that it works ok: "npm run buildAarch64"
-//--
-//--
-//-- NOTE: In case of error, check the constant: NWJS_ARM_NAME for the
-//--       the correct name
-//-------------------------------------------------------------------------
+//-- Resolution order (first match wins):
+//--   1. CLI option:        grunt dist --flavor=normal
+//--   2. Environment var:   NW_FLAVOR=normal npm run buildLinux64
+//--   3. WIP default:       WIP=true  -> "sdk"
+//--                         WIP=false -> "normal"
+//-- ----------------------------------------------------------------
 
 'use strict';
 
@@ -185,15 +186,6 @@ module.exports = function (grunt) {
   //-- Final command for stopping NWjs
   const NWJS_STOP = WIN32 ? NWJS_WIN_STOP : NWJS_UNIX_STOP;
 
-  //--------------------------------------------------------------------------
-  //-- Python executable. Used for generating the Windows installer
-  //--------------------------------------------------------------------------
-  const PYTHON_EXE = 'python-3.12.1-amd64.exe';
-  const PYTHON_URL = 'https://www.python.org/ftp/python/3.12.1/' + PYTHON_EXE;
-
-  //-- Destination folder where to download the python executable
-  const CACHE_PYTHON_EXE = CACHE + '/python/' + PYTHON_EXE;
-
   //-- Script for cleaning the dist/icestudio/osx64 folder in MAC
   //-- before creating the OSX package
   const SCRIPT_OSX = 'scripts/repairOSX.sh';
@@ -259,25 +251,15 @@ module.exports = function (grunt) {
   const ICESTUDIO_PKG_NAME = `${pkg.name}-${pkg.version}`;
 
   //-------------------------------------------------------------
-  //-- Constants for the WGET TASK
+  //-- Default collection
   //-------------------------------------------------------------
+  //-- The default collection is downloaded from the LATEST GitHub release of
+  //-- FPGAwars/collection-default by scripts/getCollection.js (the
+  //-- "getcollection" task). The version is no longer pinned in package.json.
 
-  //-- Default collection source .zip filename (Ej. v0.3.3.zip)
-  const DEFAULT_COLLECTION_ZIP_FILE = `v${pkg.collection}.zip`;
-
-  //-- The collection .zip file contains all the files in
-  //-- this folder name:
-  const DEFAULT_COLLECTION_SRC_DIR = `collection-default-${pkg.collection}`;
-
-  //-- Destination folder and filename for the default collection
-  //-- The collection version is removed from the .zip file
+  //-- Cached collection file location (kept for the clean:collectionFile task)
   const CACHE_DEFAULT_COLLECTION_FILE =
     CACHE + '/collection/collection-default.zip';
-
-  //-- URL for downloading the .zip file of the Default collection
-  const DEFAULT_COLLECTION_URL_FILE =
-    'https://github.com/FPGAwars/collection-default/archive/' +
-    DEFAULT_COLLECTION_ZIP_FILE;
 
   //-------------------------------------------------------------------------
   //-- NSIS TASK
@@ -286,7 +268,7 @@ module.exports = function (grunt) {
   //-- Command for making the Windows installer
   //-- Execute NSIS, for creating the Icestudio Windows installer (.exe)
   //-- The installation script is located in scripts/windows_installer.nsi
-  const MAKE_INSTALLER = `makensis -DARCH=win64 -DPYTHON=${PYTHON_EXE} \
+  const MAKE_INSTALLER = `makensis -DARCH=win64 \
     -DVERSION=${pkg.version} \
     -V3 scripts/windows_installer.nsi`;
 
@@ -298,64 +280,27 @@ module.exports = function (grunt) {
   //-- (**not** the Icestudio package, but the one in the top level)
   let topPkg = grunt.file.readJSON(PACKAGE_JSON);
 
-  //-- Get the NW version from the package (the one that is installed).
-  //-- The npm package can include the flavor suffix (e.g. "0.101.2-sdk"),
-  //-- but nw-builder expects the bare version and receives the flavor
-  //-- separately through NW_FLAVOR below.
+  //-- Get the NW version from the package (the one that is installed)
+  //-- Strip the "-sdk" suffix if present (flavor is set separately)
   const NW_VERSION = topPkg.devDependencies['nw'].replace(/-sdk$/, '');
 
-  //-- Select the NW build flavor
-  //-- Currently the "sdk" flavour is selected always
-  //-- for Either WIP or stable versions
-  //const NW_FLAVOR = "sdk";
-  const NW_FLAVOR = 'sdk';
+  //-- Select the NW build flavor: "sdk" or "normal".
+  //-- See the FLAVOR section at the top of this file for the contract.
+  const FLAVOR_CLI = grunt.option('flavor');
+  const FLAVOR_ENV = process.env.NW_FLAVOR;
+  const NW_FLAVOR = FLAVOR_CLI || FLAVOR_ENV || (WIP ? 'sdk' : 'normal');
+
+  if (NW_FLAVOR !== 'sdk' && NW_FLAVOR !== 'normal') {
+    grunt.fail.fatal(
+      `Invalid NW flavor "${NW_FLAVOR}". Use "sdk" or "normal".`
+    );
+  }
 
   //-- Path to the Windows ICO icon file for Icestudio
   const WIN_ICON = 'docs/resources/images/logo/icestudio-logo.ico';
 
   //-- Path to the MAC ICNS icon file for Icestudio
   const MAC_ICON = 'docs/resources/images/logo/icestudio-logo.icns';
-
-  //-- The NW for ARM is not included in the nw-build, so all the prrocess
-  //-- of generating the target binary should de done manually
-  //-- NWJS URL FOR downloading NW for ARM
-  const NWJS_ARM_BASE_URL =
-    'https://github.com/LeonardLaszlo/nw.js-armv7-binaries/releases/download/';
-
-  //-- You should copy & paste the release ID from Github:
-  //-- https://github.com/LeonardLaszlo/nw.js-armv7-binaries/releases
-  //-- Ej: nw60-arm64_2022-01-08
-  const NWJS_ARM_RELEASE_NAME = 'nw60-arm64_2022-01-08';
-
-  //-- Name of the NW tarball. The project is abandoned by author
-  //-- for the moment: Linux ARM 64 bits is stuck at 0.60 nwjs version
-  const NWJS_ARM_NAME = `nwjs-v0.60.1-linux-arm64`;
-
-  //-- Folder and filename for the NW ARM
-  const NWJS_ARM_FILENAME =
-    NWJS_ARM_RELEASE_NAME + '/' + NWJS_ARM_RELEASE_NAME + '.tar.gz';
-
-  //-- NW FOR ARM. Final binary to download
-  const NWJS_ARM_BINARY = NWJS_ARM_BASE_URL + NWJS_ARM_FILENAME;
-
-  //-- NW for ARM. Local destination file
-  const NWJS_ARM_PACKAGE = CACHE + '/nwjsAarch64/nwjs.tar.gz';
-
-  //-- NW-dist ARM destination folder when uncompressed
-  const DIST_TMP_ARM = DIST_TMP + '/nwjsAarch64';
-
-  //-- NW tarball name
-  const NW_NAME_TAR_GZ = NWJS_ARM_NAME + '.tar.gz';
-
-  //-- NW Path
-  const NW_PATH =
-    DIST_TMP_ARM + '/usr/docker/dist/nwjs-chromium-ffmpeg-branding';
-
-  //-- NW TARBALL with path
-  const NW_TARBALL = NW_PATH + '/' + NW_NAME_TAR_GZ;
-
-  //-- SRC path where the NW files (for ARM) are locted
-  const NW_SRC_PATH = DIST_TMP_ARM + '/' + NWJS_ARM_NAME;
 
   //----------------------------------------------------------------------
   //-- COPY TASK
@@ -490,7 +435,6 @@ module.exports = function (grunt) {
     win64: [
       'shell:winico',
       'compress:win64', //-- Create the Icestudio .zip package
-      'wget:python64', //-- Download the python package for Windows
       'exec:nsis64', //-- Build the Windows installer
     ],
 
@@ -511,11 +455,11 @@ module.exports = function (grunt) {
     ],
 
     //-- TARGET_AARCH64
+    //-- Since NWjs 0.83, Linux ARM64 is an official target, so the
+    //-- regular nwjs task (in DIST_COMMON_TASKS) handles the build
+    //-- and we just package it.
     aarch64: [
-      'wget:nwjsAarch64', //-- Download the ARM NW dist Tarball
-      'copy:aarch64', //-- Copy the Linux build dir to ARM build dir
-      'shell:mergeAarch64',
-      'compress:Aarch64',
+      'compress:Aarch64', //-- Create the Icestudio .zip package
     ],
 
     //-- NO TARGET
@@ -583,7 +527,7 @@ module.exports = function (grunt) {
   switch (platform) {
     case TARGET_AARCH64:
       NWJS_PLATFORM = 'linux';
-      NWJS_ARCH = 'x64';
+      NWJS_ARCH = 'arm64';
       DIST_BUILD = DIST_ICESTUDIO_AARCH64;
       break;
 
@@ -669,10 +613,9 @@ module.exports = function (grunt) {
   //-- This task is called in the npm postinstallation
   //-- (after npm install is executed)
   grunt.registerTask('getcollection', [
-    'clean:collection', //-- Remove previously installed collection
-    'wget:collection', //-- Download the collection
-    'unzip', //-- Unzip the collection (install it)
-    'clean:collectionFile', //-- Remove cached collection file
+    //-- Download + install the default collection from the latest GitHub
+    //-- release of FPGAwars/collection-default (scripts/getCollection.js)
+    'exec:getcollection',
   ]);
 
   //-- grunt server
@@ -706,14 +649,6 @@ module.exports = function (grunt) {
 
     console.log('* Variables:');
     let gruntVars = [
-      {
-        Name: 'DEFAULT_COLLECTION_ZIP_FILE',
-        Value: DEFAULT_COLLECTION_ZIP_FILE,
-      },
-      {
-        Name: 'DEFAULT_COLLECTION_URL_FILE',
-        Value: DEFAULT_COLLECTION_URL_FILE,
-      },
       { Name: 'cpu', Value: cpu },
       { Name: 'npmLifecycleEvent', Value: npmLifecycleEvent },
     ];
@@ -840,6 +775,11 @@ module.exports = function (grunt) {
             //-- Src files
             APP_HTML + '/*.html',
             APP_SCRIPTS + '/**/*.js',
+            //-- Plugins whose UI strings use gettextCatalog.getString()
+            APP_RESOURCES + '/plugins/setupWizard/js/*.js',
+            APP_RESOURCES + '/plugins/iceHub/js/*.js',
+            APP_RESOURCES + '/plugins/iceTutorial/js/*.js',
+            APP_RESOURCES + '/plugins/boardEditor/js/*.js',
           ],
         },
       },
@@ -877,76 +817,10 @@ module.exports = function (grunt) {
       },
     },
 
-    // TASK: wget: Download packages from internet
-    // NWjs for ARM, Python installer, Default collection
-    // More information: https://github.com/shootaroo/grunt-wget
-    'wget': {
-      //-- Download the Default collection from its github repo
-      collection: {
-        options: {
-          overwrite: false,
-        },
-
-        //-- URL where the src file is located
-        src: DEFAULT_COLLECTION_URL_FILE,
-
-        //-- Write to this new folder with a new name
-        dest: CACHE_DEFAULT_COLLECTION_FILE,
-      },
-
-      //-- Download the python executable. It is used for generating
-      //-- the Windows installer
-      //-- ONLY WINDOWS
-      python64: {
-        options: {
-          overwrite: false,
-        },
-
-        //-- URL where the file is localted
-        src: PYTHON_URL,
-
-        //-- Write the file to this folder
-        dest: CACHE_PYTHON_EXE,
-      },
-
-      //-- Download NWjs for ARM arquitecture, as it is not part of the
-      //-- official NWjs project
-      //-- It is downloaded during the ARM build process
-      //-- Only ARM
-      nwjsAarch64: {
-        options: {
-          //-- If the destination file already exists,it is not downloaded
-          overwrite: false,
-        },
-
-        //-- Download the NW ARM binary from the github repo
-        src: NWJS_ARM_BINARY,
-
-        //-- Local destination file. It is stored in the cache folder
-        dest: NWJS_ARM_PACKAGE,
-      },
-    },
-
-    //-- Install the Default collection
-    //-- The .zip file is unzipped in the destination folder
-    //-- https://www.npmjs.com/package/grunt-zip
-    'unzip': {
-      'using-router': {
-        router: function (filepath) {
-          //-- Change the folder name of the compress files to 'collection'
-          //-- (The original name contains a folder with the version. We want
-          //--  it to be removed)
-          return filepath.replace(DEFAULT_COLLECTION_SRC_DIR, 'collection');
-        },
-
-        //-- Original .zip file, previously downloaded
-        src: CACHE_DEFAULT_COLLECTION_FILE,
-
-        //-- Destination folder for its installation
-        //-- The collection is unzipped in folder APP_RESOURCES/collection
-        dest: APP_RESOURCES,
-      },
-    },
+    //-- NOTE: the default collection is no longer fetched via grunt-wget /
+    //-- grunt-zip. It is downloaded from the latest GitHub release and
+    //-- installed by scripts/getCollection.js (the "getcollection" task /
+    //-- exec:getcollection).
 
     //-- Execute shell commands
     //-- More info: https://github.com/sindresorhus/grunt-shell#readme
@@ -958,32 +832,6 @@ module.exports = function (grunt) {
 
           //-- Uncompress the NW-dist package
           `cp ${WIN_ICON} ${DIST_ICESTUDIO_WIN64}/resources/images`,
-        ].join(' && '),
-      },
-
-      //-- Uncompress the NW for arm, and merge the files
-      //-- with the Linux build
-      mergeAarch64: {
-        command: [
-          `sync`,
-          //-- Create a temp DIR
-          `mkdir -p ${DIST_TMP_ARM}`,
-
-          //-- Uncompress the NW-dist package
-          `tar xzf ${NWJS_ARM_PACKAGE} -C ${DIST_TMP_ARM}`,
-
-          //-- Uncompress the NW tarball (inside the NW-dist)
-          `tar xzf ${NW_TARBALL} -C ${DIST_TMP_ARM}`,
-
-          //-- Copy the ARM NW files to the Icestudio dist folder
-          `cp -R ${NW_SRC_PATH}/* ${DIST_ICESTUDIO_AARCH64}/`,
-
-          //-- Rename the binary file to icestudio
-          `mv ${DIST_ICESTUDIO_AARCH64}/nw ` +
-            `${DIST_ICESTUDIO_AARCH64}/icestudio`,
-
-          //-- Give execution permissions to icestudio file
-          `chmod +x ${DIST_ICESTUDIO_AARCH64}/icestudio`,
         ].join(' && '),
       },
 
@@ -1002,6 +850,7 @@ module.exports = function (grunt) {
     'exec': {
       nw: NWJS_EXEC_CMD, //-- Launch NWjs
       stopNW: NWJS_STOP, //-- Stop NWjs
+      getcollection: 'node scripts/getCollection.js', //-- Default collection
       nsis64: MAKE_INSTALLER, //-- Create Icestudio Windows installer
       repairOSX: SCRIPT_OSX, //-- Shell script for Mac
       repairOSXARM64: SCRIPT_OSXARM64, //-- Shell script for Mac
@@ -1050,31 +899,6 @@ module.exports = function (grunt) {
           },
         ],
       },
-
-      //-- Copy the Linux Dist folder (with the build for Linux64)
-      //-- to the a new one for ARM. It will be its base build
-      //-- Then, the binaries for NW ARM will be downloaded and
-      //-- copied there
-      aarch64: {
-        files: [
-          {
-            expand: true,
-            options: {
-              //-- Copy the files and directory permissions
-              mode: true,
-            },
-
-            //-- Current working directory (Linux)
-            cwd: DIST_ICESTUDIO_LINUX64,
-
-            //-- Set the destination folder (Arm64)
-            dest: DIST_ICESTUDIO_AARCH64,
-
-            //-- Copy all the files in the working directory
-            src: ALL,
-          },
-        ],
-      },
     },
 
     //-- TASK: json-minify
@@ -1094,13 +918,10 @@ module.exports = function (grunt) {
     //-- It will download the pre-built binaries and create a release folder
     //-- The downloaded binaries are stored in the 'icestudio/cache' folder
     //-- The release folder is DIST/icestudio/{platform}
-    //-- where platform could be "linux64", "win64", "osx64"...
+    //-- where platform could be "linux64", "aarch64", "win64", "osx64",
+    //-- "osxarm64".
     //-- More information: https://www.npmjs.com/package/grunt-nw-builder
     //--                   https://www.npmjs.com/package/nw-builder
-    //--------------------------------------------------------------------
-    //-- WARNING! It only builds the target for LINUX, MAC or WINDOWS
-    //--   NOT for AARCH64. Building for ARM is done "Manually"
-    //--   in other grunt TASKs
     //--------------------------------------------------------------------
     'nwjs': {
       options: {
@@ -1130,19 +951,14 @@ module.exports = function (grunt) {
         icon: MAC_ICON,
         winico: WIN_ICON,
         app: {
-          name: pkg.name,
+          name: 'icestudio',
           icon: MAC_ICON,
           CFBundleIconFile: 'app',
-          CFBundleIdentifier: 'io.icestudio.icestudio',
-          CFBundleName: pkg.name,
-          CFBundleDisplayName: pkg.name,
-          CFBundleSpokenName: pkg.name,
-          CFBundleVersion: pkg.version,
-          CFBundleShortVersionString: pkg.version,
           LSApplicationCategoryType: 'public.app-category.developer-tools',
-          NSHumanReadableCopyright: 'Copyright Icestudio contributors',
+          CFBundleIdentifier: 'com.fpgawars.icestudio',
+          NSHumanReadableCopyright: 'Copyright FPGAwars',
           NSLocalNetworkUsageDescription:
-            'Icestudio may use local network access for development workflows.',
+            'Icestudio needs local network access to communicate with FPGA boards.',
         },
 
         //-- Where the Icestudio NW app is located

@@ -1,0 +1,8 @@
+{
+  "label": "ECP5 Versa",
+  "SysClkMhz": 0,
+  "datasheet": "https://www.latticesemi.com/products/developmentboardsandkits/ecp5versadevelopmentkit",
+  "interface": "FTDI",
+  "arch": "ecp5",
+  "FPGAResources": {}
+}

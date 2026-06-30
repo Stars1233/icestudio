@@ -8,8 +8,6 @@
 angular
   .module('icestudio')
   .service('profile', function (utils, common, _package, nodeFs) {
-    console.log('---> scripts/services/profile.js (RUN)');
-
     //-- Information stored in the profile file
     this.data = {
       board: '', //-- Selected board
@@ -25,8 +23,16 @@ angular
       loggingEnabled: false,
       loggingFile: '',
       displayVersionInfoWindow: 'yes',
+      lastVersionReview: false, //-- Base version whose notes were last reviewed
       pythonEnv: { python: '', pip: '' },
       recentProjects: [],
+      apioChannel: 'stable', //-- Apio toolchain channel: 'stable' | 'ci'
+      setupWizardDone: false, //-- First-run setup wizard completed or dismissed
+      //-- Per-action tool preferences (Verify/Build/Upload), set from the
+      //-- Tools > Preferences panel. Shape: { verify: {...}, build: {...},
+      //-- upload: {...} }. Kept as a free object so new options can be added
+      //-- without touching the profile schema.
+      toolPreferences: {},
     };
 
     //-- Property added to the MACs
@@ -62,6 +68,9 @@ angular
             loggingFile: data.loggingFile || '',
             pythonEnv: data.pythonEnv || { python: '', pip: '' },
             recentProjects: data.recentProjects || [],
+            apioChannel: data.apioChannel || 'stable',
+            setupWizardDone: data.setupWizardDone === true,
+            toolPreferences: data.toolPreferences || {},
           };
 
           if (self.data.pythonEnv.python.length > 0) {
@@ -105,6 +114,8 @@ angular
           if (!iceStudio.isInitialized()) {
             iceStudio.init(env);
           }
+          //-- Keep this window's profile in sync with changes from others.
+          self.startWatching();
         })
         .catch(function (error) {
           console.warn(error);
@@ -115,11 +126,17 @@ angular
     };
 
     //-- Set the value of a profile property in the profile file
+    //-- Keys changed in THIS window since they were last persisted. save()
+    //-- writes only these, so a save here never clobbers keys another window
+    //-- may have changed in the shared profile file meanwhile.
+    var dirtyKeys = new Set();
+
     this.set = function (key, value) {
       //-- The given property name is valid...
       if (this.data.hasOwnProperty(key)) {
         //-- Store the value
         this.data[key] = value;
+        dirtyKeys.add(key);
 
         //-- Save into the profile file;
         this.save();
@@ -139,16 +156,104 @@ angular
       if (!nodeFs.existsSync(common.ICESTUDIO_DIR)) {
         nodeFs.mkdirSync(common.ICESTUDIO_DIR);
       }
-      let _selfcommon = common;
-      _selfcommon.profile = this.data;
-      //-- Save the data to the profile file
+      var self = this;
+      var keys = [];
+      dirtyKeys.forEach(function (k) {
+        keys.push(k);
+      });
+      //-- Atomically merge ONLY the changed keys into the on-disk profile, so a
+      //-- concurrent write from another window (to other keys) is preserved.
       utils
-        .saveFile(common.PROFILE_PATH, this.data)
+        .updateFileAtomic(common.PROFILE_PATH, function (current) {
+          var base = null;
+          if (current) {
+            try {
+              base = JSON.parse(current);
+            } catch (e) {
+              base = null;
+            }
+          }
+          if (!base || typeof base !== 'object') {
+            //-- First run / unreadable file: write the full profile.
+            base = self.data;
+          } else {
+            keys.forEach(function (k) {
+              base[k] = self.data[k];
+            });
+          }
+          return JSON.stringify(base, null, 2);
+        })
         .then(function () {
-          iceStudio.updateEnv(_selfcommon);
+          keys.forEach(function (k) {
+            dirtyKeys.delete(k);
+          });
+          common.profile = self.data;
+          iceStudio.updateEnv(common);
         })
         .catch(function (error) {
+          //-- Leave the keys dirty so a later save retries them.
           alertify.error(error, 30);
         });
+    };
+
+    //-- Watch the shared profile file: when another window writes it, merge the
+    //-- changed keys into THIS window's live data (skipping keys this window has
+    //-- pending) so every open window stays consistent. Best-effort.
+    var watching = false;
+    var watchTimer = null;
+
+    this.startWatching = function () {
+      if (watching) {
+        return;
+      }
+      var self = this;
+
+      function reloadAndMerge() {
+        var content;
+        try {
+          content = nodeFs.readFileSync(common.PROFILE_PATH, 'utf8');
+        } catch (e) {
+          return;
+        }
+        var parsed = null;
+        try {
+          parsed = JSON.parse(content);
+        } catch (e) {
+          parsed = null;
+        }
+        if (!parsed || typeof parsed !== 'object') {
+          return;
+        }
+        var changed = false;
+        Object.keys(parsed).forEach(function (k) {
+          //-- Skip keys not in our schema and keys with pending local changes.
+          if (!self.data.hasOwnProperty(k) || dirtyKeys.has(k)) {
+            return;
+          }
+          if (JSON.stringify(self.data[k]) !== JSON.stringify(parsed[k])) {
+            self.data[k] = parsed[k];
+            changed = true;
+          }
+        });
+        if (changed) {
+          common.profile = self.data;
+          if (typeof iceStudio !== 'undefined' && iceStudio.updateEnv) {
+            iceStudio.updateEnv(common);
+          }
+          utils.rootScopeSafeApply();
+        }
+      }
+
+      try {
+        nodeFs.watch(common.PROFILE_PATH, function () {
+          if (watchTimer) {
+            clearTimeout(watchTimer);
+          }
+          watchTimer = setTimeout(reloadAndMerge, 150);
+        });
+        watching = true;
+      } catch (e) {
+        //-- If the watcher can't be set up, skip live cross-window sync.
+      }
     };
   });
