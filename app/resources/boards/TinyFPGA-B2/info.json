@@ -9,5 +9,7 @@
     "pios": 23,
     "plbs": 960,
     "brams": 32
-  }
+  },
+  "arch": "ice40",
+  "group": "LP8K"
 }

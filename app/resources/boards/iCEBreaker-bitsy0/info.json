@@ -9,5 +9,7 @@
     "pios": 39,
     "plbs": 660,
     "brams": 30
-  }
+  },
+  "arch": "ice40",
+  "group": "UP5K"
 }

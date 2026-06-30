@@ -2593,3 +2593,23 @@ msgstr ""
 #: app/scripts/services/tools.js
 msgid "No"
 msgstr ""
+
+#: app/resources/plugins/boardEditor/js/boardEditor.js
+msgid "Regenerate menu"
+msgstr ""
+
+#: app/resources/plugins/boardEditor/js/boardEditor.js
+msgid "Regenerate menu.json from the boards folder (developer)"
+msgstr ""
+
+#: app/resources/plugins/boardEditor/js/boardEditor.js
+msgid "menu.json regenerated ({n} boards)"
+msgstr ""
+
+#: app/resources/plugins/boardEditor/js/boardEditor.js
+msgid "Could not regenerate menu.json: {error}"
+msgstr ""
+
+#: app/resources/plugins/boardEditor/js/boardEditor.js
+msgid "Board saved but not shown in the menu: set a supported Arch and FPGA family (Group)."
+msgstr ""

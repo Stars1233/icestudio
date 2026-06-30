@@ -10,5 +10,7 @@
     "pios": 107,
     "plbs": 960,
     "brams": 32
-  }
+  },
+  "arch": "ice40",
+  "group": "HX8K"
 }

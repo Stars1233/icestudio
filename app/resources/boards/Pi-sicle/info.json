@@ -3,5 +3,7 @@
   "SysClkMhz": 0,
   "datasheet": "https://embedded-tek.com/?product=development-fpga-board-pi-sicle",
   "interface": "GPIO",
-  "FPGAResources": {}
+  "FPGAResources": {},
+  "arch": "ice40",
+  "group": "HX8K"
 }

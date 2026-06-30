@@ -4,5 +4,6 @@
   "datasheet": "",
   "interface": "FTDI",
   "arch": "gowin",
-  "FPGAResources": {}
+  "FPGAResources": {},
+  "group": "GOWIN"
 }

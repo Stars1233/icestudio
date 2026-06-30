@@ -4,5 +4,6 @@
   "datasheet": "https://wiki.sipeed.com/hardware/en/tang/Tang-Nano-4K/examples/led.html",
   "interface": "FTDI",
   "arch": "gowin",
-  "FPGAResources": {}
+  "FPGAResources": {},
+  "group": "GOWIN"
 }

@@ -9,5 +9,7 @@
     "pios": 12,
     "plbs": 440,
     "brams": 20
-  }
+  },
+  "arch": "ice40",
+  "group": "U4K"
 }

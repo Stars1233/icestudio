@@ -4,5 +4,6 @@
   "datasheet": "https://www.latticesemi.com/products/developmentboardsandkits/ecp5versadevelopmentkit",
   "interface": "FTDI",
   "arch": "ecp5",
-  "FPGAResources": {}
+  "FPGAResources": {},
+  "group": "ECP5"
 }

@@ -3,5 +3,7 @@
   "SysClkMhz": 0,
   "datasheet": "https://www.olimex.com/Products/FPGA/iCE40/iCE40HX8K-EVB/open-source-hardware",
   "interface": "FTDI",
-  "FPGAResources": {}
+  "FPGAResources": {},
+  "arch": "ice40",
+  "group": "HX8K"
 }

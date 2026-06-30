@@ -9,5 +9,7 @@
     "pios": 14,
     "plbs": 160,
     "brams": 16
-  }
+  },
+  "arch": "ice40",
+  "group": "LP1K"
 }

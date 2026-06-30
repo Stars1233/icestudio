@@ -3,5 +3,7 @@
   "SysClkMhz": 0,
   "datasheet": "https://www.latticesemi.com/products/developmentboardsandkits/ice40ultralitebreakoutboard",
   "interface": "FTDI",
-  "FPGAResources": {}
+  "FPGAResources": {},
+  "arch": "ice40",
+  "group": "UL1K"
 }

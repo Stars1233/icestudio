@@ -2828,3 +2828,18 @@ msgstr "¿Quieres instalarla?"
 
 msgid "No"
 msgstr "No"
+
+msgid "Regenerate menu"
+msgstr "Regenerar menú"
+
+msgid "Regenerate menu.json from the boards folder (developer)"
+msgstr "Regenerar menu.json desde la carpeta de placas (desarrollador)"
+
+msgid "menu.json regenerated ({n} boards)"
+msgstr "menu.json regenerado ({n} placas)"
+
+msgid "Could not regenerate menu.json: {error}"
+msgstr "No se pudo regenerar menu.json: {error}"
+
+msgid "Board saved but not shown in the menu: set a supported Arch and FPGA family (Group)."
+msgstr "Placa guardada pero no visible en el menú: indica un Arch soportado y una familia FPGA (Group)."

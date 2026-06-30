@@ -3,5 +3,7 @@
   "SysClkMhz": 0,
   "datasheet": "",
   "interface": "FTDI",
-  "FPGAResources": {}
+  "FPGAResources": {},
+  "arch": "ice40",
+  "group": "UP5K"
 }

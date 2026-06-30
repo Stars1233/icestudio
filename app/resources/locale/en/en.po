@@ -2809,3 +2809,18 @@ msgstr "Do you want to install it?"
 
 msgid "No"
 msgstr "No"
+
+msgid "Regenerate menu"
+msgstr "Regenerate menu"
+
+msgid "Regenerate menu.json from the boards folder (developer)"
+msgstr "Regenerate menu.json from the boards folder (developer)"
+
+msgid "menu.json regenerated ({n} boards)"
+msgstr "menu.json regenerated ({n} boards)"
+
+msgid "Could not regenerate menu.json: {error}"
+msgstr "Could not regenerate menu.json: {error}"
+
+msgid "Board saved but not shown in the menu: set a supported Arch and FPGA family (Group)."
+msgstr "Board saved but not shown in the menu: set a supported Arch and FPGA family (Group)."

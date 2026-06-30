@@ -3,5 +3,7 @@
   "SysClkMhz": 0,
   "datasheet": "https://www.latticesemi.com/iCEblink40-HX1K",
   "interface": "USB",
-  "FPGAResources": {}
+  "FPGAResources": {},
+  "arch": "ice40",
+  "group": "HX1K"
 }

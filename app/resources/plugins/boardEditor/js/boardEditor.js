@@ -164,29 +164,125 @@ function inferFamily(info) {
   return 'MISC';
 }
 
-//-- Register a board name in menu.json under the given FPGA family group so
-//-- the host discovers it (scanDistributionBoards only reads boards listed
-//-- there). Creates the family group if missing and avoids duplicates.
-function registerBoardInMenu(name, family) {
-  var file = menuJsonPath();
-  var menu = JSON.parse(nodeFs.readFileSync(file, 'utf8'));
-  var group = null;
-  for (var i = 0; i < menu.length; i++) {
-    if (menu[i].type === family) {
-      group = menu[i];
-      break;
+//-- Canonical FPGA family order for the Select→Board menu (matches the historic
+//-- menu.json ordering). Unknown families are appended alphabetically.
+var MENU_FAMILY_ORDER = [
+  'HX1K',
+  'HX8K',
+  'HX4K',
+  'LP1K',
+  'LP8K',
+  'UL1K',
+  'U4K',
+  'UP5K',
+  'ECP5',
+  'GOWIN',
+];
+
+//-- Architectures supported by the open toolchain. Boards on other archs (e.g.
+//-- Xilinx "xc7") are left out of the menu.
+var MENU_SUPPORTED_ARCH = { ice40: true, ecp5: true, gowin: true };
+
+//-- Rebuild resources/boards/menu.json from scratch by scanning the boards
+//-- folder, so the file no longer has to be hand-maintained. A board is listed
+//-- when it: is not disabled (no leading "_"), has the three required files,
+//-- runs on a supported arch, and resolves to a known FPGA family
+//-- (info.group / info.type / inferred from arch+fpga). Grouped by family in the
+//-- canonical order; boards sorted alphabetically within each family.
+function regenerateMenu() {
+  var dir = boardsResourceDir();
+  var groups = {};
+  var names = nodeFs.readdirSync(dir);
+
+  for (var i = 0; i < names.length; i++) {
+    var name = names[i];
+    if (name.charAt(0) === '_') {
+      continue; //-- disabled board
+    }
+    var bp = nodePath.join(dir, name);
+    try {
+      if (!nodeFs.statSync(bp).isDirectory()) {
+        continue;
+      }
+      if (
+        !nodeFs.existsSync(nodePath.join(bp, 'info.json')) ||
+        !nodeFs.existsSync(nodePath.join(bp, 'pinout.json')) ||
+        !nodeFs.existsSync(nodePath.join(bp, 'rules.json'))
+      ) {
+        continue;
+      }
+      var info = JSON.parse(
+        nodeFs.readFileSync(nodePath.join(bp, 'info.json'), 'utf8')
+      );
+      var arch = String(info.arch || '').toLowerCase();
+      if (arch && !MENU_SUPPORTED_ARCH[arch]) {
+        continue; //-- unsupported toolchain (e.g. Xilinx)
+      }
+      var family = info.group || info.type || inferFamily(info);
+      if (!family || family === 'MISC') {
+        continue; //-- not enough metadata to place it in the menu
+      }
+      if (!groups[family]) {
+        groups[family] = [];
+      }
+      groups[family].push(name);
+    } catch (e) {
+      //-- Skip a malformed board instead of aborting the whole regeneration
     }
   }
-  if (!group) {
-    group = { type: family, boards: [] };
-    menu.push(group);
+
+  var families = Object.keys(groups).sort(function (a, b) {
+    var ia = MENU_FAMILY_ORDER.indexOf(a);
+    var ib = MENU_FAMILY_ORDER.indexOf(b);
+    if (ia === -1 && ib === -1) {
+      return a < b ? -1 : a > b ? 1 : 0;
+    }
+    if (ia === -1) {
+      return 1;
+    }
+    if (ib === -1) {
+      return -1;
+    }
+    return ia - ib;
+  });
+
+  var menu = families.map(function (family) {
+    var boards = groups[family].slice().sort(function (a, b) {
+      var la = a.toLowerCase();
+      var lb = b.toLowerCase();
+      return la < lb ? -1 : la > lb ? 1 : 0;
+    });
+    return { type: family, boards: boards };
+  });
+
+  writeJSON(menuJsonPath(), menu);
+  return menu;
+}
+
+//-- "Regenerate menu" toolbar action — developer only (the button is hidden
+//-- outside developer mode). Rebuilds menu.json from the boards folder and
+//-- refreshes the board list.
+function onRegenerateMenu() {
+  if (!devModeOn()) {
+    return;
   }
-  if (!Array.isArray(group.boards)) {
-    group.boards = [];
-  }
-  if (group.boards.indexOf(name) === -1) {
-    group.boards.push(name);
-    writeJSON(file, menu);
+  try {
+    var menu = regenerateMenu();
+    var n = menu.reduce(function (acc, g) {
+      return acc + g.boards.length;
+    }, 0);
+    reloadBoards();
+    alertify.success(
+      gettextCatalog
+        .getString('menu.json regenerated ({n} boards)')
+        .replace('{n}', n)
+    );
+  } catch (e) {
+    alertify.error(
+      gettextCatalog
+        .getString('Could not regenerate menu.json: {error}')
+        .replace('{error}', e.message)
+    );
   }
 }
 
@@ -275,6 +371,13 @@ function beTranslateUI() {
   beTitle(
     'label.be-check',
     gettextCatalog.getString('Allow editing distribution boards (developer)')
+  );
+  beTxt('#be-regenmenu', gettextCatalog.getString('Regenerate menu'));
+  beTitle(
+    '#be-regenmenu',
+    gettextCatalog.getString(
+      'Regenerate menu.json from the boards folder (developer)'
+    )
   );
   beTitle('#be-reload', gettextCatalog.getString('Reload board list'));
   bePh('#be-filter', gettextCatalog.getString('Filter boards...'));
@@ -476,6 +579,7 @@ function wireToolbar() {
   $id('be-save').addEventListener('click', saveBoard);
   $id('be-delete').addEventListener('click', deleteBoard);
   $id('be-reload').addEventListener('click', reloadBoards);
+  $id('be-regenmenu').addEventListener('click', onRegenerateMenu);
   $id('be-import-pcf').addEventListener('click', function () {
     $id('be-file').click();
   });
@@ -493,6 +597,8 @@ function wireToolbar() {
     renderList($id('be-filter').value);
     applyReadOnlyState();
     updateNewBoardStatus();
+    //-- The "Regenerate menu" action is developer-only.
+    $id('be-regenmenu').style.display = $id('be-devmode').checked ? '' : 'none';
   });
   $id('be-pin-add').addEventListener('click', function () {
     addPinRow({ name: '', value: '', type: 'inout' });
@@ -1025,11 +1131,23 @@ function saveBoard() {
     writeJSON(nodePath.join(dir, 'pinout.json'), data.pinout);
     writeJSON(nodePath.join(dir, 'rules.json'), data.rules);
 
-    //-- A brand-new distribution board must be listed in menu.json or the
-    //-- host will not discover it (and it would not show in the board list
-    //-- nor in the Select→Board menu).
-    if (beIsNew && toDistribution) {
-      registerBoardInMenu(data.name, inferFamily(data.info));
+    //-- Saving a distribution board (new or edited in developer mode): rebuild
+    //-- menu.json from the boards folder so the board appears and any family
+    //-- (group/arch) change is reflected. If the board does not resolve to a
+    //-- supported family it is left out of the menu — warn so the author sets
+    //-- Arch / FPGA family (Group).
+    if (toDistribution) {
+      var menu = regenerateMenu();
+      var listed = menu.some(function (g) {
+        return g.boards.indexOf(data.name) !== -1;
+      });
+      if (!listed) {
+        alertify.warning(
+          gettextCatalog.getString(
+            'Board saved but not shown in the menu: set a supported Arch and FPGA family (Group).'
+          )
+        );
+      }
     }
   } catch (e) {
     alertify.error(
