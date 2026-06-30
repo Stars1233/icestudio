@@ -259,31 +259,32 @@ function regenerateMenu() {
   return menu;
 }
 
-//-- "Regenerate menu" toolbar action — developer only (the button is hidden
-//-- outside developer mode). Rebuilds menu.json from the boards folder and
-//-- refreshes the board list.
-function onRegenerateMenu() {
-  if (!devModeOn()) {
+//-- The single toolbar refresh action (the ↻ button). In developer mode it
+//-- regenerates menu.json from the boards folder (the distribution list) and
+//-- then reloads; otherwise it just reloads the board list.
+function onReloadOrRegenerate() {
+  if (devModeOn()) {
+    try {
+      var menu = regenerateMenu();
+      var n = menu.reduce(function (acc, g) {
+        return acc + g.boards.length;
+      }, 0);
+      reloadBoards();
+      alertify.success(
+        gettextCatalog
+          .getString('menu.json regenerated ({n} boards)')
+          .replace('{n}', n)
+      );
+    } catch (e) {
+      alertify.error(
+        gettextCatalog
+          .getString('Could not regenerate menu.json: {error}')
+          .replace('{error}', e.message)
+      );
+    }
     return;
   }
-  try {
-    var menu = regenerateMenu();
-    var n = menu.reduce(function (acc, g) {
-      return acc + g.boards.length;
-    }, 0);
-    reloadBoards();
-    alertify.success(
-      gettextCatalog
-        .getString('menu.json regenerated ({n} boards)')
-        .replace('{n}', n)
-    );
-  } catch (e) {
-    alertify.error(
-      gettextCatalog
-        .getString('Could not regenerate menu.json: {error}')
-        .replace('{error}', e.message)
-    );
-  }
+  reloadBoards();
 }
 
 // ─── Status line ─────────────────────────────────────────────────────────────
@@ -372,14 +373,12 @@ function beTranslateUI() {
     'label.be-check',
     gettextCatalog.getString('Allow editing distribution boards (developer)')
   );
-  beTxt('#be-regenmenu', gettextCatalog.getString('Regenerate menu'));
   beTitle(
-    '#be-regenmenu',
+    '#be-reload',
     gettextCatalog.getString(
-      'Regenerate menu.json from the boards folder (developer)'
+      'Reload the board list (regenerates menu.json in developer mode)'
     )
   );
-  beTitle('#be-reload', gettextCatalog.getString('Reload board list'));
   bePh('#be-filter', gettextCatalog.getString('Filter boards...'));
 
   //-- Tabs
@@ -578,8 +577,7 @@ function wireToolbar() {
   $id('be-clone').addEventListener('click', cloneBoard);
   $id('be-save').addEventListener('click', saveBoard);
   $id('be-delete').addEventListener('click', deleteBoard);
-  $id('be-reload').addEventListener('click', reloadBoards);
-  $id('be-regenmenu').addEventListener('click', onRegenerateMenu);
+  $id('be-reload').addEventListener('click', onReloadOrRegenerate);
   $id('be-import-pcf').addEventListener('click', function () {
     $id('be-file').click();
   });
@@ -597,8 +595,6 @@ function wireToolbar() {
     renderList($id('be-filter').value);
     applyReadOnlyState();
     updateNewBoardStatus();
-    //-- The "Regenerate menu" action is developer-only.
-    $id('be-regenmenu').style.display = $id('be-devmode').checked ? '' : 'none';
   });
   $id('be-pin-add').addEventListener('click', function () {
     addPinRow({ name: '', value: '', type: 'inout' });

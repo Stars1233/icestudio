@@ -2824,3 +2824,6 @@ msgstr "Could not regenerate menu.json: {error}"
 
 msgid "Board saved but not shown in the menu: set a supported Arch and FPGA family (Group)."
 msgstr "Board saved but not shown in the menu: set a supported Arch and FPGA family (Group)."
+
+msgid "Reload the board list (regenerates menu.json in developer mode)"
+msgstr "Reload the board list (regenerates menu.json in developer mode)"

@@ -2,11 +2,11 @@
   {
     "type": "HX1K",
     "boards": [
-      "icezum",
       "go-board",
-      "icestick",
       "iCE40-HX1K-EVB",
-      "iCEblink40-HX1K"
+      "iCEblink40-HX1K",
+      "icestick",
+      "icezum"
     ]
   },
   {
@@ -18,14 +18,20 @@
       "blackice-ii",
       "blackice-mx",
       "edu-ciaa-fpga",
-      "icoboard",
-      "kefir",
       "iCE40-HX8K",
+      "iCE40-HX8K-EVB",
       "icefun",
       "iceWerx",
-      "ThetaMachines-ETH4K",
-      "iCE40-HX8K-EVB",
-      "Pi-sicle"
+      "icoboard",
+      "kefir",
+      "Pi-sicle",
+      "ThetaMachines-ETH4K"
+    ]
+  },
+  {
+    "type": "LP1K",
+    "boards": [
+      "iCESugar-nano"
     ]
   },
   {
@@ -33,12 +39,6 @@
     "boards": [
       "TinyFPGA-B2",
       "TinyFPGA-BX"
-    ]
-  },
-  {
-    "type": "LP1K",
-    "boards": [
-      "iCESugar-nano"
     ]
   },
   {
@@ -57,37 +57,31 @@
   {
     "type": "UP5K",
     "boards": [
-      "MCH2022_badge",
+      "ARiCE-v1",
+      "fomu",
+      "fpga101",
+      "iCE40-UP5K",
       "iCEBreaker",
-      "Soan-Papdi",
       "iCEBreaker-bitsy0",
       "iCEBreaker-bitsy1",
+      "iCESugar_1_5",
+      "MCH2022_badge",
+      "OK-iCE40Pro",
+      "pico-ice",
+      "Soan-Papdi",
       "upduino",
       "upduino2",
       "upduino21",
       "upduino3",
-      "upduino31",
-      "fpga101",
-      "iCE40-UP5K",
-      "fomu",
-      "iCESugar_1_5",
-      "OK-iCE40Pro",
-      "pico-ice",
-      "ARiCE-v1"
+      "upduino31"
     ]
   },
   {
     "type": "ECP5",
     "boards": [
-      "ulx3s-12f",
-      "ulx3s-25f",
-      "ulx3s-45f",
-      "ulx3s-85f",
       "Butterstick-r10-2g-85k",
       "Butterstick-r10-2g-85k_(FT2232H)",
       "Butterstick-r10-2g-85k_(FT232H)",
-      "orangecrab-r02-25f",
-      "orangecrab-r02-85f",
       "ColorLight-5A-75B-V61",
       "ColorLight-5A-75B-V7",
       "ColorLight-5A-75B-V8",
@@ -98,36 +92,42 @@
       "ColorLight-i5-v7.0_(FT2232H)",
       "ColorLight-i5-v7.0_(FT232H)",
       "ColorLight-i5-v7.0_(USB-Blaster)",
+      "ColorLight-i9-v7.2_(CMSIS-DAP)",
+      "ColorLight-i9-v7.2_(FT2232H)",
+      "ColorLight-i9-v7.2_(FT232H)",
+      "ColorLight-i9-v7.2_(USB-Blaster)",
+      "Cynthion-r1.4",
+      "ECP5-Evaluation-Board",
+      "ECP5-Mini-12_(FT2232H)",
+      "ECP5-Mini-25_(FT2232H)",
+      "ECP5-Versa",
+      "FleaFPGA-Ohm_(FT2232H)",
+      "FleaFPGA-Ohm_(FT232H)",
+      "FleaFPGA-Ohm_(USB-Blaster)",
       "icepi-zero",
       "iCESugar-Pro_(FT2232H)",
       "iCESugar-Pro_(FT232H)",
       "iCESugar-Pro_(USB-Blaster)",
-      "FleaFPGA-Ohm_(FT2232H)",
-      "FleaFPGA-Ohm_(FT232H)",
-      "FleaFPGA-Ohm_(USB-Blaster)",
-      "ECP5-Evaluation-Board",
-      "ECP5-Mini-12_(FT2232H)",
-      "ECP5-Mini-25_(FT2232H)",
-      "ColorLight-i9-v7.2_(FT2232H)",
-      "ColorLight-i9-v7.2_(FT232H)",
-      "ColorLight-i9-v7.2_(USB-Blaster)",
-      "ColorLight-i9-v7.2_(CMSIS-DAP)",
-      "Cynthion-r1.4",
       "mimas-ecp5-mini",
+      "orangecrab-r02-25f",
+      "orangecrab-r02-85f",
       "TinyFPGA-EX-rev1",
       "TinyFPGA-EX-rev2",
-      "ECP5-Versa"
+      "ulx3s-12f",
+      "ulx3s-25f",
+      "ulx3s-45f",
+      "ulx3s-85f"
     ]
   },
   {
     "type": "GOWIN",
     "boards": [
+      "BRS-100-GW1NR9",
       "Sipeed-Tang-Nano",
       "Sipeed-Tang-Nano-1K",
-      "Sipeed-Tang-Nano-4K",
-      "Sipeed-Tang-Nano-9K",
       "Sipeed-Tang-Nano-20K",
-      "BRS-100-GW1NR9"
+      "Sipeed-Tang-Nano-4K",
+      "Sipeed-Tang-Nano-9K"
     ]
   }
-  ]
+]
