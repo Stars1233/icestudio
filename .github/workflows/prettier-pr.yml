@@ -13,43 +13,24 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '23.3.0'
           cache: 'npm'
 
       - name: Install Dependencies
-        run: npm ci --legacy-peer-deps
+        run: npm ci --legacy-peer-deps --ignore-scripts
 
-      # If prettier or jshint fails, push or PR will be rejected
-      - name: Commit and Push Changes with linting and auto-format
-        if: success()
+      # Formatting and linting are enforced at COMMIT TIME by the local
+      # pre-commit hook (scripts/git/pre-commit: runs Prettier --write and then
+      # JSHint), installed automatically by `grunt setupDevEnv` on npm install.
+      # Here we only VALIDATE and never commit/push, so nothing is written to
+      # the protected 'develop' branch. (The previous version auto-committed and
+      # pushed, which failed with GH006 because the bot commit was not signed.)
+      - name: Check formatting (Prettier) and linting (JSHint)
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          # Intentar hacer commit
-          git add .
-          if git commit -m "🚀 Auto-format code and linting check"; then
-            echo "✅ Commit successful, pushing and continuing pipeline..."
-            git push
-          else
-            COMMIT_EXIT_CODE=$?
-            # Check if the pre-commit hook created the failure flag file
-            if [ -f "pre-commit.failed" ]; then
-               echo "❌ Pre-commit hook failed (JSHint, Prettier, etc.), aborting pipeline."
-               rm -f pre-commit.failed  # Clean up the flag file
-               exit 1
-            elif [ $COMMIT_EXIT_CODE -eq 1 ]; then
-               echo "⚠️ No changes detected, continuing pipeline..."
-               exit 0
-            else
-               echo "❌ Unexpected git commit error (code: $COMMIT_EXIT_CODE), aborting pipeline."
-               exit $COMMIT_EXIT_CODE
-            fi
-
-          fi
-
+          npx prettier --check .
+          npm run jshint

@@ -25,7 +25,7 @@ jobs:
 
       # Checkout the master repo branch
       - name: Checkout!
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: master
 
@@ -50,7 +50,7 @@ jobs:
 
       # Install Node
       - name: Setup Nodejs version
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '22.7.0'
 
@@ -126,12 +126,12 @@ jobs:
 
     steps:
       - name: Checkout the master repo branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: master
 
       - name: Setup Nodejs version
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '21.1.0'
 
@@ -191,12 +191,12 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checkout the develop branch
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: master
 
       - name: Setup Nodejs version
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '23.3.0'
 

@@ -15,10 +15,10 @@ jobs:
   build:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Setup Nodejs version
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '23.3.0'
 
@@ -50,7 +50,7 @@ jobs:
         env:
           ICESTUDIO_VERSION: '${{steps.icestudio_json.outputs.icestudio_version}}'
           TIMESTAMP: '${{steps.build_date.outputs.icestudio_timestamp}}'
-        uses: 'actions/upload-artifact@v4'
+        uses: 'actions/upload-artifact@v5'
         with:
           name: 'linux64_AppImage_${{env.ICESTUDIO_VERSION}}${{env.TIMESTAMP}}'
           path: 'dist/icestudio-${{env.ICESTUDIO_VERSION}}${{env.TIMESTAMP}}-linux64.AppImage'
@@ -60,7 +60,7 @@ jobs:
         env:
           ICESTUDIO_VERSION: '${{steps.icestudio_json.outputs.icestudio_version}}'
           TIMESTAMP: '${{steps.build_date.outputs.icestudio_timestamp}}'
-        uses: 'actions/upload-artifact@v4'
+        uses: 'actions/upload-artifact@v5'
         with:
           name: 'linux64_ZIP_${{env.ICESTUDIO_VERSION}}${{env.TIMESTAMP}}'
           path: 'dist/icestudio-${{env.ICESTUDIO_VERSION}}${{env.TIMESTAMP}}-linux64.zip'
