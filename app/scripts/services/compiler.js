@@ -43,6 +43,14 @@ angular
             content: content,
           });
           break;
+        case 'xdc':
+          content += header('#', opt);
+          content += xdcCompiler(project, opt);
+          files.push({
+            name: 'main.xdc',
+            content: content,
+          });
+          break;
 
         case 'list':
           files = listCompiler(project);
@@ -897,6 +905,107 @@ angular
               code += module(data);
             }
           }
+        }
+      }
+
+      return code;
+    }
+
+    //-- Generate an XDC constraint file (Xilinx 7-series, openXC7 / nextpnr-
+    //-- xilinx). Mirrors pcfCompiler but emits "set_property PACKAGE_PIN ..."
+    //-- lines; the IO standard defaults to LVCMOS33 (3.3V banks, e.g. Basys3).
+    //-- Ports without a physical pin (virtual) are skipped.
+    function xdcCompiler(project, opt) {
+      var i,
+        j,
+        p,
+        block,
+        pin,
+        value,
+        code = '';
+      var blockArray = project.design.graph.blocks;
+      opt = opt || {};
+
+      function xdcLine(port, pinValue) {
+        if (!pinValue) {
+          return '';
+        }
+        return (
+          'set_property -dict { PACKAGE_PIN ' +
+          pinValue +
+          ' IOSTANDARD LVCMOS33 } [get_ports { ' +
+          port +
+          ' }]\n'
+        );
+      }
+
+      for (i in blockArray) {
+        block = blockArray[i];
+        if (
+          block.type === blocks.BASIC_INPUT ||
+          block.type === blocks.BASIC_OUTPUT
+        ) {
+          if (block.data.pins.length > 1) {
+            for (p in block.data.pins) {
+              pin = block.data.pins[p];
+              value = block.data.virtual ? '' : pin.value;
+              code += xdcLine(
+                utils.digestId(block.id) + '[' + pin.index + ']',
+                value
+              );
+            }
+          } else if (block.data.pins.length > 0) {
+            pin = block.data.pins[0];
+            value = block.data.virtual ? '' : pin.value;
+            code += xdcLine(utils.digestId(block.id), value);
+          }
+        }
+      }
+
+      if (opt.boardRules) {
+        //-- Declare init input ports (board clock/reset rules)
+        var used = [];
+        var initPorts = opt.initPorts || getInitPorts(project);
+        var pname = '';
+        for (i in initPorts) {
+          var initPort = initPorts[i];
+          if (used.indexOf(initPort.pin) !== -1) {
+            break;
+          }
+          used.push(initPort.pin);
+
+          var found = false;
+          for (j in blockArray) {
+            block = blockArray[j];
+            if (
+              block.type === blocks.BASIC_INPUT &&
+              !block.data.range &&
+              !block.data.virtual &&
+              initPort.pin === block.data.pins[0].value
+            ) {
+              found = true;
+              used.push(initPort.pin);
+              break;
+            }
+          }
+
+          pname =
+            initPorts[i].name.charAt(0) === '@'
+              ? initPorts[i].name.substr(1)
+              : initPorts[i].name;
+          if (!found) {
+            code += xdcLine('v' + pname, initPorts[i].pin);
+          }
+        }
+
+        //-- Declare init output pins
+        var initPins = opt.initPins || getInitPins(project);
+        if (initPins.length > 1) {
+          for (i in initPins) {
+            code += xdcLine('vinit[' + i + ']', initPins[i].pin);
+          }
+        } else if (initPins.length > 0) {
+          code += xdcLine('vinit', initPins[0].pin);
         }
       }
 

@@ -340,14 +340,17 @@ angular
             console.log('ONLY VERIFY');
           } else {
             //-- Select the constraint format from the board architecture:
-            //--   ecp5  -> LPF, gowin -> CST, otherwise (ice40...) -> PCF
+            //--   ecp5 -> LPF, gowin -> CST, xc7 (openXC7) -> XDC,
+            //--   otherwise (ice40...) -> PCF
             var archName = common.selectedBoard.info.arch;
             var constraintType =
               archName === 'ecp5'
                 ? 'lpf'
                 : archName === 'gowin'
                   ? 'cst'
-                  : 'pcf';
+                  : archName === 'xc7'
+                    ? 'xdc'
+                    : 'pcf';
             var constraintFile = compiler.generate(
               constraintType,
               project.get(),
@@ -963,7 +966,9 @@ angular
             ? 'main.lpf'
             : arch === 'gowin'
               ? 'main.cst'
-              : 'main.pcf';
+              : arch === 'xc7'
+                ? 'main.xdc'
+                : 'main.pcf';
         var usb = (board.info && board.info.usb) || {};
         var projectDir =
           project.dirname ||

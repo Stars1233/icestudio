@@ -20,7 +20,7 @@
   "permissions": [
     "desktopCapture"
   ],
-  "chromium-args": "--enable-experimental-web-platform-features --enable-media-stream --enable-usermedia-screen-capturing --disable-backgrounding-occluded-window --allow-file-access-from-files --disable-web-security",
+  "chromium-args": "--remote-debugging-port=9222 --enable-experimental-web-platform-features --enable-media-stream --enable-usermedia-screen-capturing --disable-backgrounding-occluded-window --allow-file-access-from-files --disable-web-security",
   "development": {
     "mode": false
   },
