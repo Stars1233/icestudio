@@ -428,7 +428,7 @@ CI/CD Y EMPAQUETADO
   vacío); ahora se extrae con adm-zip normalizando "\" -> "/" y quitando el
   envoltorio.
 - Iconos de macOS: regenerado icestudio-logo.icns como iconset completo (16 ->
-  1024 + @2x) con fondo azul FPGAwars (#305EAC) sólido; el fichero .dmg recibe el
+  1024, 1x y 2x) con fondo azul FPGAwars (#305EAC) sólido; el fichero .dmg recibe el
   icono de Icestudio (resource fork + HasCustomIcon) tras firmar; corregida la
   ruta del repair-script del dmg de Intel.
 - Rework de CI:

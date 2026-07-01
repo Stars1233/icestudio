@@ -390,8 +390,8 @@ CI/CD & PACKAGING
 - Fixed the Apio bundle install on Windows: the .zip uses backslashes and a
   wrapper folder that extract-zip rejected (leaving an empty apio-bundle); now
   extracted with adm-zip normalizing "\" -> "/" and stripping the wrapper.
-- macOS icons: regenerated icestudio-logo.icns as a full iconset (16 -> 1024 +
-  @2x) with a solid FPGAwars blue (#305EAC) background; the .dmg file gets the
+- macOS icons: regenerated icestudio-logo.icns as a full iconset (16 -> 1024,
+  1x and 2x) with a solid FPGAwars blue (#305EAC) background; the .dmg file gets the
   Icestudio icon (resource fork + HasCustomIcon) after signing; fixed the Intel
   dmg repair-script path.
 - CI rework:

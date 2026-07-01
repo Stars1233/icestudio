@@ -15,7 +15,7 @@ on:
 
 jobs:
   build:
-    runs-on: macOS-latest
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v5
 
