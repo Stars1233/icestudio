@@ -137,7 +137,11 @@ jobs:
 
       - name: Install npm dependencies
         run: |
-          sed -i '' 's/darwinDependencies/dependencies/g' package.json
+          # Merge macOS-only deps (grunt-appdmg, fs-xattr) into "dependencies"
+          # so npm installs them. A plain rename would create a duplicate
+          # "dependencies" key (package.json already has an empty one) and npm
+          # keeps the last, empty one -> grunt-appdmg was never installed.
+          node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync('package.json'));p.dependencies=Object.assign({},p.dependencies,p.darwinDependencies);delete p.darwinDependencies;fs.writeFileSync('package.json',JSON.stringify(p,null,2))"
           npm install --legacy-peer-deps
 
       # Ad-hoc code signing (no Apple Developer certificate / secrets).
