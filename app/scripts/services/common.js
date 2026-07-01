@@ -206,17 +206,24 @@ angular.module('icestudio').service(
     //--            "/home/obijuan/.icestudio/apio-bundle/apio"
     //--
     //-- EXAMPLE FOR Windows:
-    //-- APIO_CMD = set APIO_HOME="C:\Users\Obijuan\.icestudio\apio"&
+    //-- APIO_CMD = set "APIO_HOME=C:\Users\Obijuan\.icestudio\apio"&
     //--            "C:\Users\Obijuan\.icestudio\apio-bundle\apio.exe"
     //--
-    //-- NOTICE: paths are quoted to handle folder names that contain spaces.
-    //-- IMPORTANT (Windows): There must be NO SPACE between the value and '&'.
-    //-- A trailing space would be included in the variable value.
+    //-- NOTICE (Windows): the quotes MUST wrap the whole assignment
+    //-- (set "VAR=value"), NOT just the value (set VAR="value"). CMD's `set`
+    //-- keeps everything after '=' verbatim, so `set VAR="value"` stores the
+    //-- quotes INSIDE the value: APIO_HOME would become `"C:\...\apio"` (with
+    //-- quotes) and apio then fails to locate its packages dir. The
+    //-- set "VAR=value" form both handles spaces in the path AND keeps the
+    //-- quotes out of the value (bash strips them on Linux/macOS, hence those
+    //-- platforms were unaffected).
+    //-- IMPORTANT: There must be NO SPACE between the value and '&' — a trailing
+    //-- space would be included in the variable value.
 
     if (this.WIN32) {
       //-- Apio execution command for Windows machines
       this.APIO_CMD =
-        'set APIO_HOME="' + this.APIO_HOME + '"& "' + this.APIO_EXE + '"';
+        'set "APIO_HOME=' + this.APIO_HOME + '"& "' + this.APIO_EXE + '"';
     } else {
       //-- Apio execution command for Linux/macOS machines
       this.APIO_CMD =
