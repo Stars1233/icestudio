@@ -159,6 +159,13 @@ angular
           var label = (board.info && board.info.label) || board.name || '';
           return (label + ' ' + board.name).toLowerCase().indexOf(text) !== -1;
         });
+        //-- Flat list (family is a filter, not an inline separator): show the
+        //-- boards sorted alphabetically by label.
+        list.sort(function (a, b) {
+          var la = (a.info && a.info.label) || a.name || '';
+          var lb = (b.info && b.info.label) || b.name || '';
+          return la.localeCompare(lb);
+        });
         listCache.src = common.boards;
         listCache.filter = bm.filter;
         listCache.family = bm.family;

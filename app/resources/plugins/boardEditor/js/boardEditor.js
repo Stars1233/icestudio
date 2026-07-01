@@ -663,7 +663,15 @@ function renderList(filter) {
   }
   list.innerHTML = '';
   var f = (filter || '').toLowerCase();
-  allBoards().forEach(function (board) {
+  //-- Show the boards sorted alphabetically by their label (id as fallback).
+  var boards = allBoards()
+    .slice()
+    .sort(function (a, b) {
+      var la = ((a.info && a.info.label) || a.name).toLowerCase();
+      var lb = ((b.info && b.info.label) || b.name).toLowerCase();
+      return la < lb ? -1 : la > lb ? 1 : 0;
+    });
+  boards.forEach(function (board) {
     var label = (board.info && board.info.label) || board.name;
     if (f && (label + ' ' + board.name).toLowerCase().indexOf(f) === -1) {
       return;
@@ -1464,7 +1472,11 @@ function renderApioList(filter) {
   list.innerHTML = '';
   var f = (filter || '').toLowerCase();
   var shown = 0;
-  beApioBoards.forEach(function (b) {
+  //-- Flat searchable list: show the apio boards sorted alphabetically by id.
+  var boards = beApioBoards.slice().sort(function (a, b) {
+    return String(a.id).localeCompare(String(b.id));
+  });
+  boards.forEach(function (b) {
     if (f && (b.id + ' ' + b.label).toLowerCase().indexOf(f) === -1) {
       return;
     }

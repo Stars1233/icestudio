@@ -930,12 +930,14 @@ angular
         if (!pinValue) {
           return '';
         }
+        //-- The get_ports braces must be TIGHT ("{clk}", not "{ clk }") —
+        //-- nextpnr-xilinx's XDC parser asserts the token ends with '}'.
         return (
           'set_property -dict { PACKAGE_PIN ' +
           pinValue +
-          ' IOSTANDARD LVCMOS33 } [get_ports { ' +
+          ' IOSTANDARD LVCMOS33 } [get_ports {' +
           port +
-          ' }]\n'
+          '}]\n'
         );
       }
 
