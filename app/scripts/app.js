@@ -38,7 +38,7 @@ angular.module('icestudio', ['ui.bootstrap', 'ngRoute', 'gettext']).run(
     gettextCatalog
   ) {
     /* jshint +W098 */
-    console.log('->DEBUG: app.js');
+    console.log('---> scripts/app.js (RUN)');
 
     /* If in package.json appears development:{mode:true}*/
     /* activate development tools */
