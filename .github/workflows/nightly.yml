@@ -147,7 +147,8 @@ jobs:
         with:
           tag_name: ${{ env.TAG }}
           name: Nightly ${{ env.VERSION }} — ${{ env.DATE }}
-          prerelease: true
+          prerelease: false
+          make_latest: false
           target_commitish: develop
           body_path: changelog.md
           files: |
@@ -199,7 +200,8 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.TAG }}
-          prerelease: true
+          prerelease: false
+          make_latest: false
           target_commitish: develop
           files: dist/icestudio-${{ env.VERSION }}-${{ env.DATE }}-osxarm64.dmg
 
@@ -239,7 +241,8 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.TAG }}
-          prerelease: true
+          prerelease: false
+          make_latest: false
           target_commitish: develop
           files: dist/icestudio-${{ env.VERSION }}-${{ env.DATE }}-aarch64.zip
 
